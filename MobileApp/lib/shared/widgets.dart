@@ -8,13 +8,21 @@ class Brand extends StatelessWidget {
   const Brand({super.key, this.large = false});
   final bool large;
   @override
-  Widget build(BuildContext context) => Text(
-    'trivia',
-    style: TextStyle(
-      fontSize: large ? 54 : 30,
-      fontWeight: FontWeight.w900,
-      letterSpacing: -2,
-      color: darkGreen,
+  Widget build(BuildContext context) => SizedBox(
+    width: large ? 240 : 100,
+    height: large ? 84 : 46,
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text(
+        'trivia',
+        style: TextStyle(
+          fontSize: large ? 54 : 30,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -2,
+          color: darkGreen,
+        ),
+      ),
     ),
   );
 }

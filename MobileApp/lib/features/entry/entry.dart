@@ -29,6 +29,24 @@ class _OnboardingState extends State<Onboarding> {
     'Propose a fare and choose from available driver offers.',
     'Connect with drivers and experience flexible, convenient travel with Trivia.',
   ];
+  static const images = [
+    (
+      asset: 'assets/images/onboarding/trivia_onboarding_1.png',
+      label: 'A passenger requesting a Trivia ride',
+      alignment: Alignment.center,
+    ),
+    (
+      asset: 'assets/images/onboarding/trivia_onboarding_2.png',
+      label: 'A Trivia driver ready for your journey',
+      alignment: Alignment(0.1, -0.2),
+    ),
+    (
+      asset: 'assets/images/onboarding/trivia_onboarding_3.png',
+      label: 'A completed Trivia ride on a passenger’s phone',
+      alignment: Alignment(0, 0.2),
+    ),
+  ];
+
   @override
   void dispose() {
     pages.dispose();
@@ -58,39 +76,45 @@ class _OnboardingState extends State<Onboarding> {
               controller: pages,
               itemCount: 3,
               onPageChanged: (i) => setState(() => index = i),
-              itemBuilder: (context, i) => LayoutBuilder(
-                builder: (context, size) => SingleChildScrollView(
-                  padding: const EdgeInsets.all(28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: size.maxHeight * .42,
-                        width: double.infinity,
-                        child: CustomPaint(painter: JourneyIllustration(i)),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        '0${i + 1} / YOUR NEXT CHAPTER',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          letterSpacing: 2,
-                          color: darkGreen,
-                          fontWeight: FontWeight.w700,
+              itemBuilder: (context, i) => SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: AspectRatio(
+                        aspectRatio: 1.65,
+                        child: Image.asset(
+                          images[i].asset,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          alignment: images[i].alignment,
+                          semanticLabel: images[i].label,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        titles[i],
-                        style: Theme.of(context).textTheme.headlineLarge,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      '0${i + 1} / YOUR NEXT CHAPTER',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 2,
+                        color: darkGreen,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        descriptions[i],
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      titles[i],
+                      style: Theme.of(context).textTheme.headlineLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      descriptions[i],
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -137,69 +161,6 @@ class _OnboardingState extends State<Onboarding> {
       ),
     ),
   );
-}
-
-class JourneyIllustration extends CustomPainter {
-  JourneyIllustration(this.page);
-  final int page;
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, const Radius.circular(36)),
-      Paint()..color = pale,
-    );
-    final p = Paint()
-      ..color = const Color(0xFFD1FAE5)
-      ..strokeWidth = 20
-      ..style = PaintingStyle.stroke;
-    final path = Path()
-      ..moveTo(0, size.height * .75)
-      ..cubicTo(
-        size.width * .9,
-        size.height,
-        size.width * .1,
-        0,
-        size.width,
-        size.height * .25,
-      );
-    canvas.drawPath(path, p);
-    canvas.drawCircle(
-      Offset(size.width * .25, size.height * .72),
-      13,
-      Paint()..color = darkGreen,
-    );
-    canvas.drawCircle(
-      Offset(size.width * .78, size.height * .27),
-      13,
-      Paint()..color = emerald,
-    );
-    final icon = [
-      Icons.directions_car_rounded,
-      Icons.handshake_outlined,
-      Icons.route_rounded,
-    ][page];
-    final tp = TextPainter(
-      text: TextSpan(
-        text: String.fromCharCode(icon.codePoint),
-        style: TextStyle(
-          fontFamily: icon.fontFamily,
-          package: icon.fontPackage,
-          fontSize: 96,
-          color: darkGreen,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(
-      canvas,
-      Offset((size.width - tp.width) / 2, (size.height - tp.height) / 2),
-    );
-  }
-
-  @override
-  bool shouldRepaint(JourneyIllustration oldDelegate) =>
-      page != oldDelegate.page;
 }
 
 class AuthScreen extends StatefulWidget {
@@ -510,6 +471,26 @@ class _ProfileSetupState extends State<ProfileSetup> {
             ],
           ),
         ),
+      ),
+    ),
+  );
+}
+
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: Center(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: .85, end: 1),
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 300),
+        builder: (_, value, child) => Opacity(
+          opacity: value,
+          child: Transform.scale(scale: value, child: child),
+        ),
+        child: const Brand(large: true),
       ),
     ),
   );

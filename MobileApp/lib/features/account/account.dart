@@ -241,7 +241,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 subtitle: Text(
                   '${DateFormat('d MMM, HH:mm').format(r.createdAt.toUtc().add(const Duration(hours: 2)))} CAT\n${statusLabel(r.status)}',
                 ),
-                trailing: Text(money(r.cents)),
+                trailing: Text(money(r.cents, currency: r.currency)),
                 onTap: () =>
                     openPage(context, ReceiptPage(app: widget.app, ride: r)),
               ),
@@ -272,11 +272,13 @@ class ReceiptPage extends StatelessWidget {
         Text('${ride.pickup.name}\n↓\n${ride.destination.name}'),
         const Divider(height: 40),
         Text(
-          money(ride.cents),
+          money(ride.cents, currency: ride.currency),
           style: Theme.of(context).textTheme.headlineLarge,
         ),
-        Text('Payment status: ${ride.paymentStatus}'),
+        Text('Payment status: ${paymentStatusLabel(ride.paymentStatus)}'),
         const SizedBox(height: 12),
+        if (ride.paymentMethodName != null)
+          Text('Payment method: ${ride.paymentMethodName}'),
         Text('Trip reference: ${ride.id}'),
         if (ride.driver != null)
           Text(
@@ -332,6 +334,17 @@ class ResourcePage extends StatefulWidget {
 
 class _ResourcePageState extends State<ResourcePage> {
   late Future<Map<String, dynamic>> data;
+  String lastRevision = '';
+  @override
+  void didUpdateWidget(ResourcePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final revision = '${widget.app.history.length}-${widget.app.ride?.status}';
+    if (revision != lastRevision) {
+      lastRevision = revision;
+      data = widget.app.repository.read(widget.resource);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -387,6 +400,16 @@ class _ResourcePageState extends State<ResourcePage> {
               ),
             for (final item in items)
               ListTile(
+                onTap:
+                    widget.resource == 'payments/methods' && item['id'] != null
+                    ? () {
+                        widget.app.selectPayment(
+                          '${item['id']}',
+                          '${item['name']}',
+                        );
+                        Navigator.maybePop(context);
+                      }
+                    : null,
                 leading: Icon(
                   widget.resource.startsWith('payments')
                       ? Icons.payments_outlined
@@ -673,10 +696,10 @@ class _SettingsPageState extends State<SettingsPage> {
             title: Text('Timezone'),
             trailing: Text('Africa/Harare'),
           ),
-          const ListTile(
+          ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text('Currency'),
-            trailing: Text('USD'),
+            title: const Text('Currency'),
+            trailing: Text(currencySymbol(widget.app.currency)),
           ),
           const Divider(height: 32),
           const Text(

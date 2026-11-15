@@ -10,6 +10,8 @@ import '../../core/map_view.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
 import '../account/account.dart';
+import 'booking_controller.dart';
+import 'booking_fields.dart';
 
 class PassengerHome extends StatefulWidget {
   const PassengerHome({super.key, required this.app});
@@ -19,21 +21,33 @@ class PassengerHome extends StatefulWidget {
 }
 
 class _PassengerHomeState extends State<PassengerHome> {
-  Place? pickup, destination;
-  String category = 'Standard';
-  RouteQuote? quote;
-  bool quoting = false;
-  String? quoteError;
-  int quoteGeneration = 0;
-  final fare = TextEditingController();
-  final form = GlobalKey<FormState>();
+  late final BookingController booking;
+  Place? get pickup => booking.pickup;
+  Place? get destination => booking.destination;
+  @override
+  void initState() {
+    super.initState();
+    booking = BookingController(widget.app)..addListener(refresh);
+    booking.loadConfiguration();
+  }
+
+  void refresh() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
-    fare.dispose();
+    booking.removeListener(refresh);
+    booking.dispose();
     super.dispose();
   }
 
   Future<void> choose(bool origin) async {
+    if (booking.submitting) {
+      return;
+    }
     final place = await Navigator.push<Place>(
       context,
       MaterialPageRoute(
@@ -44,47 +58,10 @@ class _PassengerHomeState extends State<PassengerHome> {
       ),
     );
     if (place != null && mounted) {
-      setState(() {
-        if (origin) {
-          pickup = place;
-        } else {
-          destination = place;
-        }
-      });
-      await loadQuote();
-    }
-  }
-
-  Future<void> loadQuote() async {
-    final generation = ++quoteGeneration;
-    setState(() {
-      quote = null;
-      quoteError = null;
-    });
-    if (pickup == null || destination == null || AppConfig.demo) {
-      return;
-    }
-    setState(() => quoting = true);
-    try {
-      final result = await widget.app.repository.quote(
-        pickup!,
-        destination!,
-        category,
+      await booking.setPlaces(
+        pickup: origin ? place : null,
+        destination: origin ? null : place,
       );
-      if (mounted && generation == quoteGeneration) {
-        setState(() => quote = result);
-      }
-    } catch (_) {
-      if (mounted && generation == quoteGeneration) {
-        setState(
-          () => quoteError =
-              'Route quote unavailable. Retry before requesting a live ride.',
-        );
-      }
-    } finally {
-      if (mounted && generation == quoteGeneration) {
-        setState(() => quoting = false);
-      }
     }
   }
 
@@ -125,7 +102,10 @@ class _PassengerHomeState extends State<PassengerHome> {
                   child: TriviaMap(
                     pickup: ride?.pickup ?? pickup,
                     destination: ride?.destination ?? destination,
-                    route: quote?.points ?? const [],
+                    route: ride?.route ?? booking.quote?.points ?? const [],
+                    driver: ride?.freshLocation == true
+                        ? ride!.driverLocation
+                        : null,
                   ),
                 ),
                 DraggableScrollableSheet(
@@ -190,8 +170,9 @@ class _PassengerHomeState extends State<PassengerHome> {
                                         size: 16,
                                       ),
                                       label: Text(p.name),
-                                      onPressed: () =>
-                                          setState(() => destination = p),
+                                      onPressed: () {
+                                        booking.setPlaces(destination: p);
+                                      },
                                     ),
                                   )
                                   .toList(),
@@ -202,102 +183,7 @@ class _PassengerHomeState extends State<PassengerHome> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            children: ['Standard', 'Comfort', 'XL']
-                                .map(
-                                  (c) => ChoiceChip(
-                                    label: Text(
-                                      'Trivia $c\n${c == 'XL' ? '6 seats' : '4 seats'}',
-                                    ),
-                                    selected: category == c,
-                                    onSelected: (_) {
-                                      setState(() => category = c);
-                                      loadQuote();
-                                    },
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                          const SizedBox(height: 16),
-                          if (AppConfig.demo &&
-                              pickup != null &&
-                              destination != null)
-                            const Text(
-                              'Road route, travel time and suggested fare are unavailable in demo mode.',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          if (quoting) const LinearProgressIndicator(),
-                          if (quoteError != null)
-                            TextButton(
-                              onPressed: loadQuote,
-                              child: Text(quoteError!),
-                            ),
-                          if (quote != null) ...[
-                            Text(
-                              '${(quote!.metres / 1000).toStringAsFixed(1)} km · ${(quote!.seconds / 60).ceil()} min · ${quote!.available ? 'Service available' : 'Service unavailable'}',
-                            ),
-                            if (quote!.suggestedCents != null)
-                              Text(
-                                'Suggested fare: ${money(quote!.suggestedCents!)}',
-                              ),
-                          ],
-                          const SizedBox(height: 16),
-                          Form(
-                            key: form,
-                            child: TextFormField(
-                              controller: fare,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: const InputDecoration(
-                                labelText: 'Offer your fare',
-                                prefixText: 'USD  ',
-                                hintText: '0.00',
-                              ),
-                              validator: (v) {
-                                try {
-                                  final amount = parseFare(v ?? '');
-                                  if (quote != null &&
-                                      amount < quote!.minimumCents) {
-                                    return 'Minimum fare: ${money(quote!.minimumCents)}';
-                                  }
-                                  return null;
-                                } on FormatException catch (e) {
-                                  return e.message;
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Choose from driver offers. Your agreed fare stays fixed.',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          ErrorNotice(app),
-                          const SizedBox(height: 18),
-                          ActionButton(
-                            AppConfig.demo
-                                ? 'Find a demo ride'
-                                : 'Request ride',
-                            pickup == null ||
-                                    destination == null ||
-                                    (!AppConfig.demo &&
-                                        quote?.available != true)
-                                ? null
-                                : () async {
-                                    if (form.currentState!.validate()) {
-                                      await app.book(
-                                        pickup!,
-                                        destination!,
-                                        category,
-                                        parseFare(fare.text),
-                                      );
-                                    }
-                                  },
-                            busy: app.busy,
-                          ),
+                          BookingFields(booking: booking),
                           const SizedBox(height: 12),
                           const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -308,9 +194,11 @@ class _PassengerHomeState extends State<PassengerHome> {
                                 color: darkGreen,
                               ),
                               SizedBox(width: 6),
-                              Text(
-                                'Your choice, from start to finish.',
-                                style: TextStyle(fontSize: 12),
+                              Flexible(
+                                child: Text(
+                                  'Your choice, from start to finish.',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                               ),
                             ],
                           ),
@@ -616,8 +504,15 @@ class TripPanel extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(r.driver == null ? 'Your proposed fare' : 'Agreed fare'),
-            Text(money(r.cents), style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              money(r.cents, currency: r.currency),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${r.paymentMethodName == null ? '' : '${r.paymentMethodName} · '}${paymentStatusLabel(r.paymentStatus)}',
         ),
         if (r.status == RideStatus.searching) ...[
           const SizedBox(height: 20),
@@ -648,7 +543,7 @@ class TripPanel extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          money(o.cents),
+                          money(o.cents, currency: r.currency),
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ],
@@ -663,7 +558,7 @@ class TripPanel extends StatelessWidget {
                       if (await confirm(
                         context,
                         'Choose ${o.name}?',
-                        'Agree to ${money(o.cents)} for this trip?',
+                        'Agree to ${money(o.cents, currency: r.currency)} for this trip?',
                       )) {
                         await app.accept(o);
                       }
@@ -693,8 +588,10 @@ class TripPanel extends StatelessWidget {
             title: Text(d.name),
             subtitle: Text('${d.vehicle}\n${d.plate}'),
           ),
-          const Text(
-            'Live driver position and road route are unavailable in this build.',
+          Text(
+            r.freshLocation
+                ? 'Driver location updated ${r.locationUpdatedAt!.toUtc().add(const Duration(hours: 2)).toIso8601String().substring(11, 19)} CAT'
+                : 'Live driver position unavailable or out of date.',
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(

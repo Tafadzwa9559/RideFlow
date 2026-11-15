@@ -13,15 +13,24 @@ abstract class TriviaRepository {
   Future<Session> profile(String first, String last, String email);
   Future<void> logout();
   Future<List<Place>> search(String query);
-  Future<RouteQuote?> quote(Place pickup, Place destination, String category);
+  Future<RouteQuote?> quote(
+    Place pickup,
+    Place destination,
+    String category, {
+    String currency = 'USD',
+  });
   Future<List<Ride>> history();
   Future<Ride?> activeRide();
   Future<Ride> request(
     Place pickup,
     Place destination,
     String category,
-    int cents,
-  );
+    int cents, {
+    String? paymentMethod,
+    String currency = 'USD',
+    String? quoteId,
+    String? requestKey,
+  });
   Future<List<DriverOffer>> offers(String rideId);
   Future<Ride> accept(String rideId, String offerId);
   Future<Ride> transition(String rideId, RideStatus status);
@@ -75,8 +84,9 @@ class DemoRepository implements TriviaRepository {
   Future<RouteQuote?> quote(
     Place pickup,
     Place destination,
-    String category,
-  ) async => null;
+    String category, {
+    String currency = 'USD',
+  }) async => null;
   @override
   Future<List<Ride>> history() async => _rides.reversed.toList();
   @override
@@ -97,8 +107,12 @@ class DemoRepository implements TriviaRepository {
     Place pickup,
     Place destination,
     String category,
-    int cents,
-  ) async {
+    int cents, {
+    String? paymentMethod,
+    String currency = 'USD',
+    String? quoteId,
+    String? requestKey,
+  }) async {
     if (_rides.any((r) => r.active)) {
       throw StateError('Finish or cancel your current demo ride first.');
     }
@@ -114,6 +128,10 @@ class DemoRepository implements TriviaRepository {
         category: category,
         status: RideStatus.searching,
         createdAt: DateTime.now().toUtc(),
+        currency: currency,
+        offeredCents: cents,
+        paymentMethod: paymentMethod,
+        paymentStatus: 'pending_cash',
       ),
     );
   }
@@ -230,30 +248,110 @@ class DemoRepository implements TriviaRepository {
     }
   }
 
+  int get _demoGross => _rides
+      .where(
+        (r) => r.driver?.id == 'demo-self' && r.status == RideStatus.completed,
+      )
+      .fold(0, (sum, r) => sum + r.cents);
+  Future<Ride> simulatePassengerSelection(Ride request, int cents) async {
+    if (!online || _session?.driverStatus != DriverStatus.approved) {
+      throw StateError('Go online as an approved demo driver first.');
+    }
+    if (_rides.any((r) => r.active)) {
+      throw StateError('Finish your active demo trip first.');
+    }
+    return _save(
+      Ride(
+        id: 'demo-driver-${DateTime.now().microsecondsSinceEpoch}',
+        pickup: request.pickup,
+        destination: request.destination,
+        cents: cents,
+        category: request.category,
+        status: RideStatus.assigned,
+        createdAt: DateTime.now().toUtc(),
+        driver: DriverOffer(
+          id: 'demo-self',
+          name: '${_session!.firstName} · Demo driver',
+          vehicle: 'White Toyota Aqua · Demo',
+          plate: 'DEMO 03',
+          cents: cents,
+        ),
+      ),
+    );
+  }
+
   @override
-  Future<Map<String, dynamic>> read(String resource) async =>
-      switch (resource) {
-        'payments/methods' => {
-          'items': [
-            {'name': 'Cash · Demo only'},
-          ],
+  Future<Map<String, dynamic>> read(
+    String resource,
+  ) async => switch (resource) {
+    'currencies' => {
+      'items': [
+        {'code': 'USD', 'name': 'United States Dollar', 'symbol': 'US\$'},
+        {'code': 'ZWG', 'name': 'Zimbabwe Gold', 'symbol': 'ZiG'},
+      ],
+      'default': 'USD',
+    },
+    'payments/methods' => {
+      'items': [
+        {
+          'id': 'cash-usd',
+          'name': 'Cash — USD',
+          'kind': 'cash',
+          'currencies': ['USD'],
+          'enabled': true,
+          'description': 'Pay the driver directly after your trip. Demo only.',
         },
-        'driver/earnings' => {
-          'gross_cents': 0,
-          'commission_cents': 0,
-          'net_cents': 0,
-          'trips': 0,
-          'payout_status': 'No demo payouts',
+        {
+          'id': 'cash-zwg',
+          'name': 'Cash — ZiG',
+          'kind': 'cash',
+          'currencies': ['ZWG'],
+          'enabled': true,
+          'description': 'Pay the driver directly after your trip. Demo only.',
         },
-        'driver/requirements' => {
-          'documents': [
-            {'key': 'licence', 'label': 'Driver’s licence'},
-            {'key': 'registration', 'label': 'Vehicle registration'},
-            {'key': 'vehicle_photo', 'label': 'Vehicle photograph'},
-          ],
-        },
-        _ => {'items': <dynamic>[]},
-      };
+        for (final name in ['EcoCash', 'OneMoney', 'InnBucks'])
+          {
+            'id': name.toLowerCase(),
+            'name': name,
+            'kind': 'mobile_money',
+            'currencies': <String>[],
+            'enabled': false,
+            'description': 'Payment integration unavailable',
+          },
+      ],
+    },
+    'driver/earnings' => {
+      'gross_cents': _demoGross,
+      'commission_cents': 0,
+      'net_cents': _demoGross,
+      'trips': _rides
+          .where(
+            (r) =>
+                r.driver?.id == 'demo-self' && r.status == RideStatus.completed,
+          )
+          .length,
+      'payout_status': 'Simulated · No funds',
+    },
+    'driver/requirements' => {
+      'documents': [
+        {'key': 'licence', 'label': 'Driver’s licence'},
+        {'key': 'registration', 'label': 'Vehicle registration'},
+        {'key': 'vehicle_photo', 'label': 'Vehicle photograph'},
+      ],
+    },
+    'notifications' => {
+      'items': _rides
+          .map(
+            (r) => {
+              'title': statusLabel(r.status),
+              'description':
+                  '${r.pickup.name} → ${r.destination.name} · Demo trip',
+            },
+          )
+          .toList(),
+    },
+    _ => {'items': <dynamic>[]},
+  };
   @override
   Future<void> write(String resource, Map<String, dynamic> data) async {}
 }
@@ -272,18 +370,32 @@ class ApiRepository implements TriviaRepository {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await storage.read(key: 'access');
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
+          try {
+            final token = await storage.read(key: 'access');
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+            handler.next(options);
+          } catch (error) {
+            handler.reject(DioException(requestOptions: options, error: error));
           }
-          handler.next(options);
         },
         onError: (error, handler) async {
-          if (error.response?.statusCode == 401) {
-            await storage.deleteAll();
-            expired.add(null);
+          try {
+            if (error.response?.statusCode == 401) {
+              try {
+                await storage.deleteAll();
+              } finally {
+                if (!expired.isClosed) {
+                  expired.add(null);
+                }
+              }
+            }
+          } catch (_) {
+            /* Still propagate the original request failure. */
+          } finally {
+            handler.next(error);
           }
-          handler.next(error);
         },
       ),
     );
@@ -349,12 +461,14 @@ class ApiRepository implements TriviaRepository {
   Future<RouteQuote?> quote(
     Place pickup,
     Place destination,
-    String category,
-  ) async => RouteQuote.fromJson(
+    String category, {
+    String currency = 'USD',
+  }) async => RouteQuote.fromJson(
     await _post('routes/quote/', {
       'pickup': pickup.toJson(),
       'destination': destination.toJson(),
       'category': category,
+      'currency': currency,
     }),
   );
   @override
@@ -375,13 +489,21 @@ class ApiRepository implements TriviaRepository {
     Place pickup,
     Place destination,
     String category,
-    int cents,
-  ) async => Ride.fromJson(
+    int cents, {
+    String? paymentMethod,
+    String currency = 'USD',
+    String? quoteId,
+    String? requestKey,
+  }) async => Ride.fromJson(
     await _post('rides/', {
       'pickup': pickup.toJson(),
       'destination': destination.toJson(),
       'category': category,
       'fare_cents': cents,
+      'payment_method_id': ?paymentMethod,
+      'currency': currency,
+      'quote_id': quoteId,
+      'idempotency_key': requestKey,
     }),
   );
   @override

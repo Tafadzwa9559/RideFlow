@@ -15,7 +15,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.mordecsolutions.trivia"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -32,20 +31,35 @@ android {
     signingConfigs {
         create("production") {
             val storePath = System.getenv("TRIVIA_KEYSTORE")
-            if (storePath != null) {
+            if (!storePath.isNullOrBlank()) {
                 storeFile = file(storePath)
                 storePassword = System.getenv("TRIVIA_STORE_PASSWORD")
                 keyAlias = System.getenv("TRIVIA_KEY_ALIAS")
                 keyPassword = System.getenv("TRIVIA_KEY_PASSWORD")
             }
+            enableV2Signing = true
+            enableV3Signing = true
         }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("production")
+        }
+    }
+}
+
+// Debug/analyze workflows need no production secrets. Every release workflow does.
+gradle.taskGraph.whenReady {
+    if (allTasks.any { it.project == project && it.name.contains("Release") }) {
+        val required = listOf("TRIVIA_KEYSTORE", "TRIVIA_STORE_PASSWORD", "TRIVIA_KEY_ALIAS", "TRIVIA_KEY_PASSWORD")
+        val missing = required.filter { System.getenv(it).isNullOrBlank() }
+        check(missing.isEmpty()) {
+            "Release signing credentials missing: ${missing.joinToString()}. " +
+                "Supply the existing Trivia release key securely; unsigned release APKs are not installable. See README.md."
+        }
+        check(file(System.getenv("TRIVIA_KEYSTORE")).isFile) {
+            "TRIVIA_KEYSTORE must reference an existing release keystore file."
         }
     }
 }

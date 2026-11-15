@@ -67,7 +67,7 @@ class _TriviaAppState extends ConsumerState<TriviaApp>
         listenable: app,
         builder: (_, _) {
           if (!app.ready) {
-            return const Scaffold(body: Center(child: Brand(large: true)));
+            return const SplashScreen();
           }
           if (app.initializationFailed) {
             return Scaffold(

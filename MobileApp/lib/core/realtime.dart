@@ -14,7 +14,7 @@ class Realtime extends ChangeNotifier {
   final Future<void> Function() reconcile;
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _subscription;
-  Timer? _retry, _heartbeat;
+  Timer? _retry, _heartbeat, _liveness;
   bool _closed = false;
   int _attempt = 0;
   String state = 'Disconnected';
@@ -38,15 +38,18 @@ class Realtime extends ChangeNotifier {
       }
       final channel = WebSocketChannel.connect(Uri.parse(url));
       _channel = channel;
-      await channel.ready;
+      await channel.ready.timeout(const Duration(seconds: 15));
       if (_closed) {
         await channel.sink.close();
         return;
       }
       channel.sink.add(jsonEncode({'type': 'authenticate', 'ticket': auth}));
+      _liveness = Timer(const Duration(seconds: 15), _reconnect);
       _subscription = channel.stream.listen(
         (raw) async {
           try {
+            _liveness?.cancel();
+            _liveness = Timer(const Duration(seconds: 60), _reconnect);
             final event = jsonDecode(raw as String) as Map<String, dynamic>;
             if (event['type'] == 'authenticated') {
               _attempt = 0;
@@ -78,6 +81,7 @@ class Realtime extends ChangeNotifier {
     if (_closed || _retry?.isActive == true) {
       return;
     }
+    _liveness?.cancel();
     _heartbeat?.cancel();
     _subscription?.cancel();
     _channel?.sink.close();
@@ -92,6 +96,7 @@ class Realtime extends ChangeNotifier {
   void dispose() {
     _closed = true;
     _retry?.cancel();
+    _liveness?.cancel();
     _heartbeat?.cancel();
     _subscription?.cancel();
     _channel?.sink.close();

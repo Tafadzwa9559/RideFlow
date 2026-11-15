@@ -14,8 +14,9 @@ class TriviaMap extends StatefulWidget {
     this.destination,
     this.onTap,
     this.route = const [],
+    this.driver,
   });
-  final Place? pickup, destination;
+  final Place? pickup, destination, driver;
   final List<LatLng> route;
   final ValueChanged<Place>? onTap;
   @override
@@ -79,6 +80,13 @@ class _TriviaMapState extends State<TriviaMap> {
             ),
           MarkerLayer(
             markers: [
+              if (widget.driver != null)
+                Marker(
+                  point: widget.driver!.point,
+                  width: 44,
+                  height: 44,
+                  child: const _Pin(icon: Icons.local_taxi),
+                ),
               if (widget.pickup != null)
                 Marker(
                   point: widget.pickup!.point,
@@ -95,17 +103,35 @@ class _TriviaMapState extends State<TriviaMap> {
                 ),
             ],
           ),
-          RichAttributionWidget(
-            attributions: [
-              TextSourceAttribution(
-                'OpenStreetMap contributors',
-                onTap: () => launchUrl(
-                  Uri.parse('https://www.openstreetmap.org/copyright'),
+        ],
+      ),
+      Positioned(
+        top: 8,
+        left: 8,
+        right: 76,
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            child: InkWell(
+              onTap: () => launchUrl(
+                Uri.parse('https://www.openstreetmap.org/copyright'),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(6),
+                child: Text(
+                  '© OpenStreetMap contributors',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: darkGreen,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
-        ],
+        ),
       ),
       Positioned(
         right: 16,
@@ -144,7 +170,7 @@ class _TriviaMapState extends State<TriviaMap> {
       ),
       if (failed)
         const Positioned(
-          top: 10,
+          top: 54,
           left: 12,
           right: 70,
           child: Card(

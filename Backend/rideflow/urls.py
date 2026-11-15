@@ -14,9 +14,25 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
+    path("mobile/v1/", include("rides.api.urls")),
+    path("mobile/v1/", include("payments.api.urls")),
 ]
+
+# Existing identity provider/OTP integration can issue the same JWTs. These
+# authenticated-account token endpoints support staging without inventing users.
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+urlpatterns += [
+    path("mobile/v1/auth/token/", TokenObtainPairView.as_view()),
+    path("mobile/v1/auth/token/refresh/", TokenRefreshView.as_view()),
+]
+
+from accounts.api.views import MeView
+
+urlpatterns += [path("mobile/v1/me/", MeView.as_view())]

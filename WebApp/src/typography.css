@@ -1,0 +1,365 @@
+/* The single type scale for public pages and the denser administration UI.
+   Fluid sizes interpolate from 320px to 1440px; rem values preserve zoom. */
+@font-face {
+  font-family: Inter;
+  src: url("/fonts/inter-latin-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/fonts/plus-jakarta-sans-latin-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+}
+:root {
+  --font-body:
+    "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-heading: "Plus Jakarta Sans", var(--font-body);
+  --type-hero: clamp(2.5rem, 1.929rem + 2.857vw, 4.5rem);
+  --type-page: clamp(2.25rem, 1.893rem + 1.786vw, 3.5rem);
+  --type-section: clamp(1.875rem, 1.625rem + 1.25vw, 2.75rem);
+  --type-subheading: clamp(1.5rem, 1.429rem + 0.357vw, 1.75rem);
+  --type-card: clamp(1.25rem, 1.214rem + 0.179vw, 1.375rem);
+  --type-lead: clamp(1.125rem, 1.089rem + 0.179vw, 1.25rem);
+  --type-body: 1rem;
+  --type-small: 0.875rem;
+  --type-button: 0.9375rem;
+  --type-caption: 0.75rem;
+  --type-nav: 0.875rem;
+  --type-admin-page: clamp(1.625rem, 1.554rem + 0.357vw, 1.875rem);
+  --type-admin-section: 1.375rem;
+  --type-admin-card: 1.0625rem;
+  --type-admin-metric: clamp(1.375rem, 1.232rem + 0.714vw, 1.875rem);
+  --type-admin-support: 0.8125rem;
+  --weight-body: 400;
+  --weight-label: 500;
+  --weight-button: 600;
+  --weight-heading: 700;
+  --weight-hero: 800;
+  --leading-heading: 1.2;
+  --leading-body: 1.7;
+  --text-heading: #171717;
+  --text-body: #525252;
+  --text-muted: #737373;
+  --text-muted-on-soft: #666666;
+  --text-action: #047857;
+  font-size: 16px;
+  font-family: var(--font-body);
+}
+body {
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+}
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-body);
+}
+/* Scope public rules so phone concept text and admin density stay intentional. */
+.marketing.marketing {
+  font-size: var(--type-body);
+  line-height: var(--leading-body);
+}
+.marketing :is(h1, h2, h3, h4) {
+  color: var(--text-heading);
+  overflow-wrap: break-word;
+  font-family: var(--font-heading);
+  font-weight: var(--weight-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: -0.035em;
+}
+.marketing h1 {
+  font-size: var(--type-page);
+  line-height: 1.12;
+}
+.marketing .photo-hero h1 {
+  font-size: var(--type-hero);
+  font-weight: var(--weight-hero);
+  line-height: 1.08;
+}
+.marketing h2 {
+  font-size: var(--type-section);
+}
+.marketing h3 {
+  font-size: var(--type-subheading);
+}
+.marketing h4 {
+  font-size: var(--type-card);
+  font-weight: var(--weight-button);
+}
+.marketing.marketing p {
+  color: var(--text-body);
+  font-size: var(--type-body);
+  font-weight: var(--weight-body);
+  line-height: var(--leading-body);
+}
+.marketing
+  :is(.hero-editorial, .page-intro, .site-page-hero, .download-page)
+  > p,
+.marketing .page-intro > div > p,
+.marketing .process-photography p {
+  font-size: var(--type-lead);
+  line-height: 1.65;
+}
+.marketing p {
+  max-width: 65ch;
+}
+.marketing.marketing small {
+  font-size: var(--type-small);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.marketing.marketing
+  :is(
+    .site-eyebrow,
+    .editorial-label,
+    .photo-context,
+    .scene-caption,
+    figcaption
+  ) {
+  font-family: var(--font-body);
+  font-size: var(--type-caption);
+  font-weight: var(--weight-label);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.marketing :is(.site-eyebrow, .editorial-label) {
+  letter-spacing: 0.1em;
+}
+.marketing
+  :is(
+    .feature-rows h2,
+    .faq-page-editorial aside > h2,
+    .contact-grid h2,
+    .support-boundary h2
+  ) {
+  font-size: var(--type-subheading);
+}
+.marketing .mission-editorial article h2 {
+  font-size: var(--type-subheading);
+  line-height: 1.4;
+}
+.marketing
+  :is(.concise-steps h3, .journey-timeline h3, .category-editorial h3) {
+  font-size: var(--type-card);
+  font-weight: var(--weight-button);
+}
+.marketing
+  :is(
+    .concise-steps > li > span,
+    .journey-timeline li > span,
+    .feature-rows > article > span
+  ) {
+  font-size: var(--type-caption);
+  line-height: 1.5;
+}
+.marketing :is(.category-editorial strong, .intro-values, .plain-requirements) {
+  font-size: var(--type-body);
+}
+.marketing :is(.site-button, .site-text-link, .download-button) {
+  font-family: var(--font-body);
+  font-size: var(--type-button);
+  font-weight: var(--weight-button);
+  line-height: 1.2;
+}
+.marketing .download-button small {
+  font-size: var(--type-caption);
+}
+.marketing :is(.platform-choice, .contact-form .field) {
+  font-size: var(--type-small);
+  font-weight: var(--weight-label);
+  line-height: 1.4;
+}
+.marketing :is(input, select, textarea) {
+  font-size: var(--type-body);
+  font-weight: var(--weight-body);
+  line-height: 1.6;
+}
+.marketing .faq-item h3 > button {
+  font-family: var(--font-body);
+  font-size: var(--type-body);
+  font-weight: var(--weight-button);
+  line-height: 1.5;
+}
+.marketing .faq-item h3 > button > span {
+  font-size: var(--type-subheading);
+}
+.marketing .site-nav :is(.desktop-navigation > a, .dropdown-trigger) {
+  font-family: var(--font-body);
+  font-size: var(--type-nav);
+  font-weight: var(--weight-label);
+  line-height: 1.4;
+}
+.marketing .site-nav .nav-download {
+  font-size: var(--type-button);
+  font-weight: var(--weight-button);
+  line-height: 1.2;
+}
+.marketing :is(.dropdown-panel > a, .mobile-secondary-links > a) {
+  font-size: var(--type-small);
+  font-weight: var(--weight-label);
+  line-height: 1.4;
+}
+.marketing .mobile-menu-panel nav > div:not(.mobile-secondary-links) > a {
+  font-size: var(--type-body);
+  font-weight: var(--weight-label);
+  line-height: 1.4;
+}
+.marketing :is(.mobile-link-index, .mobile-menu-title > span) {
+  font-size: var(--type-caption);
+}
+.marketing .site-footer {
+  font-size: var(--type-small);
+  line-height: 1.6;
+}
+.marketing .site-footer :is(p, small, a:not(.logo)) {
+  font-size: var(--type-small);
+}
+.marketing .footer-note p {
+  font-size: var(--type-card);
+  line-height: 1.4;
+}
+.marketing .site-footer-bottom {
+  font-size: var(--type-caption);
+}
+.marketing .site-footer-bottom :is(a, span) {
+  font-size: var(--type-caption);
+}
+/* Explicit admin scope wins over historical responsive compact-view rules. */
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page) {
+  font-family: var(--font-body);
+  font-size: var(--type-small);
+  line-height: 1.6;
+  color: var(--text-heading);
+}
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page)
+  :is(h1, h2, h3, h4) {
+  font-family: var(--font-body);
+  line-height: 1.25;
+  font-weight: var(--weight-heading);
+  letter-spacing: -0.025em;
+  overflow-wrap: break-word;
+}
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page) h1 {
+  font-size: var(--type-admin-page);
+}
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page) h2 {
+  font-size: var(--type-admin-section);
+}
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page) :is(h3, h4) {
+  font-size: var(--type-admin-card);
+  font-weight: var(--weight-button);
+}
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page) p {
+  font-size: var(--type-small);
+  line-height: 1.65;
+  color: var(--text-body);
+}
+.app-shell.app-shell :is(td, th, .sidebar nav a) {
+  font-size: var(--type-small);
+  line-height: 1.5;
+}
+.app-shell.app-shell
+  :is(
+    small,
+    .muted,
+    .breadcrumb,
+    .demo-banner,
+    .app-footer,
+    .kpi > span,
+    .workspace-label,
+    .badge
+  ) {
+  font-size: var(--type-admin-support);
+  line-height: 1.5;
+}
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page) .field {
+  font-size: var(--type-small);
+  font-weight: var(--weight-label);
+  line-height: 1.4;
+}
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page)
+  :is(input, select, textarea) {
+  font-size: var(--type-body);
+  font-weight: var(--weight-body);
+  line-height: 1.5;
+}
+:is(.app-shell.app-shell, .admin-login-page.admin-login-page)
+  :is(.btn, button:not(.icon-btn)) {
+  font-size: var(--type-button);
+  font-weight: var(--weight-button);
+  line-height: 1.2;
+}
+.app-shell.app-shell :is(.kpi strong, .big-number) {
+  font-size: var(--type-admin-metric);
+  line-height: 1.2;
+}
+.app-shell.app-shell .eyebrow {
+  font-size: var(--type-caption);
+  font-weight: var(--weight-label);
+}
+
+/* Muted text needs a slightly darker tone on the off-white and mint surfaces. */
+.marketing
+  :is(.site-soft, .site-footer, .site-download-section, .availability-note) {
+  --text-muted: var(--text-muted-on-soft);
+}
+
+.app-shell.app-shell
+  :is(
+    .location-pill,
+    .profile strong,
+    .profile small,
+    .workspace-label span,
+    .notice,
+    .date-label,
+    .field-error,
+    .small-copy,
+    .nav-count,
+    .sidebar-note,
+    .sidebar-note p,
+    .connection
+  ),
+.admin-login-page.admin-login-page :is(.admin-status, .field-error, small) {
+  font-size: var(--type-admin-support);
+  line-height: 1.5;
+}
+.marketing.marketing
+  :is(.site-eyebrow, .editorial-label, .photo-context, figcaption) {
+  color: var(--text-muted);
+}
+.marketing .field-error {
+  font-size: var(--type-small);
+  line-height: 1.4;
+}
+
+/* Larger, readable action labels wrap beneath narrow dashboard titles. */
+@media (max-width: 620px) {
+  .app-shell .page-heading {
+    flex-wrap: wrap;
+  }
+  .app-shell .page-heading > div {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .app-shell .page-heading > .btn {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+/* Full localised currency prefixes need room in narrow metric cards. */
+.app-shell .kpi {
+  min-width: 0;
+}
+.app-shell.app-shell .app-footer > span {
+  font-size: var(--type-admin-support);
+  line-height: 1.5;
+  min-width: 0;
+  max-width: 100%;
+}

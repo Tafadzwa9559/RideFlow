@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/config.dart';
+import '../core/api_error.dart';
 import '../core/repository.dart';
 import '../core/realtime.dart';
 import '../shared/models.dart';
@@ -27,6 +28,9 @@ class AppController extends ChangeNotifier {
       driverMode = false,
       online = false;
   String? error;
+  String? paymentMethod = AppConfig.demo ? 'cash-usd' : null;
+  String? paymentLabel = AppConfig.demo ? 'Cash — USD' : null;
+  String currency = 'USD';
   Session? session;
   Ride? ride;
   List<DriverOffer> offers = [];
@@ -58,11 +62,7 @@ class AppController extends ChangeNotifier {
       await action();
       return true;
     } catch (e) {
-      error = e is FormatException
-          ? e.message
-          : e is StateError
-          ? e.message.toString()
-          : 'Unable to reach Trivia. Check your connection and try again.';
+      error = apiErrorMessage(e);
       return false;
     } finally {
       busy = false;
@@ -76,6 +76,7 @@ class AppController extends ChangeNotifier {
       AppConfig.validate();
       _prefs = await SharedPreferences.getInstance();
       onboarded = _prefs!.getBool('trivia_onboarded') ?? false;
+      currency = _prefs!.getString('trivia_currency') == 'ZWG' ? 'ZWG' : 'USD';
       session = await repository.restore();
       if (repository is ApiRepository) {
         _expiration = (repository as ApiRepository).expired.stream.listen((_) {
@@ -125,13 +126,23 @@ class AppController extends ChangeNotifier {
     }
     _syncing = true;
     try {
+      final identity = session;
+      final refreshed = await repository.restore();
       final current = await repository.activeRide();
       final records = await repository.history();
       final bids = current?.status == RideStatus.searching
           ? await repository.offers(current!.id)
           : <DriverOffer>[];
-      if (session == null || _disposed) {
+      if (session == null || session?.phone != identity?.phone || _disposed) {
         return;
+      }
+      session = refreshed ?? session;
+      if (online && session?.driverStatus != DriverStatus.approved) {
+        online = false;
+        await _positions?.cancel();
+        try {
+          await repository.availability(false);
+        } catch (_) {}
       }
       ride = current;
       history = records;
@@ -171,12 +182,32 @@ class AppController extends ChangeNotifier {
     realtime = null;
   }
 
-  Future<bool> book(Place a, Place b, String category, int cents) =>
-      perform(() async {
-        ride = await repository.request(a, b, category, cents);
-        recent = [b, ...recent.where((p) => p.name != b.name)].take(8).toList();
-        await sync();
-      });
+  Future<bool> book(
+    Place a,
+    Place b,
+    String category,
+    int cents, {
+    String? quoteId,
+    String? requestKey,
+    String? offeredCurrency,
+    String? methodId,
+  }) => perform(() async {
+    if (!AppConfig.demo && (methodId ?? paymentMethod) == null) {
+      throw StateError('Choose an enabled payment method before booking.');
+    }
+    ride = await repository.request(
+      a,
+      b,
+      category,
+      cents,
+      paymentMethod: methodId ?? paymentMethod,
+      currency: offeredCurrency ?? currency,
+      quoteId: quoteId,
+      requestKey: requestKey,
+    );
+    recent = [b, ...recent.where((p) => p.name != b.name)].take(8).toList();
+    await sync();
+  });
   Future<bool> accept(DriverOffer offer) => perform(() async {
     ride = await repository.accept(ride!.id, offer.id);
     offers = [];
@@ -259,9 +290,14 @@ class AppController extends ChangeNotifier {
     driverMode = !driverMode;
   });
   Future<bool> logout() => perform(() async {
+    await _positions?.cancel();
     try {
       if (online) {
-        await repository.availability(false);
+        try {
+          await repository.availability(false);
+        } catch (_) {
+          /* Local logout must still clear credentials. */
+        }
       }
       await repository.logout();
     } finally {
@@ -273,10 +309,24 @@ class AppController extends ChangeNotifier {
       offers = [];
       saved = [];
       recent = [];
+      paymentMethod = AppConfig.demo ? 'cash-usd' : null;
+      paymentLabel = AppConfig.demo ? 'Cash — USD' : null;
       driverMode = false;
       online = false;
     }
   });
+  void selectCurrency(String value) {
+    currency = value;
+    _prefs?.setString('trivia_currency', value);
+    notifyListeners();
+  }
+
+  void selectPayment(String id, String label) {
+    paymentMethod = id;
+    paymentLabel = label;
+    notifyListeners();
+  }
+
   void savePlace(Place p) {
     if (!saved.any((v) => v.name == p.name)) {
       saved.add(p);

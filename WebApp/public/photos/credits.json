@@ -1,0 +1,92 @@
+[
+  {
+    "name": "city-car",
+    "author": "Thang Nguyen",
+    "source": "https://www.pexels.com/photo/modern-electric-car-on-urban-street-37048022/",
+    "license": "https://www.pexels.com/license/",
+    "dimensions": [
+      1200,
+      799
+    ],
+    "bytes": 93282
+  },
+  {
+    "name": "passenger",
+    "author": "Roberto Hund",
+    "source": "https://www.pexels.com/photo/confident-black-woman-opening-door-of-taxi-5356272/",
+    "license": "https://www.pexels.com/license/",
+    "dimensions": [
+      1200,
+      800
+    ],
+    "bytes": 82656
+  },
+  {
+    "name": "driver",
+    "author": "Gustavo Fring",
+    "source": "https://www.pexels.com/photo/smiling-woman-at-steering-wheel-in-car-6817008/",
+    "license": "https://www.pexels.com/license/",
+    "dimensions": [
+      1200,
+      800
+    ],
+    "bytes": 48186
+  },
+  {
+    "name": "navigation",
+    "author": "RDNE Stock project",
+    "source": "https://www.pexels.com/photo/a-person-checking-the-gps-on-the-cellphone-7362886/",
+    "license": "https://www.pexels.com/license/",
+    "dimensions": [
+      1200,
+      800
+    ],
+    "bytes": 47572
+  },
+  {
+    "name": "safety",
+    "author": "SALOMON BYUMA",
+    "source": "https://www.pexels.com/photo/photograph-of-a-man-in-a-car-6650892/",
+    "license": "https://www.pexels.com/license/",
+    "dimensions": [
+      1200,
+      1801
+    ],
+    "bytes": 89128
+  },
+  {
+    "name": "suv",
+    "author": "Taryn Elliott",
+    "source": "https://www.pexels.com/photo/aerial-view-of-an-suv-car-on-the-road-6552198/",
+    "license": "https://www.pexels.com/license/",
+    "dimensions": [
+      1200,
+      1734
+    ],
+    "bytes": 112616
+  },
+  {
+    "name": "interior",
+    "author": "Mario Amé",
+    "source": "https://www.pexels.com/photo/man-sitting-behind-the-wheel-of-a-car-15476320/",
+    "license": "https://www.pexels.com/license/",
+    "dimensions": [
+      1200,
+      1200
+    ],
+    "bytes": 72170
+  },
+  {
+    "name": "harare",
+    "author": "Noah Denhe",
+    "source": "https://www.pexels.com/photo/high-rise-building-with-glass-panels-along-a-street-13408426/",
+    "license": "https://www.pexels.com/license/",
+    "location": "Harare, Zimbabwe",
+    "dimensions": [
+      1200,
+      1800
+    ],
+    "bytes": 179606,
+    "use": "Illustrative city photography; not a service-coverage announcement."
+  }
+]

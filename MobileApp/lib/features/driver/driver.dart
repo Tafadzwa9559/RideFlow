@@ -40,7 +40,13 @@ class DriverHome extends StatelessWidget {
         Expanded(
           child: Stack(
             children: [
-              const Positioned.fill(child: TriviaMap()),
+              Positioned.fill(
+                child: TriviaMap(
+                  pickup: app.ride?.pickup,
+                  destination: app.ride?.destination,
+                  route: app.ride?.route ?? const [],
+                ),
+              ),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Container(
@@ -331,17 +337,24 @@ class DriverRequests extends StatefulWidget {
 class _DriverRequestsState extends State<DriverRequests> {
   List<Ride> requests = [];
   final declined = <String>{};
+  final submittedCents = <String, int>{};
   String? error;
   bool loading = false;
+  bool lastOnline = false;
   @override
   void initState() {
     super.initState();
+    lastOnline = widget.app.online;
     load();
   }
 
   @override
   void didUpdateWidget(DriverRequests oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (lastOnline != widget.app.online) {
+      lastOnline = widget.app.online;
+      load();
+    }
   }
 
   Future<void> load() async {
@@ -369,7 +382,7 @@ class _DriverRequestsState extends State<DriverRequests> {
     if (counter) {
       final value = await showDialog<String>(
         context: context,
-        builder: (_) => const _CounterDialog(),
+        builder: (_) => _CounterDialog(currency: r.currency),
       );
       if (value == null) {
         return;
@@ -380,6 +393,7 @@ class _DriverRequestsState extends State<DriverRequests> {
       () => widget.app.repository.counteroffer(r.id, cents),
     );
     if (ok && mounted) {
+      setState(() => submittedCents[r.id] = cents);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -430,7 +444,7 @@ class _DriverRequestsState extends State<DriverRequests> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      money(r.cents),
+                      money(r.cents, currency: r.currency),
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     Text('Trivia ${r.category}'),
@@ -459,18 +473,14 @@ class _DriverRequestsState extends State<DriverRequests> {
                     if (AppConfig.demo)
                       TextButton(
                         onPressed: () async {
-                          final ok = await widget.app.book(
-                            r.pickup,
-                            r.destination,
-                            r.category,
-                            r.cents,
-                          );
-                          if (ok) {
-                            final o = widget.app.offers.firstOrNull;
-                            if (o != null) {
-                              await widget.app.accept(o);
-                            }
-                          }
+                          final ok = await widget.app.perform(() async {
+                            await (widget.app.repository as DemoRepository)
+                                .simulatePassengerSelection(
+                                  r,
+                                  submittedCents[r.id] ?? r.cents,
+                                );
+                            await widget.app.sync();
+                          });
                           if (context.mounted && ok) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -496,7 +506,8 @@ class _DriverRequestsState extends State<DriverRequests> {
 }
 
 class _CounterDialog extends StatefulWidget {
-  const _CounterDialog();
+  const _CounterDialog({required this.currency});
+  final String currency;
   @override
   State<_CounterDialog> createState() => _CounterDialogState();
 }
@@ -518,7 +529,9 @@ class _CounterDialogState extends State<_CounterDialog> {
       child: TextFormField(
         controller: input,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: const InputDecoration(prefixText: 'USD '),
+        decoration: InputDecoration(
+          prefixText: '${currencySymbol(widget.currency)} ',
+        ),
         validator: (v) {
           try {
             parseFare(v ?? '');

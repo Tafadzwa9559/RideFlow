@@ -1,0 +1,34 @@
+Running Gradle task 'assembleRelease'...                        
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.internal.NativeLibraryLoader in an unnamed module (file:/home/taflowork/.gradle/wrapper/dists/gradle-9.3.1-all/9ot9r568e8zfvvd4mn8rbu1j0/gradle-9.3.1/lib/native-platform-0.22-milestone-29.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+Checking the license for package Android SDK Platform 35 in /home/taflowork/Android/Sdk/licenses
+License for package Android SDK Platform 35 accepted.
+Preparing "Install Android SDK Platform 35 (revision 2)".
+"Install Android SDK Platform 35 (revision 2)" ready.
+Installing Android SDK Platform 35 in /home/taflowork/Android/Sdk/platforms/android-35
+"Install Android SDK Platform 35 (revision 2)" complete.
+"Install Android SDK Platform 35 (revision 2)" finished.
+Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 8108 bytes (99.5% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+Warning: Observed package id 'cmdline-tools;latest' in inconsistent location '/home/taflowork/Android/Sdk/cmdline-tools/23.0' (Expected '/home/taflowork/Android/Sdk/cmdline-tools/latest')
+Warning: Observed package id 'cmdline-tools;22.0' in inconsistent location '/home/taflowork/Android/Sdk/cmdline-tools/latest' (Expected '/home/taflowork/Android/Sdk/cmdline-tools/22.0')
+Warning: Already observed package id 'cmdline-tools;22.0' in '/home/taflowork/Android/Sdk/cmdline-tools/22.0'. Skipping duplicate at '/home/taflowork/Android/Sdk/cmdline-tools/latest'
+Checking the license for package CMake 3.22.1 in /home/taflowork/Android/Sdk/licenses
+License for package CMake 3.22.1 accepted.
+Preparing "Install CMake 3.22.1 v.3.22.1".
+"Install CMake 3.22.1 v.3.22.1" ready.
+Installing CMake 3.22.1 in /home/taflowork/Android/Sdk/cmake/3.22.1
+"Install CMake 3.22.1 v.3.22.1" complete.
+"Install CMake 3.22.1 v.3.22.1" finished.
+Warning: Observed package id 'cmdline-tools;latest' in inconsistent location '/home/taflowork/Android/Sdk/cmdline-tools/23.0' (Expected '/home/taflowork/Android/Sdk/cmdline-tools/latest')
+Warning: Observed package id 'cmdline-tools;22.0' in inconsistent location '/home/taflowork/Android/Sdk/cmdline-tools/latest' (Expected '/home/taflowork/Android/Sdk/cmdline-tools/22.0')
+Warning: Already observed package id 'cmdline-tools;22.0' in '/home/taflowork/Android/Sdk/cmdline-tools/22.0'. Skipping duplicate at '/home/taflowork/Android/Sdk/cmdline-tools/latest'
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+Note: /home/taflowork/.pub-cache/hosted/pub.dev/geolocator_android-5.2.1/android/src/main/java/com/baseflow/geolocator/location/LocationMapper.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+3 warnings

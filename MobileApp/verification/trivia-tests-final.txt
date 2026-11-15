@@ -1,0 +1,21 @@
+00:00 +0: loading /home/taflowork/Desktop/RideFlow/MobileApp/test/widget_test.dart
+00:00 +0: /home/taflowork/Desktop/RideFlow/MobileApp/test/ride_test.dart: Fare parsing uses cents and rejects invalid input
+00:00 +1: /home/taflowork/Desktop/RideFlow/MobileApp/test/ride_test.dart: OTP fails closed and driver access requires approval
+00:00 +2: /home/taflowork/Desktop/RideFlow/MobileApp/test/ride_test.dart: Ride lifecycle prevents duplicate assignment and fixes agreed fare
+00:00 +3: /home/taflowork/Desktop/RideFlow/MobileApp/test/ride_test.dart: Concurrent selections cannot assign two drivers
+00:00 +4: /home/taflowork/Desktop/RideFlow/MobileApp/test/ride_test.dart: Switching modes is blocked during active trip and logout clears state
+00:00 +5: /home/taflowork/Desktop/RideFlow/MobileApp/test/ride_test.dart: Driver simulation preserves assigned fare and active trip when offline
+00:00 +6: /home/taflowork/Desktop/RideFlow/MobileApp/test/ride_test.dart: Route quote preserves road geometry and backend fare rules
+00:00 +7: /home/taflowork/Desktop/RideFlow/MobileApp/test/ride_test.dart: Logout clears the session even when offline availability fails
+00:02 +8: /home/taflowork/Desktop/RideFlow/MobileApp/test/widget_test.dart: Onboarding swipes and persists completion
+00:03 +9: /home/taflowork/Desktop/RideFlow/MobileApp/test/widget_test.dart: Phone validation rejects incomplete Zimbabwe number
+00:04 +10: /home/taflowork/Desktop/RideFlow/MobileApp/test/widget_test.dart: Passenger home stays usable on a small phone with enlarged text
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:05 +11: All tests passed!
