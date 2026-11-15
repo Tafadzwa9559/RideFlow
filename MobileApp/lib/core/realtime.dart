@@ -1,0 +1,100 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+/// Gets a short-lived, single-use socket ticket from the authenticated REST API.
+/// Tokens are never included in the URL. Every event triggers an authoritative read.
+class Realtime extends ChangeNotifier {
+  Realtime({required this.url, required this.ticket, required this.reconcile});
+  final String url;
+  final Future<String> Function() ticket;
+  final Future<void> Function() reconcile;
+  WebSocketChannel? _channel;
+  StreamSubscription<dynamic>? _subscription;
+  Timer? _retry, _heartbeat;
+  bool _closed = false;
+  int _attempt = 0;
+  String state = 'Disconnected';
+  void _state(String value) {
+    if (_closed) {
+      return;
+    }
+    state = value;
+    notifyListeners();
+  }
+
+  Future<void> connect() async {
+    if (_closed || url.isEmpty) {
+      return;
+    }
+    _state('Connecting');
+    try {
+      final auth = await ticket();
+      if (_closed) {
+        return;
+      }
+      final channel = WebSocketChannel.connect(Uri.parse(url));
+      _channel = channel;
+      await channel.ready;
+      if (_closed) {
+        await channel.sink.close();
+        return;
+      }
+      channel.sink.add(jsonEncode({'type': 'authenticate', 'ticket': auth}));
+      _subscription = channel.stream.listen(
+        (raw) async {
+          try {
+            final event = jsonDecode(raw as String) as Map<String, dynamic>;
+            if (event['type'] == 'authenticated') {
+              _attempt = 0;
+              _state('Connected');
+              channel.sink.add(
+                jsonEncode({'type': 'subscribe', 'channel': 'user'}),
+              );
+              await reconcile();
+            } else if (event['type'] != 'pong') {
+              await reconcile();
+            }
+          } catch (_) {
+            _state('Sync interrupted');
+          }
+        },
+        onError: (_) => _reconnect(),
+        onDone: _reconnect,
+      );
+      _heartbeat = Timer.periodic(
+        const Duration(seconds: 25),
+        (_) => channel.sink.add(jsonEncode({'type': 'ping'})),
+      );
+    } catch (_) {
+      _reconnect();
+    }
+  }
+
+  void _reconnect() {
+    if (_closed || _retry?.isActive == true) {
+      return;
+    }
+    _heartbeat?.cancel();
+    _subscription?.cancel();
+    _channel?.sink.close();
+    _state('Reconnecting');
+    _retry = Timer(
+      Duration(seconds: min(30, 1 << min(_attempt++, 5))),
+      connect,
+    );
+  }
+
+  @override
+  void dispose() {
+    _closed = true;
+    _retry?.cancel();
+    _heartbeat?.cancel();
+    _subscription?.cancel();
+    _channel?.sink.close();
+    super.dispose();
+  }
+}
