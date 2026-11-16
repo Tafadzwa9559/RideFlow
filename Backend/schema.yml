@@ -19335,6 +19335,148 @@ paths:
                       detail: invalid
                     request_id: example-correlation-id
           description: Configured provider or infrastructure unavailable
+    patch:
+      operationId: api_v1_offers_id_patch
+      description: |-
+        Patch offers · id.
+
+        Requires Bearer JWT authentication and ownership of the requested private resource.
+      summary: Patch offers · id
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+        required: true
+        description: Identifier of the resource; ownership and role restrictions apply.
+      tags:
+      - Offers
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
   /api/v1/offers/{id}/withdraw/:
     post:
       operationId: api_v1_offers_id_withdraw_post
@@ -21759,6 +21901,149 @@ paths:
                       detail: invalid
                     request_id: example-correlation-id
           description: Configured provider or infrastructure unavailable
+  /api/v1/rides/{id}/driver-request-decline/:
+    post:
+      operationId: api_v1_rides_id_driver_request_decline_post
+      description: |-
+        Post rides · id · driver request decline. Ride commands validate participant ownership, driver eligibility and authoritative state inside transactions. Direct-payment preferences are Cash, EcoCash and OneMoney in USD; Trivia does not collect or verify funds.
+
+        Requires Bearer JWT authentication and ownership of the requested private resource.
+      summary: Post rides · id · driver request decline
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: Identifier of the resource; ownership and role restrictions apply.
+      tags:
+      - Rides
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
   /api/v1/rides/{id}/offers/:
     get:
       operationId: api_v1_rides_id_offers_get
@@ -23293,6 +23578,149 @@ paths:
                     sequence: 1
                     updated_at: '2026-11-16T08:00:00Z'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response; values are not live operational
+                    data
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+  /api/v1/rides/{id}/sync/:
+    get:
+      operationId: api_v1_rides_id_sync_get
+      description: |-
+        Get rides · id · sync. Ride commands validate participant ownership, driver eligibility and authoritative state inside transactions. Direct-payment preferences are Cash, EcoCash and OneMoney in USD; Trivia does not collect or verify funds.
+
+        Requires Bearer JWT authentication and ownership of the requested private resource.
+      summary: Get rides · id · sync
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: Identifier of the resource; ownership and role restrictions apply.
+      tags:
+      - Rides
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
         '400':
           content:
             application/json:

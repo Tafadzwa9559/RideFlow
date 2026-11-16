@@ -1,0 +1,96 @@
+"""Django settings for Trivia (RideFlow backend).
+
+Production configuration is supplied via environment variables (Render).
+MongoDB Atlas is the primary application database.
+"""
+
+import os
+from datetime import timedelta
+from pathlib import Path
+
+import environ
+from django.core.exceptions import ImproperlyConfigured
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+# Load .env locally; on Render, configured environment variables take precedence.
+environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
+
+
+def env_bool(name: str, default: bool = False) -> bool:
+    return os.environ.get(name, str(default)).strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+
+
+def env_list(name: str, default: str = "") -> list[str]:
+    return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
+
+
+# ------------------------------------------------------------
+# Security and reverse proxy (Render)
+# ------------------------------------------------------------
+DEBUG = env_bool("DJANGO_DEBUG", False)
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if os.environ.get("DJANGO_SETTINGS_MODULE") == "rideflow.testing":
+        SECRET_KEY = "test-only-secret-key-not-for-production-0123456789"
+    else:
+        raise ImproperlyConfigured("Set DJANGO_SECRET_KEY in the environment.")
+
+ALLOWED_HOSTS = env_list(
+    "ALLOWED_HOSTS",
+    os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1"),
+)
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# Only trust X-Forwarded-Proto when deployed behind a controlled proxy (Render).
+# Never accept untrusted forwarded headers on an arbitrary directly exposed server.
+if RENDER_EXTERNAL_HOSTNAME:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# CSRF trusted origins are independent of CORS. Include the https:// scheme.
+CSRF_TRUSTED_ORIGINS = env_list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "https://trivia-backend-bze2.onrender.com" if RENDER_EXTERNAL_HOSTNAME else "",
+)
+if RENDER_EXTERNAL_HOSTNAME:
+    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# Add production React frontend origins explicitly when available.
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+
+
+# ------------------------------------------------------------
+# Applications and middleware
+# ------------------------------------------------------------
+INSTALLED_APPS = [
+    "rideflow.apps.MongoAdminConfig",
+    "rideflow.apps.MongoAuthConfig",
+    "rideflow.apps.MongoContentTypesConfig",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
+    "django_filters",
+    "drf_spectacular",
+    "channels",
+    "corsheaders",
+    "accounts",
+    "drivers",
+    "notifications",
+    "rides",
+    "payments",
+    "core.apps.CoreConfig",
+]
