@@ -380,3 +380,31 @@ def collection(name, child, key='results', paginated=False, extra=None):
     fields.update(extra or {})
     _collections[name] = type(name, (s.Serializer,), fields)
     return _collections[name]
+
+
+class OfferUpdatedSerializer(s.Serializer):
+    id = ObjectIdSerializerField()
+    status = s.CharField()
+    fare_cents = s.IntegerField()
+
+
+class DriverDeclineSerializer(s.Serializer):
+    id = s.UUIDField()
+    offer_id = ObjectIdSerializerField(required=False)
+    status = s.CharField()
+    message = s.CharField(required=False)
+
+
+class RideSyncSerializer(s.Serializer):
+    id = s.UUIDField()
+    status = s.CharField()
+    assigned_driver_id = ObjectIdSerializerField(allow_null=True)
+    assigned_vehicle_id = ObjectIdSerializerField(allow_null=True)
+    agreed_fare = s.CharField(allow_null=True)
+    payment_preference = s.CharField()
+    current_trip_stage = s.CharField()
+    latest_sequence = s.IntegerField()
+    server_timestamp = s.DateTimeField()
+    pending_actions = s.ListField(child=s.CharField())
+    request_expires_at = s.DateTimeField(allow_null=True)
+    updated_at = s.DateTimeField()

@@ -19,3 +19,13 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 if os.environ.get('TRUST_PROXY_SSL_HEADER', 'false').lower() == 'true':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_REDIRECT_EXEMPT = [r'^health/$', r'^ready/$']
+
+from core.production import validate_production
+validate_production(
+    uri=DATABASES['default']['HOST'], hosts=ALLOWED_HOSTS,
+    cors_origins=CORS_ALLOWED_ORIGINS, csrf_origins=CSRF_TRUSTED_ORIGINS,
+    storage_backend=PRIVATE_STORAGE_BACKEND, bucket=PRIVATE_STORAGE_BUCKET,
+)
+
+if os.environ.get('PRIVATE_STORAGE_ENDPOINT') and not os.environ['PRIVATE_STORAGE_ENDPOINT'].startswith('https://'):
+    raise ImproperlyConfigured('Production private storage requires HTTPS.')

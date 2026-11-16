@@ -3,13 +3,37 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django_mongodb_backend.managers import MongoManager
-from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import FileSystemStorage, Storage, storages
+from django.utils.deconstruct import deconstructible
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
-class PrivateStorage(FileSystemStorage):
-    def __init__(self, *args, **kwargs):
-        super().__init__(location=settings.PRIVATE_MEDIA_ROOT)
+@deconstructible
+class PrivateStorage(Storage):
+    """Stable migration identity; retrieval always uses authorized API views."""
+    @property
+    def backend(self):
+        if settings.STORAGES['private']['BACKEND'] == 'django.core.files.storage.FileSystemStorage':
+            return FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT)
+        return storages['private']
+
+    def _open(self, name, mode='rb'):
+        return self.backend.open(name, mode)
+
+    def _save(self, name, content):
+        return self.backend.save(name, content)
+
+    def exists(self, name):
+        return self.backend.exists(name)
+
+    def size(self, name):
+        return self.backend.size(name)
+
+    def delete(self, name):
+        return self.backend.delete(name)
+
+    def path(self, name):
+        return self.backend.path(name)
 
     def url(self, name):
         raise ValueError('Private documents require authenticated retrieval.')
@@ -59,6 +83,7 @@ class DriverApplication(models.Model):
         return vehicle
 
     class Meta:
+        indexes = [models.Index(fields=['status', 'licence_expires'], name='driver_licence_expiry')]
         permissions = [('review_driver', 'Review driver applications'), ('operate_platform', 'Operate rides and safety')]
 
 
@@ -94,6 +119,7 @@ class DriverDocument(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        indexes = [models.Index(fields=['expires_on'], name='driver_document_expiry')]
         constraints = [models.UniqueConstraint(fields=['application', 'requirement'], name='one_driver_document_type')]
 
 
@@ -107,4 +133,5 @@ class VehicleDocument(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        indexes = [models.Index(fields=['expires_on'], name='vehicle_document_expiry')]
         constraints = [models.UniqueConstraint(fields=['vehicle', 'requirement'], name='one_vehicle_document_type')]

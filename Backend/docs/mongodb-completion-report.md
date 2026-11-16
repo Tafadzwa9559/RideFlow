@@ -34,7 +34,7 @@ A separate `Backend/mongo_migrations/` graph covers auth, contenttypes, admin, s
 - Isolated single-member `trivia-rs` replica set ran on localhost port 27028 with storage under ignored Backend test files.
 - Both the isolated verification connection and the user's already configured MongoDB URI passed read-only database/topology checks.
 - Test databases were separate `test_*` databases. Test settings now reject application database names to prevent accidental deletion.
-- Migrations were **not** applied to the user's configured live/application database; only isolated verification/test databases were written.
+- The configured database was read-only inventoried and contained only seeded permissions/content types/payment preferences, with zero users, rides or other business records. Its idempotent `migrate` command reported **no migrations to apply**, and its 2dsphere index was verified. No customer/source records were transferred, deleted or overwritten.
 
 ## Executed verification
 

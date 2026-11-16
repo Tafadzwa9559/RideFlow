@@ -1,6 +1,6 @@
 # Trivia API endpoint catalog
 
-**154 distinct documented REST operations** (HTTP method + canonical path), plus 10 explicitly marked semantic aliases. Mobile/legacy compatibility aliases, documentation, health, HEAD and OPTIONS routes are excluded from the distinct total.
+**157 distinct documented REST operations** (HTTP method + canonical path), plus 10 explicitly marked semantic aliases. Mobile/legacy compatibility aliases, documentation, health, HEAD and OPTIONS routes are excluded from the distinct total.
 
 All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI identifies exact semantic aliases so totals do not count the same behavior twice.
 
@@ -19,11 +19,11 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Earnings | 3 |
 | Locations | 9 |
 | Notifications | 6 |
-| Offers | 4 |
+| Offers | 5 |
 | Platform Configuration | 5 |
 | Pricing | 3 |
 | Ratings | 3 |
-| Rides | 11 |
+| Rides | 13 |
 | Routes | 1 |
 | Safety | 9 |
 | Support | 6 |
@@ -32,7 +32,7 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Users | 9 |
 | Vehicles | 10 |
 | Verification | 4 |
-| **Total** | **154** |
+| **Total** | **157** |
 
 | Group | Method | Path | Alias of |
 |---|---|---|---|
@@ -128,6 +128,7 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Notifications | POST | `/api/v1/notifications/{id}/read/` | — |
 | Offers | GET | `/api/v1/offers/{id}/` | — |
 | Offers | GET | `/api/v1/rides/{id}/offers/` | — |
+| Offers | PATCH | `/api/v1/offers/{id}/` | — |
 | Offers | POST | `/api/v1/offers/{id}/withdraw/` | — |
 | Offers | POST | `/api/v1/rides/{id}/offers/` | — |
 | Platform Configuration | DELETE | `/api/v1/admin/service-areas/{id}/` | — |
@@ -146,11 +147,13 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Rides | GET | `/api/v1/rides/active/` | — |
 | Rides | GET | `/api/v1/rides/{id}/` | — |
 | Rides | GET | `/api/v1/rides/{id}/status/` | — |
+| Rides | GET | `/api/v1/rides/{id}/sync/` | — |
 | Rides | POST | `/api/v1/rides/` | — |
 | Rides | POST | `/api/v1/rides/{id}/arrived/` | — |
 | Rides | POST | `/api/v1/rides/{id}/cancel/` | — |
 | Rides | POST | `/api/v1/rides/{id}/complete/` | — |
 | Rides | POST | `/api/v1/rides/{id}/driver-en-route/` | — |
+| Rides | POST | `/api/v1/rides/{id}/driver-request-decline/` | — |
 | Rides | POST | `/api/v1/rides/{id}/select-offer/` | — |
 | Rides | POST | `/api/v1/rides/{id}/start/` | — |
 | Routes | POST | `/api/v1/routes/estimate/` | — |

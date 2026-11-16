@@ -196,6 +196,7 @@ class RideOffer(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=['status', 'expires_at'], name='offer_expiry_work')]
         constraints = [models.UniqueConstraint(fields=['ride', 'driver'], name='one_driver_offer_per_ride')]
 
 
@@ -256,7 +257,10 @@ class Ride(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        indexes = [models.Index(fields=["status", "created_at"]), models.Index(fields=["passenger", "status"])]
+        indexes = [models.Index(fields=["status", "created_at"]), models.Index(fields=["passenger", "status"]),
+            models.Index(fields=['passenger', '-created_at'], name='ride_passenger_history'),
+            models.Index(fields=['assigned_driver', 'status', '-created_at'], name='ride_driver_state_history'),
+            models.Index(fields=['status', 'expires_at'], name='ride_expiry_work')]
         constraints = [
             models.UniqueConstraint(
                 fields=["passenger", "idempotency_key"],
@@ -266,7 +270,7 @@ class Ride(models.Model):
 
 
 class ActiveAssignment(models.Model):
-    """Unconditional unique keys work on MySQL, unlike conditional indexes."""
+    """Unique active ride/driver/passenger keys supplement transaction guards."""
     ride = models.OneToOneField(Ride, on_delete=models.PROTECT, related_name='active_assignment')
     driver = models.OneToOneField('drivers.DriverApplication', on_delete=models.PROTECT, related_name='active_assignment')
     passenger = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='active_assignment')

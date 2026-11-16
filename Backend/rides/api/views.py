@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from drivers.services.eligibility import driver_for, eligible
 from rides.models import Ride, RideOffer, Rating, SupportTicket, SavedPlace, PricingZone
 from rides.services.booking import book, quote_route
-from rides.services.lifecycle import make_offer, select_offer, transition, withdraw, nearby, emit
+from rides.services.lifecycle import make_offer, select_offer, transition, withdraw, nearby, emit, update_offer
 from rides.services.routing import search_places
 from .serializers import BookingRequestSerializer, QuoteRequestSerializer, RideSerializer, quote_json, PlaceSerializer
 
@@ -50,6 +50,8 @@ class OfferSerializer(serializers.Serializer):
 
     def validate(self, data):
         data['decision'] = normalize_offer_decision(data.get('decision', 'counteroffer'))
+        if data['decision'] not in {'accept', 'decline', 'counteroffer'}:
+            raise serializers.ValidationError({'decision': 'Choose accept, decline or counteroffer.'})
         if data['decision'] == 'counteroffer' and 'fare_cents' not in data:
             raise serializers.ValidationError({'fare_cents': 'Required for a counteroffer.'})
         if data['decision'] == 'accept' and 'fare_cents' in data:
@@ -83,34 +85,29 @@ class RideSyncView(APIView):
             'current_trip_stage': ride.status,
             'latest_sequence': ride.sequence,
             'server_timestamp': timezone.now().isoformat(),
-            'pending_actions': [] if ride.status in ['completed', 'cancelled', 'expired'] else ['await_driver_offer', 'await_trip_start'][0:1] if ride.status == 'searching' else ['await_driver_arrival'],
+            'pending_actions': {'searching': ['await_driver_offer'], 'assigned': ['await_driver_arrival'], 'arriving': ['await_driver_arrival'], 'arrived': ['await_trip_start'], 'inProgress': ['await_trip_completion']}.get(ride.status, []),
             'request_expires_at': ride.expires_at,
             'updated_at': ride.updated_at,
         })
 
 
+class OfferPatchSerializer(serializers.Serializer):
+    fare_cents = serializers.IntegerField(min_value=1, max_value=999999999999, required=False)
+    note = serializers.CharField(max_length=250, required=False, allow_blank=True)
+    pickup_minutes = serializers.IntegerField(min_value=1, max_value=180, required=False, allow_null=True)
+
+    def validate(self, data):
+        if not data:
+            raise serializers.ValidationError('Provide fare_cents, note or pickup_minutes.')
+        return data
+
+
 class OfferUpdateView(APIView):
     def patch(self, request, pk):
-        offer = get_object_or_404(RideOffer.objects.select_related('ride', 'driver__user', 'vehicle'), pk=pk)
-        if offer.driver.user_id != request.user.pk:
-            raise PermissionDenied()
-        if offer.status != 'pending':
-            raise ValidationError('Only pending offers can be updated.')
-        data = OfferSerializer(data=request.data)
+        get_object_or_404(RideOffer, pk=pk)
+        data = OfferPatchSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        values = dict(data.validated_data)
-        amount = values.pop('fare_cents', None)
-        if amount is not None:
-            offer.amount = Decimal(amount) / 100
-        if 'note' in values:
-            offer.note = values['note']
-        if 'pickup_minutes' in values:
-            offer.pickup_minutes = values['pickup_minutes']
-        offer.offer_type = 'driver'
-        if offer.expires_at and offer.expires_at <= timezone.now():
-            raise ValidationError('This offer has expired.')
-        offer.save(update_fields=['amount', 'note', 'pickup_minutes', 'offer_type', 'updated_at'])
-        emit(offer.ride, 'offer.updated', {'offer_id': offer.pk})
+        offer = update_offer(request.user, pk, data.validated_data)
         return Response({'id': str(offer.pk), 'status': offer.status, 'fare_cents': int(offer.amount * 100)})
 
 

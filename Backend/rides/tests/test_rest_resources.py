@@ -225,10 +225,17 @@ class ResourceTests(RideFixtures, TestCase):
         self.assertEqual(self.client.get('/api/v1/admin/passengers/').status_code, 403)
 
     def test_swagger_redoc_and_schema_are_staff_protected(self):
-        for url in ['/api/docs/','/api/redoc/','/api/schema/','/api/websockets/']:
-            self.assertEqual(self.client.get(url).status_code, 403)
-        self.client.force_authenticate(self.admin)
-        for url in ['/api/docs/','/api/redoc/','/api/schema/','/api/websockets/']:
+        # Production HTML/schema use the existing Django staff-session login flow.
+        for url in ['/api/docs/', '/api/redoc/', '/api/schema/']:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response['Location'].startswith('/admin/login/?next='))
+        self.assertEqual(self.client.get('/api/websockets/').status_code, 403)
+        self.client.force_authenticate(user=None)
+        self.client.force_login(self.passenger)
+        self.assertEqual(self.client.get('/api/schema/').status_code, 302)
+        self.client.force_login(self.admin)
+        for url in ['/api/docs/', '/api/redoc/', '/api/schema/', '/api/websockets/']:
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
     def test_driver_profile_revision_requires_fresh_review(self):

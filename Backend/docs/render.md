@@ -1,0 +1,69 @@
+# Render / Atlas deployment
+
+This configuration is prepared for review and staging. It has not been deployed to Render or certified against Atlas. Do not apply a new Blueprint blindly to existing resources.
+
+## Existing service and secrets
+
+Use `Backend/render.yaml` as the Blueprint file path. Confirm the web service's **actual Render resource name**, region, service plan and custom domains in the dashboard before adopting it; `trivia-backend-bze2` is inferred from the existing documented hostname and must be reconciled. Update the existing service to retain `https://trivia-backend-bze2.onrender.com` and its custom domains. Never delete/recreate the existing service to apply this file. No deployment is performed by this repository change.
+
+Create an external Render environment group `trivia-production-secrets` and attach it to web, worker and beat. Use identical secrets/database/media configuration for all three:
+
+| Variable | Value/purpose |
+|---|---|
+| DJANGO_SECRET_KEY | Existing strong secret; retain it across services/redeploys |
+| MONGODB_URI | Secret Atlas **triviacluster** SRV URI copied from Atlas Connect; never invent the DNS name |
+| MONGODB_DATABASE | Existing database name, e.g. trivia |
+| ALLOWED_HOSTS | Explicit public API hostname/custom domains, no scheme, no wildcard or localhost |
+| CORS_ALLOWED_ORIGINS | Exact HTTPS React origins; Flutter native does not use CORS |
+| DJANGO_CSRF_TRUSTED_ORIGINS | Exact HTTPS browser/admin origins |
+| PRIVATE_STORAGE_BUCKET | Private shared S3-compatible bucket |
+| PRIVATE_STORAGE_ENDPOINT | HTTPS endpoint for non-default S3 providers; omit for default endpoint |
+| PRIVATE_STORAGE_REGION | Provider region |
+| PRIVATE_STORAGE_ACCESS_KEY / PRIVATE_STORAGE_SECRET_KEY | Least-privilege object credentials, or workload identity where supported |
+| SMS_PROVIDER | Installed adapter class; empty means OTP returns 503, not delivered |
+| TRIVIA_ROUTING_URL / TRIVIA_GEOCODING_URL | Licensed HTTPS compatible services; no invented straight-line road distance |
+| PUSH_PROVIDER | Optional installed adapter; empty means no push delivery claim |
+
+The Blueprint supplies production settings, private storage class and internal Redis connections. Production rejects local OTP, non-Atlas URIs, insecure browser origins, wildcard/local hosts and filesystem-only storage. Never supply test variables on production services. The environment group is intentionally not generated with secret values.
+
+## Atlas and private media
+
+Use Atlas database credentials limited to Trivia's application database; give migration credentials separately controlled index/collection permissions. Restrict Atlas access lists to the Render outbound addresses for the actual region/services (or a supported private networking arrangement). Keep TLS verification enabled; never allow 0.0.0.0/0 for convenience. Confirm Atlas UI identifies **triviacluster**, enable backups/PITR as supported, rehearse restore and alert on connections/storage/transaction conflicts. The application can validate the URI format/topology, not the human-readable cluster identity or Atlas access-list policy.
+
+Private storage must block public access, use encryption at rest and HTTPS transport, restrict credentials to the required prefix/bucket, and have a documented retention/restore policy. Driver uploads and avatars retain existing object names. Copy existing private files to the same keys and verify counts/checksums **before switching storage**. File upload/database transactions are not distributed transactions; monitor/reconcile orphan objects after failures. The application never returns storage URLs and streams documents only through authorized retrieval APIs. Local files remain untouched.
+
+## Release sequence
+
+1. Rehearse on a separate Atlas staging database with synthetic data. Run destructive tests **only** on a loopback replica set; the test settings reject Atlas/remote URIs.
+2. Review BACKEND_AUDIT.md and the additive migrations. Snapshot the existing database/media before rollout. Do not run legacy SQL export/import for an already MongoDB-native database.
+3. Validate the Blueprint with Render CLI/API and reconcile existing service properties. The web pre-deploy command runs deployment/database checks and supported migrations. Build collects static files with WhiteNoise.
+4. Roll out matching web and Celery worker revisions, then a **single** beat instance. Use `celery -A rideflow inspect ping` to confirm workers. Keep beat singleton during deploys; duplicate task notifications deduplicate by event ID where supported.
+5. Verify `/health/` (process liveness), `/ready/` (MongoDB replica topology, Redis, live Celery worker), JWT/OTP, admin, protected docs and authenticated `wss://.../ws/v1/notifications/`. Run a real device synthetic ride, provider deliveries and reconnection tests before admitting traffic.
+6. Monitor pending outbox age, task retries/failures, Atlas query plans, transaction retries, HTTP p95/p99, Redis memory/latency and stale-driver ratios. Alert on dependency readiness and failed releases.
+
+Start commands from Backend (after installing requirements-storage.txt):
+
+```bash
+python manage.py check --deploy --database default
+python manage.py migrate --noinput
+python manage.py collectstatic --noinput
+daphne -b 0.0.0.0 -p "$PORT" --proxy-headers rideflow.asgi:application
+celery -A rideflow worker --loglevel=INFO --concurrency=2
+celery -A rideflow beat --loglevel=INFO --schedule=/tmp/trivia-celerybeat
+```
+
+Each long-running command is a separate service. Daphne is ASGI; a WSGI-only Gunicorn process would not serve Channels sockets. Render must strip untrusted forwarded headers before trusted proxy mode is enabled. Public health responses deliberately omit dependency errors and credentials.
+
+## Recovery and capacity
+
+The initial shared Redis uses noeviction to avoid silently evicting Celery jobs. It is private-network-only; monitor memory and separate cache/realtime/broker instances as traffic requires. Outbox is at least once; clients deduplicate event IDs and resync authoritative state over REST. Push adapters must use event IDs for provider-side idempotency where possible. SMS dispatch remains synchronous to avoid plaintext OTP broker persistence; real delivery and retry guarantees depend on the configured adapter.
+
+Celery prefetch is 1, retries bounded where implemented, soft/hard task limits 240/300 seconds, visibility timeout 600 seconds. Worker graceful shutdown is 300 seconds; capacity-test large maintenance batches before increasing limits. Beat schedule storage is ephemeral, so restarts may repeat ticks. Database-backed idempotency remains essential.
+
+Rollback application code with additive indexes retained. Do not drop collections/indexes as a rollback shortcut. Do not roll back to the old SQL revision against MongoDB. Stop intake during any required data repair; reconcile active assignments and outbox, then verify a synthetic trip.
+
+Sources: [Render Blueprint reference](https://render.com/docs/blueprint-spec), [Django MongoDB indexes](https://www.mongodb.com/docs/languages/python/django-mongodb/v5.2/model-data/indexes/), [private S3 storage options](https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html).
+
+### Follow-up release: notification receipts
+
+Apply `notifications.0002_notification_push_receipts` before deploying the updated notification worker. It initializes an internal empty receipt map on existing notification documents; review collection size and rehearse migration duration on staging. Keep any in-flight older workers drained during the transition. An adapter must deduplicate acceptance using event ID and destination device, raise `TransientPushError` for retryable failures, and handle permanently invalid tokens explicitly. Five retries with jitter and a 300-second maximum backoff are configured. A receipt means the adapter returned successfully, not that a handset received/read a message.

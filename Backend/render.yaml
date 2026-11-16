@@ -1,0 +1,95 @@
+# Select Backend/render.yaml as the Blueprint path in Render.
+# Before applying: use the EXISTING web service name below to preserve its URL,
+# and create the trivia-production-secrets environment group (see docs/render.md).
+services:
+  - type: keyvalue
+    name: trivia-redis
+    plan: starter
+    region: frankfurt
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+  - type: web
+    name: trivia-backend-bze2
+    runtime: python
+    plan: starter
+    region: frankfurt
+    rootDir: Backend
+    buildCommand: bash scripts/render-build.sh
+    preDeployCommand: python manage.py check --deploy --database default && python manage.py migrate --noinput
+    startCommand: daphne -b 0.0.0.0 -p $PORT --proxy-headers --application-close-timeout 20 rideflow.asgi:application
+    healthCheckPath: /health/
+    maxShutdownDelaySeconds: 60
+    envVars:
+      - fromGroup: trivia-production-secrets
+      - key: PYTHON_VERSION
+        value: 3.12.12
+      - key: DJANGO_SETTINGS_MODULE
+        value: rideflow.production
+      - key: DJANGO_DEBUG
+        value: 'false'
+      - key: TRIVIA_LOCAL_OTP
+        value: 'false'
+      - key: TRUST_PROXY_SSL_HEADER
+        value: 'true'
+      - key: PRIVATE_STORAGE_BACKEND
+        value: storages.backends.s3.S3Storage
+      - key: REDIS_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}
+      - key: CELERY_BROKER_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}
+      - key: CACHE_REDIS_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}
+  - type: worker
+    name: trivia-worker
+    runtime: python
+    plan: starter
+    region: frankfurt
+    rootDir: Backend
+    buildCommand: bash scripts/render-build.sh
+    startCommand: celery -A rideflow worker --loglevel=INFO --concurrency=2
+    maxShutdownDelaySeconds: 300
+    envVars:
+      - fromGroup: trivia-production-secrets
+      - key: PYTHON_VERSION
+        value: 3.12.12
+      - key: DJANGO_SETTINGS_MODULE
+        value: rideflow.production
+      - key: DJANGO_DEBUG
+        value: 'false'
+      - key: TRIVIA_LOCAL_OTP
+        value: 'false'
+      - key: PRIVATE_STORAGE_BACKEND
+        value: storages.backends.s3.S3Storage
+      - key: REDIS_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}
+      - key: CELERY_BROKER_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}
+      - key: CACHE_REDIS_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}
+  - type: worker
+    name: trivia-beat
+    runtime: python
+    plan: starter
+    region: frankfurt
+    rootDir: Backend
+    buildCommand: bash scripts/render-build.sh
+    startCommand: celery -A rideflow beat --loglevel=INFO --schedule=/tmp/trivia-celerybeat
+    maxShutdownDelaySeconds: 60
+    envVars:
+      - fromGroup: trivia-production-secrets
+      - key: PYTHON_VERSION
+        value: 3.12.12
+      - key: DJANGO_SETTINGS_MODULE
+        value: rideflow.production
+      - key: DJANGO_DEBUG
+        value: 'false'
+      - key: TRIVIA_LOCAL_OTP
+        value: 'false'
+      - key: PRIVATE_STORAGE_BACKEND
+        value: storages.backends.s3.S3Storage
+      - key: REDIS_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}
+      - key: CELERY_BROKER_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}
+      - key: CACHE_REDIS_URL
+        fromService: {type: keyvalue, name: trivia-redis, property: connectionString}

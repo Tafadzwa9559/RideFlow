@@ -183,6 +183,29 @@ STORAGES = {
 PRIVATE_MEDIA_ROOT = Path(
     os.environ.get("PRIVATE_MEDIA_ROOT", str(BASE_DIR / "private_media"))
 )
+# Shared private storage for disposable/scaled Render processes.
+PRIVATE_STORAGE_BACKEND = os.environ.get('PRIVATE_STORAGE_BACKEND', 'django.core.files.storage.FileSystemStorage')
+PRIVATE_STORAGE_BUCKET = os.environ.get('PRIVATE_STORAGE_BUCKET', '')
+if PRIVATE_STORAGE_BACKEND == 'storages.backends.s3.S3Storage':
+    STORAGES['private'] = {
+        'BACKEND': PRIVATE_STORAGE_BACKEND,
+        'OPTIONS': {
+            'bucket_name': PRIVATE_STORAGE_BUCKET,
+            'region_name': os.environ.get('PRIVATE_STORAGE_REGION') or None,
+            'endpoint_url': os.environ.get('PRIVATE_STORAGE_ENDPOINT') or None,
+            'access_key': os.environ.get('PRIVATE_STORAGE_ACCESS_KEY') or None,
+            'secret_key': os.environ.get('PRIVATE_STORAGE_SECRET_KEY') or None,
+            'default_acl': None, 'custom_domain': None,
+            'querystring_auth': True, 'file_overwrite': False,
+            'object_parameters': {'CacheControl': 'private, no-store'},
+        },
+    }
+else:
+    STORAGES['private'] = {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'OPTIONS': {'location': PRIVATE_MEDIA_ROOT},
+    }
+
 DRIVER_DOCUMENT_MAX_BYTES = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
@@ -307,6 +330,10 @@ CACHES = {
     }
 }
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/1")
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_SOFT_TIME_LIMIT = 240
+CELERY_TASK_TIME_LIMIT = 300
+CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 600}
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = "UTC"
@@ -314,6 +341,7 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BEAT_SCHEDULE = {
     "maintenance": {"task": "rides.tasks.maintenance", "schedule": 15.0},
     "event-outbox": {"task": "notifications.tasks.deliver_outbox", "schedule": 2.0},
+    "document-expiry": {"task": "drivers.tasks.document_expiry_alerts", "schedule": 86400.0},
     "retention": {"task": "rides.tasks.retention", "schedule": 3600.0},
 }
 

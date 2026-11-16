@@ -109,3 +109,16 @@ class MongoConcurrencyTests(RideFixtures, TransactionTestCase):
             self.assertEqual(ActiveAssignment.objects.filter(ride=self.ride).count(), 1)
         else:
             self.assertFalse(ActiveAssignment.objects.filter(ride=self.ride).exists())
+
+    def test_offer_edit_races_with_selection_without_changing_agreed_fare(self):
+        from rides.services.lifecycle import update_offer
+        offer = make_offer(self.driver_user, self.ride.pk, 600)
+        self.race(lambda: update_offer(self.driver_user, offer.pk, {'fare_cents': 700}),
+                  lambda: select_offer(self.passenger, self.ride.pk, offer.pk))
+        offer.refresh_from_db()
+        self.ride.refresh_from_db()
+        self.assertEqual(self.ride.status, 'assigned')
+        self.assertEqual(offer.status, 'accepted')
+        self.assertEqual(self.ride.agreed_fare, offer.amount)
+        self.assertEqual(self.ride.payment.amount, offer.amount)
+        self.assertEqual(ActiveAssignment.objects.count(), 1)

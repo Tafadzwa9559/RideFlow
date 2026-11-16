@@ -69,6 +69,33 @@ def make_offer(user, ride_id, cents, note='', decision='counteroffer', pickup_mi
 
 
 @transaction.atomic
+def update_offer(user, offer_id, changes):
+    initial = RideOffer.objects.get(pk=offer_id)
+    transaction.guard(Ride, initial.ride_id)
+    ride = Ride.objects.get(pk=initial.ride_id)
+    app = driver_for(user, lock=True)
+    offer = RideOffer.objects.get(pk=offer_id)
+    if offer.driver_id != app.pk:
+        raise PermissionDenied()
+    eligible(app, online=True)
+    now = timezone.now()
+    if ride.status != 'searching' or not ride.expires_at or ride.expires_at <= now or offer.status != 'pending' or not offer.expires_at or offer.expires_at <= now:
+        raise ValidationError('Ride or offer is no longer available.')
+    if hasattr(app, 'active_assignment') or offer.vehicle_id != app.active_vehicle_id or not nearby(app, ride):
+        raise PermissionDenied('This request is outside your eligibility.')
+    from rides.services.booking import validate_offer
+    cents = changes.get('fare_cents', int(offer.amount * 100))
+    validate_offer(ride, cents, offer_type='driver')
+    offer.amount = Decimal(cents) / 100
+    for field in ('note', 'pickup_minutes'):
+        if field in changes:
+            setattr(offer, field, changes[field])
+    offer.save(update_fields=['amount', 'note', 'pickup_minutes', 'updated_at'])
+    emit(ride, 'offer.updated', {'offer_id': offer.pk})
+    return offer
+
+
+@transaction.atomic
 def select_offer(user, ride_id, offer_id):
     transaction.guard(Ride, ride_id)
     ride = Ride.objects.get(pk=ride_id)

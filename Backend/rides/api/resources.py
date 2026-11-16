@@ -11,7 +11,7 @@ from drivers.models import DriverApplication
 from drivers.services.eligibility import driver_for, eligible
 from rides.models import Ride, RideOffer, Rating, SupportTicket, PricingZone, PricingConfiguration
 from rides.api.serializers import PlaceSerializer, QuoteRequestSerializer, RideSerializer
-from rides.api.views import visible_rides, passenger_rides, paginate, offer_json
+from rides.api.views import visible_rides, passenger_rides, paginate, offer_json, OfferUpdateView
 from rides.services.lifecycle import nearby
 
 
@@ -103,7 +103,7 @@ class RideReadView(APIView):
                 'trip_duration_seconds': int((ride.completed_at-ride.started_at).total_seconds()) if ride.started_at and ride.completed_at else None})
 
 
-class OfferDetailView(APIView):
+class OfferDetailView(OfferUpdateView):
     def get(self, request, pk):
         offer = get_object_or_404(RideOffer.objects.select_related('driver__user', 'vehicle', 'ride'), pk=pk, driver__isnull=False)
         if offer.ride.passenger_id != request.user.pk and offer.driver.user_id != request.user.pk:

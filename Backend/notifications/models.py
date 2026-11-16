@@ -11,6 +11,8 @@ class Notification(models.Model):
     envelope = models.JSONField(encoder=StorageJSONEncoder, )
     delivered_at = models.DateTimeField(null=True, db_index=True)
     read_at = models.DateTimeField(null=True)
+    # Hashes of accepted device tokens; never store raw tokens in delivery receipts.
+    push_receipts = models.JSONField(encoder=StorageJSONEncoder, default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

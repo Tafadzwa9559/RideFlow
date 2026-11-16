@@ -21,6 +21,10 @@ class PhoneChallenge(models.Model):
     consumed = models.BooleanField(default=False)
 
 
+    class Meta:
+        indexes = [models.Index(fields=['expires_at'], name='otp_expiry_cleanup')]
+
+
 class AuditEvent(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)

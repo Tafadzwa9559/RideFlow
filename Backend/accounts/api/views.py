@@ -100,12 +100,18 @@ class LogoutView(APIView):
 class RefreshView(TokenRefreshView):
     throttle_scope = 'otp_verify'
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
         try:
             token = RefreshToken(request.data.get('refresh', ''))
             from bson import ObjectId
             if not ObjectId.is_valid(str(token.get('user_id', ''))):
                 raise InvalidToken('Sign in again after the database migration.')
+            from django.contrib.auth import get_user_model
+            transaction.guard(get_user_model(), token['user_id'])
+            transaction.guard('refresh', token['jti'])
+            # Revalidate after acquiring guards: another rotation may have committed.
+            token = RefreshToken(request.data.get('refresh', ''))
             identity = PhoneIdentity.objects.select_related('user').filter(user_id=token['user_id']).first()
             if identity and (not identity.user.is_active or token.get('session_version') != identity.session_version):
                 raise InvalidToken('Session revoked.')

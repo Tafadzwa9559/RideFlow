@@ -1,0 +1,8 @@
+-r requirements.txt
+# Private S3-compatible media integration; required by the Render configuration.
+django-storages[s3]==1.14.6
+boto3==1.44.3
+botocore==1.44.3
+s3transfer==0.19.3
+jmespath==1.1.0
+urllib3==2.8.0
