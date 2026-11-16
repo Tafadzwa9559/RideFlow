@@ -1,3 +1,5 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -82,6 +84,8 @@ class BookingRepositoryFixture extends DemoRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+  TestWidgetsFlutterBinding.ensureInitialized();
   late BookingRepositoryFixture repo;
   late AppController app;
   late BookingController draft;
@@ -126,47 +130,17 @@ void main() {
     await draft.setCategory('Comfort');
     expect(repo.calls.last, 'Comfort:USD');
   });
-  test('Currency changes require a compatible method and submit the correct currency', () async {
+  test('Only USD and three direct-payment preferences are available', () async {
     await route();
     await draft.setCurrency('ZWG');
-    expect(draft.fare.text, '85.00');
-    expect(draft.paymentError, contains('does not support'));
-    expect(draft.canSubmit, isFalse);
-    draft.setPayment(draft.methods.firstWhere((m) => m.id == 'cash-zwg'));
-    expect(draft.canSubmit, isTrue);
-    expect(await draft.submit(), isTrue);
-    expect(repo.currencies.single, 'ZWG');
-    expect(app.ride!.currency, 'ZWG');
-    expect(money(app.ride!.cents, currency: 'ZWG'), 'ZiG 85.00');
-  });
-  test('All mobile money methods remain selectable but cannot submit without integration', () async {
-    await route();
-    for (final name in ['EcoCash', 'OneMoney', 'InnBucks']) {
-      draft.setPayment(draft.methods.firstWhere((m) => m.name == name));
-      expect(draft.paymentError, contains('integration unavailable'));
-      expect(draft.canSubmit, isFalse);
+    expect(draft.currency, 'USD');
+    expect(draft.methods.map((m) => m.name), ['EcoCash', 'OneMoney', 'Cash']);
+    for (final method in draft.methods) {
+      draft.setPayment(method);
+      expect(draft.paymentError, isNull);
+      expect(draft.canSubmit, isTrue);
     }
-    expect(repo.keys, isEmpty);
   });
-  test(
-    'Missing roads and exchange rates never produce a fabricated fare',
-    () async {
-      repo.noRoute = true;
-      await route();
-      expect(draft.quote, isNull);
-      expect(draft.canSubmit, isFalse);
-      expect(draft.fare.text, isEmpty);
-      repo.noRoute = false;
-      await draft.refreshQuote();
-      expect(draft.fare.text, '4.25');
-      repo.noExchange = true;
-      await draft.setCurrency('ZWG');
-      expect(draft.fare.text, isEmpty);
-      expect(draft.quote, isNull);
-      expect(draft.canSubmit, isFalse);
-      expect(draft.error, contains('verified'));
-    },
-  );
   test('Invalid precision, nonpositive values and platform offer limits disable submission', () async {
     await route();
     for (final value in ['0', '-1', '1.001', 'NaN', '1.99', '100.01']) {
@@ -215,50 +189,43 @@ void main() {
       expect(repo.keys[0], isNotNull);
     },
   );
-  testWidgets(
-    'Booking UI edits the suggested fare, switches currency and submits compatible cash',
-    (tester) async {
-      await route();
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: triviaTheme(),
-          home: Scaffold(
-            body: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: BookingFields(booking: draft),
-              ),
+  testWidgets('Booking UI edits fare and submits EcoCash in USD', (
+    tester,
+  ) async {
+    await route();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: triviaTheme(),
+        home: Scaffold(
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: BookingFields(booking: draft),
             ),
           ),
         ),
-      );
-      expect(
-        tester.widget<TextField>(find.byType(TextField)).controller!.text,
-        '4.25',
-      );
-      await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
-      await tester.tap(find.byType(DropdownButtonFormField<String>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('ZiG · Zimbabwe Gold').last);
-      await tester.pumpAndSettle();
-      expect(draft.currency, 'ZWG');
-      expect(draft.fare.text, '85.00');
-      await tester.ensureVisible(find.text('Cash — ZiG'));
-      await tester.tap(find.text('Cash — ZiG'));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byType(TextField));
-      await tester.enterText(find.byType(TextField), '99.00');
-      await tester.pumpAndSettle();
-      tester.testTextInput.hide();
-      await tester.ensureVisible(find.text('Request ride'));
-      await tester.tap(find.text('Request ride'));
-      await tester.pumpAndSettle();
-      expect(app.ride!.currency, 'ZWG');
-      expect(app.ride!.cents, 9900);
-      expect(app.ride!.paymentStatus, 'pending_cash');
-      expect(draft.canSubmit, isFalse);
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
+      ),
+    );
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '4.25',
+    );
+    expect(find.textContaining('ZiG'), findsNothing);
+    await tester.ensureVisible(find.text('EcoCash'));
+    await tester.tap(find.text('EcoCash'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), '99.00');
+    await tester.pumpAndSettle();
+    tester.testTextInput.hide();
+    await tester.ensureVisible(find.text('Request ride'));
+    await tester.tap(find.text('Request ride'));
+    await tester.pumpAndSettle();
+    expect(app.ride!.currency, 'USD');
+    expect(app.ride!.cents, 9900);
+    expect(app.ride!.paymentStatus, 'pending_cash');
+    expect(draft.canSubmit, isFalse);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

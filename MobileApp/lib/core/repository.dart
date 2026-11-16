@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -30,6 +33,8 @@ abstract class TriviaRepository {
     String currency = 'USD',
     String? quoteId,
     String? requestKey,
+    String? paymentPreference,
+    String? passengerNote,
   });
   Future<List<DriverOffer>> offers(String rideId);
   Future<Ride> accept(String rideId, String offerId);
@@ -47,8 +52,29 @@ abstract class TriviaRepository {
 
 class DemoRepository implements TriviaRepository {
   Session? _session;
+  final registrationStorage = const FlutterSecureStorage();
+  Map<String, dynamic> registration = {};
+  Future<void> saveRegistration(
+    Map<String, dynamic> data,
+    DriverStatus status,
+  ) async {
+    if (_session == null) throw StateError('Sign in first.');
+    registration = {...data, 'status': status.name};
+    await registrationStorage.write(
+      key: 'trivia_driver_${_session!.phone}',
+      value: jsonEncode(registration),
+    );
+    _session = Session(
+      firstName: _session!.firstName,
+      lastName: _session!.lastName,
+      phone: _session!.phone,
+      driverStatus: status,
+    );
+  }
+
   final List<Ride> _rides = [];
   bool online = false;
+  final Map<String, DriverOffer> _localOffers = {};
   @override
   Future<Session?> restore() async => _session;
   @override
@@ -58,7 +84,18 @@ class DemoRepository implements TriviaRepository {
     if (code != '123456') {
       throw StateError('Use the displayed demo code: 123456.');
     }
-    return _session = Session(firstName: '', lastName: '', phone: phone);
+    final saved = await registrationStorage.read(key: 'trivia_driver_$phone');
+    registration = saved == null
+        ? {}
+        : jsonDecode(saved) as Map<String, dynamic>;
+    return _session = Session(
+      firstName: '',
+      lastName: '',
+      phone: phone,
+      driverStatus: DriverStatus.values.byName(
+        registration['status'] as String? ?? 'notRegistered',
+      ),
+    );
   }
 
   @override
@@ -72,7 +109,9 @@ class DemoRepository implements TriviaRepository {
   @override
   Future<void> logout() async {
     _session = null;
+    registration = {};
     _rides.clear();
+    _localOffers.clear();
     online = false;
   }
 
@@ -86,7 +125,22 @@ class DemoRepository implements TriviaRepository {
     Place destination,
     String category, {
     String currency = 'USD',
-  }) async => null;
+  }) async => RouteQuote(
+    id: 'demo-quote-${DateTime.now().microsecondsSinceEpoch}',
+    currency: 'USD',
+    points: [pickup.point, destination.point],
+    metres: 5000,
+    seconds: 900,
+    available: true,
+    minimumCents: 200,
+    maximumCents: 10000,
+    suggestedCents: category == 'XL'
+        ? 900
+        : category == 'Comfort'
+        ? 700
+        : 500,
+    expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 10)),
+  );
   @override
   Future<List<Ride>> history() async => _rides.reversed.toList();
   @override
@@ -112,6 +166,8 @@ class DemoRepository implements TriviaRepository {
     String currency = 'USD',
     String? quoteId,
     String? requestKey,
+    String? paymentPreference,
+    String? passengerNote,
   }) async {
     if (_rides.any((r) => r.active)) {
       throw StateError('Finish or cancel your current demo ride first.');
@@ -128,7 +184,8 @@ class DemoRepository implements TriviaRepository {
         category: category,
         status: RideStatus.searching,
         createdAt: DateTime.now().toUtc(),
-        currency: currency,
+        currency: 'USD',
+        paymentMethodName: directPaymentLabel(paymentMethod, null),
         offeredCents: cents,
         paymentMethod: paymentMethod,
         paymentStatus: 'pending_cash',
@@ -143,6 +200,7 @@ class DemoRepository implements TriviaRepository {
       return [];
     }
     return [
+      if (_localOffers[rideId] != null) _localOffers[rideId]!,
       DriverOffer(
         id: 'demo-tariro',
         name: 'Tariro · Demo driver',
@@ -200,17 +258,27 @@ class DemoRepository implements TriviaRepository {
     Map<String, dynamic> fields,
     Map<String, String> documents,
   ) async {
-    _session = Session(
-      firstName: _session!.firstName,
-      lastName: _session!.lastName,
-      phone: _session!.phone,
-      driverStatus: DriverStatus.submitted,
-    );
+    await saveRegistration({
+      'fields': fields,
+      'documents': documents,
+      'step': 4,
+    }, DriverStatus.submitted);
     return DriverStatus.submitted;
   }
 
   // Explicit developer simulation, never used by the API adapter.
-  void approveSimulation() {
+  Future<void> approveSimulation() async {
+    if (!kDebugMode ||
+        !AppConfig.demo ||
+        ![
+          DriverStatus.submitted,
+          DriverStatus.underReview,
+        ].contains(_session?.driverStatus)) {
+      throw StateError(
+        'Only submitted debug demo applications may be approved.',
+      );
+    }
+    await saveRegistration(registration, DriverStatus.approved);
     _session = Session(
       firstName: _session!.firstName,
       lastName: _session!.lastName,
@@ -228,24 +296,24 @@ class DemoRepository implements TriviaRepository {
   }
 
   @override
-  Future<List<Ride>> requests() async => online
-      ? [
-          Ride(
-            id: 'demo-request',
-            pickup: demoPlaces[0],
-            destination: demoPlaces[1],
-            cents: 500,
-            category: 'Standard',
-            status: RideStatus.searching,
-            createdAt: DateTime.now().toUtc(),
-          ),
-        ]
+  Future<List<Ride>> requests() async =>
+      online && _session?.driverStatus == DriverStatus.approved
+      ? _rides.where((r) => r.status == RideStatus.searching).toList()
       : [];
   @override
   Future<void> counteroffer(String rideId, int cents) async {
-    if (!online || cents <= 0) {
-      throw StateError('Go online and enter a valid fare.');
+    if (!online || cents <= 0 || _get(rideId).status != RideStatus.searching) {
+      throw StateError(
+        'Go online and choose an open request with a valid fare.',
+      );
     }
+    _localOffers[rideId] = DriverOffer(
+      id: 'demo-self',
+      name: 'Local demo driver',
+      vehicle: 'Demo Toyota Aqua',
+      plate: 'DEMO 03',
+      cents: cents,
+    );
   }
 
   int get _demoGross => _rides
@@ -257,22 +325,17 @@ class DemoRepository implements TriviaRepository {
     if (!online || _session?.driverStatus != DriverStatus.approved) {
       throw StateError('Go online as an approved demo driver first.');
     }
-    if (_rides.any((r) => r.active)) {
-      throw StateError('Finish your active demo trip first.');
+    final current = _get(request.id);
+    if (current.status != RideStatus.searching) {
+      throw StateError('This demo request is no longer available.');
     }
     return _save(
-      Ride(
-        id: 'demo-driver-${DateTime.now().microsecondsSinceEpoch}',
-        pickup: request.pickup,
-        destination: request.destination,
-        cents: cents,
-        category: request.category,
+      current.copy(
         status: RideStatus.assigned,
-        createdAt: DateTime.now().toUtc(),
         driver: DriverOffer(
           id: 'demo-self',
-          name: '${_session!.firstName} · Demo driver',
-          vehicle: 'White Toyota Aqua · Demo',
+          name: 'Local demo driver',
+          vehicle: 'Demo Toyota Aqua',
           plate: 'DEMO 03',
           cents: cents,
         ),
@@ -281,77 +344,65 @@ class DemoRepository implements TriviaRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> read(
-    String resource,
-  ) async => switch (resource) {
-    'currencies' => {
-      'items': [
-        {'code': 'USD', 'name': 'United States Dollar', 'symbol': 'US\$'},
-        {'code': 'ZWG', 'name': 'Zimbabwe Gold', 'symbol': 'ZiG'},
-      ],
-      'default': 'USD',
-    },
-    'payments/methods' => {
-      'items': [
-        {
-          'id': 'cash-usd',
-          'name': 'Cash — USD',
-          'kind': 'cash',
-          'currencies': ['USD'],
-          'enabled': true,
-          'description': 'Pay the driver directly after your trip. Demo only.',
+  Future<Map<String, dynamic>> read(String resource) async =>
+      switch (resource) {
+        'currencies' => {
+          'items': [
+            {'code': 'USD', 'name': 'United States Dollar', 'symbol': 'US\$'},
+          ],
+          'default': 'USD',
         },
-        {
-          'id': 'cash-zwg',
-          'name': 'Cash — ZiG',
-          'kind': 'cash',
-          'currencies': ['ZWG'],
-          'enabled': true,
-          'description': 'Pay the driver directly after your trip. Demo only.',
+        'payments/methods' => {
+          'items': [
+            for (final m in directPaymentMethods)
+              {
+                'id': m.id,
+                'name': m.name,
+                'kind': m.kind,
+                'currencies': m.currencies,
+                'enabled': true,
+                'description': m.description,
+              },
+          ],
         },
-        for (final name in ['EcoCash', 'OneMoney', 'InnBucks'])
-          {
-            'id': name.toLowerCase(),
-            'name': name,
-            'kind': 'mobile_money',
-            'currencies': <String>[],
-            'enabled': false,
-            'description': 'Payment integration unavailable',
-          },
-      ],
-    },
-    'driver/earnings' => {
-      'gross_cents': _demoGross,
-      'commission_cents': 0,
-      'net_cents': _demoGross,
-      'trips': _rides
-          .where(
-            (r) =>
-                r.driver?.id == 'demo-self' && r.status == RideStatus.completed,
-          )
-          .length,
-      'payout_status': 'Simulated · No funds',
-    },
-    'driver/requirements' => {
-      'documents': [
-        {'key': 'licence', 'label': 'Driver’s licence'},
-        {'key': 'registration', 'label': 'Vehicle registration'},
-        {'key': 'vehicle_photo', 'label': 'Vehicle photograph'},
-      ],
-    },
-    'notifications' => {
-      'items': _rides
-          .map(
-            (r) => {
-              'title': statusLabel(r.status),
-              'description':
-                  '${r.pickup.name} → ${r.destination.name} · Demo trip',
+        'driver/earnings' => {
+          'gross_cents': _demoGross,
+          'commission_cents': 0,
+          'net_cents': _demoGross,
+          'trips': _rides
+              .where(
+                (r) =>
+                    r.driver?.id == 'demo-self' &&
+                    r.status == RideStatus.completed,
+              )
+              .length,
+          'payout_status': 'Simulated · No funds',
+        },
+        'driver/requirements' => {
+          'documents': [
+            {'key': 'national_id', 'label': 'National identification'},
+            {
+              'key': 'transport_permission',
+              'label': 'Passenger transport permission (demo requirement)',
             },
-          )
-          .toList(),
-    },
-    _ => {'items': <dynamic>[]},
-  };
+            {'key': 'licence', 'label': 'Driver’s licence'},
+            {'key': 'registration', 'label': 'Vehicle registration'},
+            {'key': 'vehicle_photo', 'label': 'Vehicle photograph'},
+          ],
+        },
+        'notifications' => {
+          'items': _rides
+              .map(
+                (r) => {
+                  'title': statusLabel(r.status),
+                  'description':
+                      '${r.pickup.name} → ${r.destination.name} · Demo trip',
+                },
+              )
+              .toList(),
+        },
+        _ => {'items': <dynamic>[]},
+      };
   @override
   Future<void> write(String resource, Map<String, dynamic> data) async {}
 }
@@ -494,16 +545,20 @@ class ApiRepository implements TriviaRepository {
     String currency = 'USD',
     String? quoteId,
     String? requestKey,
+    String? paymentPreference,
+    String? passengerNote,
   }) async => Ride.fromJson(
     await _post('rides/', {
       'pickup': pickup.toJson(),
       'destination': destination.toJson(),
       'category': category,
       'fare_cents': cents,
-      'payment_method_id': ?paymentMethod,
+      'payment_method_id': paymentMethod,
       'currency': currency,
       'quote_id': quoteId,
       'idempotency_key': requestKey,
+      'payment_preference': paymentPreference,
+      'passenger_note': passengerNote,
     }),
   );
   @override

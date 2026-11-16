@@ -27,6 +27,8 @@ ROAD = {
 
 class BookingAPITests(TestCase):
     def setUp(self):
+        from payments.tests.fixtures import direct_methods
+        direct_methods()
         cache.clear()
         self.user = get_user_model().objects.create_user(
             username="+263771234567", password=None, first_name="Test"
@@ -131,7 +133,7 @@ class BookingAPITests(TestCase):
         self.assertEqual(ride.offered_fare, Decimal("4"))
         self.assertIsNone(ride.agreed_fare)
         self.assertEqual(ride.quote.suggested_cents, 500)
-        self.assertEqual(ride.payment.status, "pending_cash")
+        self.assertEqual(ride.payment.status, "unverified")
         self.assertEqual(ride.payment.amount, Decimal("4"))
         self.assertEqual(ride.payment.currency, "USD")
 
@@ -171,64 +173,8 @@ class BookingAPITests(TestCase):
         self.assertEqual(bad.status_code, 400)
         self.assertFalse(Payment.objects.exists())
 
-    def test_mobile_money_disabled_even_if_admin_enables_row(self):
-        q = self.quote()
-        for code in ["ecocash", "onemoney", "innbucks"]:
-            method = PaymentMethod.objects.get(pk=code)
-            method.enabled = True
-            method.supported_currencies = ["USD"]
-            method.save()
-            response = self.client.post(
-                "/mobile/v1/rides/",
-                self.booking(q, payment_method_id=code),
-                format="json",
-            )
-            self.assertEqual(response.status_code, 400)
-            self.assertIn("integration unavailable", str(response.data))
-        self.assertFalse(Payment.objects.exists())
 
-    def test_verified_conversion_and_cash_zig(self):
-        rate = self.rate()
-        q = self.quote(currency="ZWG")
-        self.assertEqual(q["suggested_fare_cents"], 10200)
-        self.assertEqual(q["exchange_rate"], "20.00000000")
-        response = self.client.post(
-            "/mobile/v1/rides/",
-            self.booking(q, payment_method_id="cash-zwg"),
-            format="json",
-        )
-        self.assertEqual(response.status_code, 201, response.data)
-        ride = Ride.objects.get()
-        self.assertEqual(ride.currency, "ZWG")
-        self.assertEqual(ride.quote.exchange_rate_id, rate.pk)
-        self.assertEqual(ride.payment.amount, Decimal("102"))
-        self.assertEqual(ride.payment.status, "pending_cash")
 
-    def test_missing_stale_unverified_or_untrusted_exchange_fails_closed(self):
-        self.assertEqual(
-            self.client.post(
-                "/mobile/v1/routes/quote/",
-                {**self.payload, "currency": "ZWG"},
-                format="json",
-            ).status_code,
-            503,
-        )
-        rate = self.rate()
-        for changes in [
-            {"valid_until": timezone.now() - timedelta(seconds=1)},
-            {"observed_at": timezone.now() - timedelta(days=2)},
-            {"verified_by": None},
-            {"source_url": "https://untrusted.example/rate"},
-        ]:
-            original = {key: getattr(rate, key) for key in changes}
-            ExchangeRate.objects.filter(pk=rate.pk).update(**changes)
-            response = self.client.post(
-                "/mobile/v1/routes/quote/",
-                {**self.payload, "currency": "ZWG"},
-                format="json",
-            )
-            self.assertEqual(response.status_code, 503, changes)
-            ExchangeRate.objects.filter(pk=rate.pk).update(**original)
 
     def test_route_currency_category_tampering_or_expiry_rejected(self):
         q = self.quote()
@@ -302,7 +248,7 @@ class BookingAPITests(TestCase):
             self.client.post(
                 f"/mobile/v1/rides/{pk}/status/", {"status": "completed"}, format="json"
             ).status_code,
-            400,
+            403,
         )
         self.assertEqual(
             self.client.post(
@@ -312,39 +258,28 @@ class BookingAPITests(TestCase):
         )
         self.assertEqual(Payment.objects.get().status, "cancelled")
 
-    def test_method_currency_and_exchange_metadata_endpoints(self):
-        methods = self.client.get("/mobile/v1/payments/methods/").data["items"]
-        self.assertEqual(len(methods), 5)
-        self.assertEqual(sum(m["enabled"] for m in methods), 2)
-        self.assertEqual(
-            self.client.get("/mobile/v1/currencies/").data["default"], "USD"
-        )
-        self.rate()
-        self.assertEqual(
-            self.client.get("/mobile/v1/exchange-rates/").data["quote"], "ZWG"
-        )
 
-    def test_new_verified_rate_invalidates_old_conversion_quote(self):
-        from django.core.exceptions import ValidationError
 
-        rate = self.rate()
-        q = self.quote(currency="ZWG")
-        rate.usd_to_zwg = Decimal("21")
-        with self.assertRaises(ValidationError):
-            rate.save()
-        now = timezone.now()
-        ExchangeRate.objects.create(
-            usd_to_zwg=Decimal("21"),
-            source_url="https://www.rbz.co.zw/test-rate",
-            observed_at=now,
-            valid_until=now + timedelta(hours=1),
-            verified_at=now,
-            verified_by=self.staff,
-        )
-        response = self.client.post(
-            "/mobile/v1/rides/",
-            self.booking(q, payment_method_id="cash-zwg"),
-            format="json",
-        )
-        self.assertEqual(response.status_code, 409)
-        self.assertFalse(Payment.objects.exists())
+    def test_exact_direct_payment_methods_and_usd_only(self):
+        methods = self.client.get('/mobile/v1/payments/methods/').data['items']
+        self.assertEqual({m['id'] for m in methods}, {'cash-usd', 'ecocash', 'onemoney'})
+        self.assertTrue(all(m['enabled'] for m in methods))
+        self.assertEqual(self.client.get('/mobile/v1/currencies/').data['items'], [{'code': 'USD', 'name': 'United States Dollar', 'symbol': 'US$'}])
+        for currency in ['ZWG', 'ZIG', 'EUR']:
+            response = self.client.post('/mobile/v1/routes/quote/', {**self.payload, 'currency': currency}, format='json')
+            self.assertEqual(response.status_code, 400)
+
+    def test_all_preferences_are_unverified_direct_payments(self):
+        for code in ['cash-usd', 'ecocash', 'onemoney']:
+            response = self.client.post('/mobile/v1/rides/', self.booking(self.quote(), payment_method_id=code, passenger_note='Please call at the gate.'), format='json')
+            self.assertEqual(response.status_code, 201, response.data)
+            ride = Ride.objects.get(pk=response.data['id'])
+            self.assertEqual(ride.payment.status, 'unverified')
+            self.assertEqual(ride.payment.method_id, code)
+            self.assertEqual(ride.passenger_note, 'Please call at the gate.')
+            self.client.post(f'/mobile/v1/rides/{ride.pk}/cancel/', {}, format='json')
+
+    def test_unsupported_payment_and_inconsistent_preference_rejected(self):
+        q = self.quote()
+        for data in [self.booking(q, payment_method_id='innbucks'), self.booking(q, payment_preference='ecocash')]:
+            self.assertEqual(self.client.post('/mobile/v1/rides/', data, format='json').status_code, 400)

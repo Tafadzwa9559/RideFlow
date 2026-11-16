@@ -138,3 +138,18 @@ def search_places(query):
         raise RouteUnavailable(
             "Address search is unavailable. Retry or choose a map pin."
         ) from exc
+
+
+def reverse_geocode(point):
+    base = settings.TRIVIA_GEOCODING_URL.rstrip('/')
+    if not base:
+        raise RouteUnavailable('Reverse geocoding is not configured.')
+    data = provider_json(base + '/reverse?' + urlencode({'lat': point['latitude'], 'lon': point['longitude'], 'format': 'jsonv2'}))
+    try:
+        name = data['display_name']
+        lat, lon = float(data['lat']), float(data['lon'])
+        if not isinstance(name, str) or not name or not math.isfinite(lat) or not math.isfinite(lon) or not -90 <= lat <= 90 or not -180 <= lon <= 180:
+            raise ValueError()
+        return {'name': name[:200], 'latitude': lat, 'longitude': lon}
+    except (KeyError, TypeError, ValueError):
+        raise RouteUnavailable('Reverse geocoding returned an invalid place.')

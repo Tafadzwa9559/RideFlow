@@ -512,7 +512,7 @@ class TripPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '${r.paymentMethodName == null ? '' : '${r.paymentMethodName} · '}${paymentStatusLabel(r.paymentStatus)}',
+          'Payment method: ${directPaymentLabel(r.paymentMethod, r.paymentMethodName)}. Please pay your driver directly using your selected payment method. Trivia does not collect or verify payment.',
         ),
         if (r.status == RideStatus.searching) ...[
           const SizedBox(height: 20),
@@ -609,7 +609,15 @@ class TripPanel extends StatelessWidget {
           ],
         ],
         ErrorNotice(app),
-        if (r.status != RideStatus.inProgress)
+        if (!r.active)
+          TextButton(
+            onPressed: () {
+              app.ride = null;
+              app.notifyListeners();
+            },
+            child: const Text('Book another ride'),
+          ),
+        if (r.active && r.status != RideStatus.inProgress)
           TextButton(
             onPressed: app.busy
                 ? null

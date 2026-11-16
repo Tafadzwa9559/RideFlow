@@ -1,5 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
+from rest_framework.exceptions import ErrorDetail
 from payments.models import CURRENCIES
 from rides.models import Ride
 
@@ -23,7 +24,7 @@ class QuoteRequestSerializer(serializers.Serializer):
     pickup = PlaceSerializer()
     destination = PlaceSerializer()
     category = serializers.ChoiceField(choices=["Standard", "Comfort", "XL"])
-    currency = serializers.ChoiceField(choices=CURRENCIES, default="USD")
+    currency = serializers.ChoiceField(choices=["USD"], default="USD")
 
 
 class BookingRequestSerializer(QuoteRequestSerializer):
@@ -31,6 +32,21 @@ class BookingRequestSerializer(QuoteRequestSerializer):
     idempotency_key = serializers.UUIDField()
     fare_cents = serializers.IntegerField(min_value=1, max_value=999999999999)
     payment_method_id = serializers.SlugField()
+    payment_preference = serializers.ChoiceField(
+        choices=["ecocash", "onemoney", "cash"],
+        required=False,
+        default="cash",
+    )
+    passenger_note = serializers.CharField(max_length=250, required=False, allow_blank=True, default="")
+
+    def validate(self, data):
+        preference = {'cash-usd': 'cash', 'ecocash': 'ecocash', 'onemoney': 'onemoney'}.get(data['payment_method_id'])
+        if preference is None:
+            raise serializers.ValidationError({'payment_method_id': ErrorDetail('Choose cash-usd, ecocash or onemoney.', code='INVALID_PAYMENT_METHOD')})
+        if 'payment_preference' in self.initial_data and data['payment_preference'] != preference:
+            raise serializers.ValidationError({'payment_preference': 'Must match the selected payment method.'})
+        data['payment_preference'] = preference
+        return data
 
 
 def quote_json(quote):
@@ -58,17 +74,21 @@ def quote_json(quote):
 
 
 class RideSerializer(serializers.ModelSerializer):
-    pickup = serializers.JSONField(source="quote.pickup")
-    destination = serializers.JSONField(source="quote.destination")
+    pickup = PlaceSerializer(source="quote.pickup")
+    destination = PlaceSerializer(source="quote.destination")
     category = serializers.CharField(source="quote.category")
-    route_geometry = serializers.JSONField(source="quote.route_geometry")
+    route_geometry = serializers.ListField(child=serializers.ListField(child=serializers.FloatField(), min_length=2, max_length=2), source="quote.route_geometry")
     distance_metres = serializers.IntegerField(source="quote.distance_metres")
     duration_seconds = serializers.IntegerField(source="quote.duration_seconds")
     suggested_fare_cents = serializers.IntegerField(source="quote.suggested_cents")
     fare_cents = serializers.SerializerMethodField()
     payment_method_id = serializers.CharField(source="payment.method_id")
+    assigned_driver_id = serializers.IntegerField(read_only=True, allow_null=True)
+    sequence = serializers.IntegerField(read_only=True)
     payment_status = serializers.CharField(source="payment.status")
     payment_method_name = serializers.CharField(source="payment.method.name")
+    payment_preference = serializers.ChoiceField(choices=["cash", "ecocash", "onemoney"])
+    passenger_note = serializers.CharField(allow_blank=True, required=False)
     exchange_rate = serializers.DecimalField(
         source="quote.exchange_rate_value",
         max_digits=20,
@@ -83,6 +103,8 @@ class RideSerializer(serializers.ModelSerializer):
         model = Ride
         fields = [
             "id",
+            "assigned_driver_id",
+            "sequence",
             "pickup",
             "destination",
             "category",
@@ -96,6 +118,8 @@ class RideSerializer(serializers.ModelSerializer):
             "payment_method_id",
             "payment_method_name",
             "payment_status",
+            "payment_preference",
+            "passenger_note",
             "distance_metres",
             "duration_seconds",
             "route_geometry",
@@ -104,7 +128,7 @@ class RideSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_fare_cents(self, ride):
+    def get_fare_cents(self, ride) -> int:
         return int(
             (ride.agreed_fare if ride.agreed_fare is not None else ride.offered_fare)
             * 100

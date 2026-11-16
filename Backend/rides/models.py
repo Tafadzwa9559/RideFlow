@@ -156,6 +156,7 @@ class FareQuote(models.Model):
     routing_provider = models.CharField(max_length=100)
     pricing = models.ForeignKey(PricingConfiguration, on_delete=models.PROTECT)
     pricing_snapshot = models.JSONField()
+    pricing_version = models.CharField(max_length=100, blank=True, default="")
     minimum_cents = models.PositiveBigIntegerField()
     maximum_cents = models.PositiveBigIntegerField()
     suggested_cents = models.PositiveBigIntegerField()
@@ -170,7 +171,45 @@ class FareQuote(models.Model):
     expires_at = models.DateTimeField()
 
 
+class RideOffer(models.Model):
+    driver = models.ForeignKey('drivers.DriverApplication', null=True, on_delete=models.PROTECT, related_name='offers')
+    vehicle = models.ForeignKey('drivers.Vehicle', null=True, on_delete=models.PROTECT)
+    status = models.CharField(max_length=20, default='pending', choices=[(s, s) for s in ['pending', 'accepted', 'rejected', 'withdrawn', 'expired', 'declined']])
+    expires_at = models.DateTimeField(null=True)
+    pickup_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
+    offer_type = models.CharField(
+        max_length=20,
+        choices=[("passenger", "Passenger"), ("driver", "Driver")],
+        default="driver",
+    )
+    ride = models.ForeignKey(
+        "Ride",
+        on_delete=models.CASCADE,
+        related_name="counteroffers",
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[positive])
+    note = models.TextField(blank=True, default="")
+    accepted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=['ride', 'driver'], name='one_driver_offer_per_ride')]
+
+
 class Ride(models.Model):
+    assigned_driver = models.ForeignKey('drivers.DriverApplication', null=True, on_delete=models.PROTECT, related_name='trips')
+    assigned_vehicle = models.ForeignKey('drivers.Vehicle', null=True, on_delete=models.PROTECT)
+    expires_at = models.DateTimeField(null=True, db_index=True)
+    accepted_at = models.DateTimeField(null=True)
+    arrived_at = models.DateTimeField(null=True)
+    started_at = models.DateTimeField(null=True)
+    completed_at = models.DateTimeField(null=True)
+    cancelled_at = models.DateTimeField(null=True)
+    cancellation_reason = models.CharField(max_length=500, blank=True)
+    sequence = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     passenger = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="trivia_rides"
@@ -185,6 +224,17 @@ class Ride(models.Model):
     agreed_fare = models.DecimalField(
         max_digits=12, decimal_places=2, null=True, blank=True, validators=[positive]
     )
+    payment_preference = models.CharField(
+        max_length=20,
+        choices=[
+            ("ecocash", "EcoCash"),
+            ("onemoney", "OneMoney"),
+            ("cash", "Cash"),
+        ],
+        default="cash",
+    )
+    passenger_note = models.TextField(blank=True, default="")
+    pricing_version = models.CharField(max_length=100, blank=True, default="")
     status = models.CharField(
         max_length=20,
         default="searching",
@@ -198,15 +248,85 @@ class Ride(models.Model):
                 "inProgress",
                 "completed",
                 "cancelled",
+                "expired",
             ]
         ],
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        indexes = [models.Index(fields=["status", "created_at"]), models.Index(fields=["passenger", "status"])]
         constraints = [
             models.UniqueConstraint(
                 fields=["passenger", "idempotency_key"],
                 name="unique_passenger_booking_key",
             )
         ]
+
+
+class ActiveAssignment(models.Model):
+    """Unconditional unique keys work on MySQL, unlike conditional indexes."""
+    ride = models.OneToOneField(Ride, on_delete=models.PROTECT, related_name='active_assignment')
+    driver = models.OneToOneField('drivers.DriverApplication', on_delete=models.PROTECT, related_name='active_assignment')
+    passenger = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='active_assignment')
+
+
+class RideEvent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ride = models.ForeignKey(Ride, on_delete=models.PROTECT, related_name='events')
+    sequence = models.PositiveIntegerField()
+    event_type = models.CharField(max_length=80)
+    payload = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['ride', 'sequence'], name='unique_ride_event_sequence')]
+        ordering = ['sequence']
+
+
+class LocationUpdate(models.Model):
+    ride = models.ForeignKey(Ride, on_delete=models.CASCADE, related_name='locations')
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=10, decimal_places=6)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
+class Rating(models.Model):
+    ride = models.ForeignKey(Ride, on_delete=models.PROTECT, related_name='ratings')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='ratings_given')
+    subject = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='ratings_received')
+    score = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['ride', 'author'], name='one_rating_per_ride_author')]
+
+
+class SupportTicket(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    ride = models.ForeignKey(Ride, null=True, blank=True, on_delete=models.PROTECT)
+    category = models.CharField(max_length=20, choices=[(s, s) for s in ['support', 'safety']])
+    message = models.CharField(max_length=2000)
+    status = models.CharField(max_length=20, default='open', choices=[(s, s) for s in ['open', 'investigating', 'resolved']])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class SavedPlace(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    label = models.CharField(max_length=80)
+    place = models.JSONField()
+
+
+class EmergencyContact(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=16)
+
+
+class TripShare(models.Model):
+    ride = models.ForeignKey(Ride, on_delete=models.CASCADE)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_shares_created')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trip_shares_received')
+    expires_at = models.DateTimeField()
+    revoked = models.BooleanField(default=False)

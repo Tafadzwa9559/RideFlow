@@ -9,9 +9,10 @@ import '../../shared/models.dart';
 
 /// Owns only the editable booking draft. Live quote/pricing is always backend-fed.
 class BookingController extends ChangeNotifier {
-  BookingController(this.app) : currency = app.currency;
+  BookingController(this.app) : currency = 'USD';
   final AppController app;
   final fare = TextEditingController();
+  final note = TextEditingController();
   Place? pickup, destination;
   String category = 'Standard', currency;
   RouteQuote? quote;
@@ -25,6 +26,40 @@ class BookingController extends ChangeNotifier {
   int _generation = 0;
   bool _disposed = false;
   Timer? _expiry;
+  static const int fareStepCents = 50;
+
+  void adjustFare(int deltaCents) {
+    if (quote == null || fare.text.trim().isEmpty) {
+      final current = quote == null ? 0 : quote!.suggestedCents ?? quote!.minimumCents;
+      final next = (current + deltaCents).clamp(quote?.minimumCents ?? 0, quote?.maximumCents ?? current + deltaCents);
+      fare.text = (next / 100).toStringAsFixed(2);
+      manuallyEdited = true;
+      notifyListeners();
+      return;
+    }
+    try {
+      final value = parseFare(fare.text);
+      final next = (value + deltaCents).clamp(
+        quote!.minimumCents,
+        quote!.maximumCents ?? double.maxFinite.toInt(),
+      );
+      fare.text = (next / 100).toStringAsFixed(2);
+      manuallyEdited = true;
+      notifyListeners();
+    } on FormatException {
+      final fallback = quote!.suggestedCents ?? quote!.minimumCents;
+      fare.text = (fallback / 100).toStringAsFixed(2);
+      manuallyEdited = true;
+      notifyListeners();
+    }
+  }
+
+  void resetFareToSuggested() {
+    if (quote?.suggestedCents == null) return;
+    fare.text = (quote!.suggestedCents! / 100).toStringAsFixed(2);
+    manuallyEdited = false;
+    notifyListeners();
+  }
   @override
   void notifyListeners() {
     if (!_disposed) {
@@ -85,24 +120,11 @@ class BookingController extends ChangeNotifier {
     configurationError = null;
     notifyListeners();
     try {
-      final result = await Future.wait([
-        app.repository.read('payments/methods'),
-        app.repository.read('currencies'),
-      ]);
-      if (_disposed) {
-        return;
-      }
-      methods = (result[0]['items'] as List)
-          .map((j) => BookingPaymentMethod.fromJson(j as Map<String, dynamic>))
-          .toList();
-      currencies = (result[1]['items'] as List)
-          .map((j) => j['code'] as String)
-          .where((c) => c == 'USD' || c == 'ZWG')
-          .toList();
-      if (methods.isEmpty || currencies.isEmpty) {
-        throw StateError(
-          'Booking payment and currency configuration is unavailable.',
-        );
+      methods = directPaymentMethods;
+      currencies = ['USD'];
+      currency = 'USD';
+      if (method == null) {
+        app.selectPayment('cash-usd', 'Cash');
       }
     } catch (e) {
       configurationError =
@@ -228,12 +250,14 @@ class BookingController extends ChangeNotifier {
     submitting = true;
     error = null;
     notifyListeners();
-    final signature = '${quote!.id}|${method!.id}|$currency|${fare.text}';
+    final signature = '${quote!.id}|${method!.id}|$currency|${fare.text}|${note.text}';
     if (signature != _lastSubmission) {
       _requestKey = _uuid();
       _lastSubmission = signature;
     }
     _requestKey ??= _uuid();
+    final paymentPreference =
+        method?.id == 'ecocash' ? 'ecocash' : method?.id == 'onemoney' ? 'onemoney' : 'cash';
     final ok = await app.book(
       pickup!,
       destination!,
@@ -243,6 +267,8 @@ class BookingController extends ChangeNotifier {
       requestKey: _requestKey,
       offeredCurrency: currency,
       methodId: method!.id,
+      paymentPreference: paymentPreference,
+      passengerNote: note.text,
     );
     if (ok) {
       _expiry?.cancel();
@@ -273,6 +299,7 @@ class BookingController extends ChangeNotifier {
     _generation++;
     _expiry?.cancel();
     fare.dispose();
+    note.dispose();
     super.dispose();
   }
 }

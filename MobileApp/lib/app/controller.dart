@@ -28,8 +28,8 @@ class AppController extends ChangeNotifier {
       driverMode = false,
       online = false;
   String? error;
-  String? paymentMethod = AppConfig.demo ? 'cash-usd' : null;
-  String? paymentLabel = AppConfig.demo ? 'Cash — USD' : null;
+  String? paymentMethod = 'cash-usd';
+  String? paymentLabel = 'Cash';
   String currency = 'USD';
   Session? session;
   Ride? ride;
@@ -76,7 +76,7 @@ class AppController extends ChangeNotifier {
       AppConfig.validate();
       _prefs = await SharedPreferences.getInstance();
       onboarded = _prefs!.getBool('trivia_onboarded') ?? false;
-      currency = _prefs!.getString('trivia_currency') == 'ZWG' ? 'ZWG' : 'USD';
+      currency = 'USD';
       session = await repository.restore();
       if (repository is ApiRepository) {
         _expiration = (repository as ApiRepository).expired.stream.listen((_) {
@@ -144,7 +144,7 @@ class AppController extends ChangeNotifier {
           await repository.availability(false);
         } catch (_) {}
       }
-      ride = current;
+      ride = current ?? (ride?.active == false ? ride : null);
       history = records;
       offers = bids;
       notifyListeners();
@@ -191,6 +191,8 @@ class AppController extends ChangeNotifier {
     String? requestKey,
     String? offeredCurrency,
     String? methodId,
+    String? paymentPreference,
+    String? passengerNote,
   }) => perform(() async {
     if (!AppConfig.demo && (methodId ?? paymentMethod) == null) {
       throw StateError('Choose an enabled payment method before booking.');
@@ -204,6 +206,8 @@ class AppController extends ChangeNotifier {
       currency: offeredCurrency ?? currency,
       quoteId: quoteId,
       requestKey: requestKey,
+      paymentPreference: paymentPreference,
+      passengerNote: passengerNote,
     );
     recent = [b, ...recent.where((p) => p.name != b.name)].take(8).toList();
     await sync();
@@ -277,7 +281,8 @@ class AppController extends ChangeNotifier {
     }
   });
   Future<bool> switchMode() => perform(() async {
-    if (ride?.active == true) {
+    if (ride?.active == true &&
+        !(AppConfig.demo && ride?.status == RideStatus.searching)) {
       throw StateError(
         'Complete or cancel your current trip before switching modes.',
       );
@@ -309,8 +314,8 @@ class AppController extends ChangeNotifier {
       offers = [];
       saved = [];
       recent = [];
-      paymentMethod = AppConfig.demo ? 'cash-usd' : null;
-      paymentLabel = AppConfig.demo ? 'Cash — USD' : null;
+      paymentMethod = 'cash-usd';
+      paymentLabel = 'Cash';
       driverMode = false;
       online = false;
     }

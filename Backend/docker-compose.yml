@@ -1,0 +1,74 @@
+x-backend: &backend
+  build: .
+  env_file: .env
+  environment:
+    MYSQL_HOST: mysql
+    REDIS_URL: redis://redis:6379/0
+    CELERY_BROKER_URL: redis://redis:6379/1
+    CACHE_REDIS_URL: redis://redis:6379/2
+  volumes:
+    - private_media:/app/private_media
+    - staticfiles:/app/staticfiles
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-trivia}
+      MYSQL_USER: ${MYSQL_USER:-trivia}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, 'mysqladmin ping -h localhost -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      retries: 30
+  redis:
+    image: redis:7.4-alpine
+    command: [redis-server, --appendonly, 'yes']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      retries: 20
+  migrate:
+    <<: *backend
+    command: [python, manage.py, migrate, --noinput]
+    restart: 'no'
+  api:
+    <<: *backend
+    ports: ['127.0.0.1:8000:8000']
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 15s
+      retries: 5
+  worker:
+    <<: *backend
+    command: [celery, -A, rideflow, worker, --loglevel=INFO]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD-SHELL, 'celery -A rideflow inspect ping --timeout 3']
+      interval: 30s
+      retries: 3
+  beat:
+    <<: *backend
+    command: [celery, -A, rideflow, beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+volumes:
+  mysql_data:
+  redis_data:
+  private_media:
+  staticfiles:

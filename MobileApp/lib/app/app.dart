@@ -6,8 +6,10 @@ import 'theme.dart';
 import '../features/entry/entry.dart';
 import '../features/passenger/home.dart';
 import '../features/driver/driver.dart';
+import '../features/driver/registration.dart';
 import '../features/account/account.dart';
 import '../shared/widgets.dart';
+import '../shared/models.dart';
 
 class TriviaApp extends ConsumerStatefulWidget {
   const TriviaApp({super.key});
@@ -119,6 +121,9 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final app = widget.app;
     final driver = app.driverMode;
+    if (driver && app.session?.driverStatus != DriverStatus.approved) {
+      return SafeArea(child: DriverRegistration(app: app));
+    }
     final pages = <Widget>[
       driver ? DriverHome(app: app) : PassengerHome(app: app),
       driver ? DriverRequests(app: app) : HistoryPage(app: app),

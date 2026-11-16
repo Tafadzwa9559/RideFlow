@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../core/repository.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
 import 'booking_controller.dart';
@@ -40,6 +41,10 @@ class BookingFields extends StatelessWidget {
             const Text('Calculating driving route and fare…'),
           ],
           if (q != null) ...[
+            if (booking.app.repository is DemoRepository)
+              const Text(
+                'Demo estimate: fictional distance, duration and fare.',
+              ),
             Text(
               '${(q.metres / 1000).toStringAsFixed(1)} km · ${(q.seconds / 60).ceil()} min',
               style: Theme.of(context).textTheme.titleMedium,
@@ -54,11 +59,11 @@ class BookingFields extends StatelessWidget {
                 key: ValueKey('${q.id}-${q.suggestedCents}'),
               ),
             ),
-            if (q.exchangeRate != null)
-              Text(
-                'USD/ZiG rate: ${q.exchangeRate} · ${q.exchangeRateTimestamp?.toUtc().toIso8601String() ?? ''}',
-                style: const TextStyle(fontSize: 11),
-              ),
+            const SizedBox(height: 4),
+            Text(
+              'Minimum allowed fare: ${money(q.minimumCents, currency: currency)}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ],
           if (booking.notice != null)
             Padding(
@@ -85,55 +90,68 @@ class BookingFields extends StatelessWidget {
               label: const Text('Recalculate route & fare'),
             ),
           const SizedBox(height: 16),
-          TextField(
-            controller: booking.fare,
-            enabled: !booking.submitting,
-            onChanged: booking.editFare,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: 'Offer your fare',
-              prefixText: '${currencySymbol(currency)} ',
-              hintText: '0.00',
-              suffixIcon: const Icon(Icons.edit_outlined),
-              errorText: booking.fare.text.isEmpty ? null : booking.fareError,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: booking.fare,
+                  enabled: !booking.submitting,
+                  onChanged: booking.editFare,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Offer your fare',
+                    prefixText: '${currencySymbol(currency)} ',
+                    hintText: '0.00',
+                    errorText: booking.fare.text.isEmpty ? null : booking.fareError,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                children: [
+                  IconButton(
+                    onPressed: () => booking.adjustFare(BookingController.fareStepCents),
+                    icon: const Icon(Icons.add_circle_outline),
+                    tooltip: 'Increase offer by 0.50 USD',
+                  ),
+                  IconButton(
+                    onPressed: () => booking.adjustFare(-BookingController.fareStepCents),
+                    icon: const Icon(Icons.remove_circle_outline),
+                    tooltip: 'Decrease offer by 0.50 USD',
+                  ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Suggested fare — you can change this amount',
-            style: TextStyle(fontSize: 12),
+          Row(
+            children: [
+              const Text(
+                'Suggested fare — you can change this amount',
+                style: TextStyle(fontSize: 12),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: booking.quote?.suggestedCents == null ? null : booking.resetFareToSuggested,
+                child: const Text('Reset to Suggested Fare'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: booking.note,
+            enabled: !booking.submitting,
+            maxLength: 250,
+            maxLines: 3,
+            minLines: 1,
+            decoration: const InputDecoration(
+              labelText: 'Passenger note (optional)',
+              hintText: 'Any route notes or preferences for the driver',
+              alignLabelWithHint: true,
+            ),
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: currency,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Currency'),
-            items: ['USD', 'ZWG']
-                .map(
-                  (c) => DropdownMenuItem(
-                    value: c,
-                    enabled: booking.currencies.contains(c),
-                    child: Text(
-                      c == 'USD'
-                          ? 'US\$ · United States Dollar'
-                          : 'ZiG · Zimbabwe Gold',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged:
-                booking.submitting ||
-                    booking.loadingMethods ||
-                    booking.configurationError != null
-                ? null
-                : (c) {
-                    if (c != null) {
-                      booking.setCurrency(c);
-                    }
-                  },
-          ),
+          const Text('Fare currency: USD'),
           const SizedBox(height: 20),
           Text(
             'Payment method',
@@ -186,9 +204,7 @@ class BookingFields extends StatelessWidget {
                         color: darkGreen,
                       ),
                       title: Text(m.name),
-                      subtitle: Text(
-                        '${m.currencies.isEmpty ? 'Currencies pending gateway configuration' : m.currencies.map(currencySymbol).join(' · ')}\n${m.description}',
-                      ),
+                      subtitle: Text(m.description),
                       trailing: Icon(
                         booking.method?.id == m.id
                             ? Icons.radio_button_checked
@@ -215,6 +231,7 @@ class BookingFields extends StatelessWidget {
               'Your offered fare: ${money(parseFare(booking.fare.text), currency: currency)}',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+          Text('Payment method: ${booking.method?.name ?? 'Choose a method'}'),
           const SizedBox(height: 6),
           const Text(
             'This is your offer, not a driver-accepted price. The agreed fare is confirmed only after a driver offer is accepted.',

@@ -10,7 +10,7 @@ from django.utils import timezone
 from rest_framework.exceptions import APIException, ValidationError
 from payments.models import Payment, PaymentMethod
 from payments.services.exchange import verified_rate
-from rides.models import FareQuote, PricingConfiguration, Ride
+from rides.models import FareQuote, PricingConfiguration, Ride, RideOffer
 from .routing import driving_route
 
 
@@ -44,7 +44,6 @@ def pricing_snapshot(policy, now):
         "minimum_offer_usd",
         "maximum_offer_usd",
         "rounding_usd",
-        "rounding_zwg",
     ]
     return {
         "id": policy.pk,
@@ -62,6 +61,8 @@ def cents(value, rounding=ROUND_HALF_UP):
 
 
 def quote_route(user, pickup, destination, category, currency):
+    if currency != "USD":
+        raise ValidationError({"currency": "Only USD fares are supported."})
     if (
         pickup["latitude"] == destination["latitude"]
         and pickup["longitude"] == destination["longitude"]
@@ -79,7 +80,7 @@ def quote_route(user, pickup, destination, category, currency):
     )
     if policy is None:
         raise ValidationError(
-            "No configured service coverage or pricing exists for this route and category."
+            "No configured service coverage or pricing exists for this route and category.", code="OUTSIDE_SERVICE_AREA"
         )
     route = driving_route(pickup, destination)
     if not all(
@@ -92,23 +93,21 @@ def quote_route(user, pickup, destination, category, currency):
     now = timezone.now()
     rate, factor = verified_rate() if currency == "ZWG" else (None, Decimal(1))
     snapshot = pricing_snapshot(policy, now)
+    distance_km = Decimal(route["distance_metres"]) / Decimal(1000)
+    duration_minutes = Decimal(route["duration_seconds"]) / Decimal(60)
     base = (
         policy.base_fare_usd
-        + Decimal(route["distance_metres"]) / 1000 * policy.per_km_usd
-        + Decimal(route["duration_seconds"]) / 60 * policy.per_minute_usd
+        + distance_km * policy.per_km_usd
+        + duration_minutes * policy.per_minute_usd
     )
-    raw = (
-        base * Decimal(snapshot["time_multiplier"]) + policy.booking_fee_usd
-    ) * factor
+    raw = (base * Decimal(snapshot["time_multiplier"]) + policy.booking_fee_usd) * factor
     increment = policy.rounding_zwg if currency == "ZWG" else policy.rounding_usd
     minimum = cents(policy.minimum_offer_usd * factor, ROUND_CEILING)
     maximum = cents(policy.maximum_offer_usd * factor, ROUND_FLOOR)
-    suggested = max(
-        minimum,
-        cents(
-            (raw / increment).quantize(Decimal(1), rounding=ROUND_HALF_UP) * increment
-        ),
+    rounded = cents(
+        (raw / increment).quantize(Decimal(1), rounding=ROUND_HALF_UP) * increment
     )
+    suggested = max(minimum, rounded)
     if suggested <= 0 or suggested > maximum or maximum > 999999999999:
         raise ValidationError(
             "This route exceeds the configured fare limits. Contact support or choose another route."
@@ -118,8 +117,7 @@ def quote_route(user, pickup, destination, category, currency):
         expires = min(
             expires,
             rate.valid_until,
-            rate.observed_at
-            + timedelta(seconds=settings.TRIVIA_EXCHANGE_MAX_AGE_SECONDS),
+            rate.observed_at + timedelta(seconds=settings.TRIVIA_EXCHANGE_MAX_AGE_SECONDS),
         )
     return FareQuote.objects.create(
         passenger=user,
@@ -133,6 +131,7 @@ def quote_route(user, pickup, destination, category, currency):
         routing_provider=route["provider"],
         pricing=policy,
         pricing_snapshot=snapshot,
+        pricing_version=str(policy.pk) + ":" + snapshot["updated_at"],
         minimum_cents=minimum,
         maximum_cents=maximum,
         suggested_cents=suggested,
@@ -150,10 +149,33 @@ def fingerprint(data):
 
 
 @transaction.atomic
+def _validate_route_quote(quote, data, now):
+    if quote.expires_at <= now:
+        raise QuoteExpired()
+    if not quote.pricing.enabled or not quote.pricing.zone.enabled:
+        raise QuoteExpired()
+    if quote.pricing_snapshot != pricing_snapshot(quote.pricing, now):
+        raise QuoteExpired()
+    for field in ["pickup", "destination", "category", "currency"]:
+        if getattr(quote, field) != data[field]:
+            raise ValidationError(
+                f"{field} does not match the route quote. Recalculate the fare."
+            )
+    if not all(
+        quote.pricing.zone.contains({"latitude": p[1], "longitude": p[0]})
+        for p in quote.route_geometry
+    ):
+        raise QuoteExpired()
+    if quote.exchange_rate_id and verified_rate()[0].pk != quote.exchange_rate_id:
+        raise QuoteExpired()
+
+
+@transaction.atomic
 def book(user, data):
-    # Lock the passenger row on MySQL: even different idempotency keys cannot
-    # race to create two active rides. No SQLite-only partial index is required.
     get_user_model().objects.select_for_update().get(pk=user.pk)
+    from rides.models import ActiveAssignment
+    if ActiveAssignment.objects.filter(driver__user=user).exists():
+        raise ValidationError('Finish your driver assignment before requesting a passenger ride.')
     key = data["idempotency_key"]
     digest = fingerprint(data)
     existing = (
@@ -169,7 +191,7 @@ def book(user, data):
         return existing, False
     if (
         Ride.objects.filter(passenger=user)
-        .exclude(status__in=["completed", "cancelled"])
+        .exclude(status__in=["completed", "cancelled", "expired"])
         .exists()
     ):
         raise ValidationError(
@@ -186,25 +208,7 @@ def book(user, data):
             "A valid route quote belonging to this passenger is required."
         )
     now = timezone.now()
-    if (
-        quote.expires_at <= now
-        or not quote.pricing.enabled
-        or not quote.pricing.zone.enabled
-        or quote.pricing_snapshot != pricing_snapshot(quote.pricing, now)
-    ):
-        raise QuoteExpired()
-    for field in ["pickup", "destination", "category", "currency"]:
-        if getattr(quote, field) != data[field]:
-            raise ValidationError(
-                f"{field} does not match the route quote. Recalculate the fare."
-            )
-    if not all(
-        quote.pricing.zone.contains({"latitude": p[1], "longitude": p[0]})
-        for p in quote.route_geometry
-    ):
-        raise QuoteExpired()
-    if quote.exchange_rate_id and verified_rate()[0].pk != quote.exchange_rate_id:
-        raise QuoteExpired()
+    _validate_route_quote(quote, data, now)
     amount = data["fare_cents"]
     if not quote.minimum_cents <= amount <= quote.maximum_cents:
         raise ValidationError(
@@ -226,7 +230,7 @@ def book(user, data):
     if not method.operational:
         raise ValidationError(
             {
-                "payment_method_id": "Payment integration unavailable. Select an enabled cash method."
+                "payment_method_id": "Choose an enabled direct-payment preference."
             }
         )
     if Ride.objects.filter(quote=quote).exists():
@@ -238,12 +242,38 @@ def book(user, data):
         idempotency_key=key,
         request_fingerprint=digest,
         offered_fare=Decimal(amount) / 100,
+        payment_preference={"cash-usd": "cash", "ecocash": "ecocash", "onemoney": "onemoney"}[method.pk],
+        expires_at=now + timedelta(seconds=settings.RIDE_REQUEST_TTL),
+        passenger_note=data.get("passenger_note", "")[:250],
+        pricing_version=quote.pricing_version,
     )
     Payment.objects.create(
         ride=ride,
         method=method,
         currency=quote.currency,
         amount=ride.offered_fare,
-        status="pending_cash",
+        status="unverified",
     )
+    from rides.services.lifecycle import emit
+    emit(ride, "ride.created")
+    from rides.tasks import dispatch_request
+    transaction.on_commit(lambda: dispatch_request.delay(str(ride.pk)), robust=True)
     return ride, True
+
+
+def validate_offer(ride, amount, *, offer_type="passenger"):
+    if amount <= 0:
+        raise ValidationError({"fare_cents": "Offer must be greater than zero."})
+    if amount < ride.quote.minimum_cents:
+        raise ValidationError(
+            {"fare_cents": f"Offer must be at least {ride.quote.minimum_cents} cents."}
+        )
+    if ride.quote.maximum_cents and amount > ride.quote.maximum_cents:
+        raise ValidationError(
+            {"fare_cents": f"Offer may not exceed {ride.quote.maximum_cents} cents."}
+        )
+    if not ride.quote.pricing_snapshot:
+        raise ValidationError({"fare_cents": "Quote is invalid or expired."})
+    if offer_type == "driver" and amount <= 0:
+        raise ValidationError({"fare_cents": "Driver offers must be positive."})
+    return True

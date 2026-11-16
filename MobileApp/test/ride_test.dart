@@ -1,9 +1,12 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/shared/models.dart';
 import 'package:rideflow_mobile/app/controller.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
   test('Fare parsing uses cents and rejects invalid input', () {
     expect(parseFare('12.3'), 1230);
     expect(parseFare('0.01'), 1);
@@ -21,9 +24,10 @@ void main() {
     await expectLater(repo.availability(true), throwsStateError);
     await repo.applyDriver({}, {});
     await expectLater(repo.availability(true), throwsStateError);
-    repo.approveSimulation();
+    await repo.applyDriver({}, {});
+    await repo.approveSimulation();
     await repo.availability(true);
-    expect(await repo.requests(), isNotEmpty);
+    expect(await repo.requests(), isEmpty);
   });
   test(
     'Ride lifecycle prevents duplicate assignment and fixes agreed fare',
@@ -71,31 +75,36 @@ void main() {
     );
     expect(results.where((v) => v).length, 1);
   });
-  test(
-    'Switching modes is blocked during active trip and logout clears state',
-    () async {
-      final app = AppController(DemoRepository());
-      await app.verify('+263771234567', '123456');
-      await app.updateProfile('Test', 'User', '');
-      await app.book(demoPlaces[0], demoPlaces[1], 'Standard', 500);
-      expect(await app.switchMode(), isFalse);
-      expect(app.driverMode, isFalse);
-      await app.transition(RideStatus.cancelled);
-      expect(await app.switchMode(), isTrue);
-      await app.logout();
-      expect(app.session, isNull);
-      expect(app.history, isEmpty);
-      app.dispose();
-    },
-  );
+  test('Demo searching request can be inspected in driver mode and logout clears state', () async {
+    final app = AppController(DemoRepository());
+    await app.verify('+263771234567', '123456');
+    await app.updateProfile('Test', 'User', '');
+    await app.book(demoPlaces[0], demoPlaces[1], 'Standard', 500);
+    expect(await app.switchMode(), isTrue);
+    expect(app.driverMode, isTrue);
+    await app.transition(RideStatus.cancelled);
+    expect(await app.switchMode(), isTrue);
+    await app.logout();
+    expect(app.session, isNull);
+    expect(app.history, isEmpty);
+    app.dispose();
+  });
   test(
     'Driver simulation preserves assigned fare and active trip when offline',
     () async {
       final repo = DemoRepository();
       await repo.verifyOtp('+263771234567', '123456');
       await repo.profile('Driver', 'Test', '');
-      repo.approveSimulation();
+      await repo.applyDriver({}, {});
+      await repo.approveSimulation();
       await repo.availability(true);
+      await repo.request(
+        demoPlaces[0],
+        demoPlaces[1],
+        'Standard',
+        500,
+        paymentMethod: 'ecocash',
+      );
       final request = (await repo.requests()).first;
       await repo.counteroffer(request.id, 750);
       final ride = await repo.simulatePassengerSelection(request, 750);

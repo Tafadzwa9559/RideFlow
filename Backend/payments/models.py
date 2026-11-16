@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
-CURRENCIES = [("USD", "United States Dollar"), ("ZWG", "Zimbabwe Gold (ZiG)")]
+CURRENCIES = [("USD", "United States Dollar")]
 
 
 class PaymentMethod(models.Model):
@@ -28,7 +28,7 @@ class PaymentMethod(models.Model):
     def operational(self):
         # No authorized gateway is integrated in this project yet. Merely
         # enabling an admin row must never turn on a nonexistent payment flow.
-        return self.enabled and self.kind == "cash"
+        return self.enabled and self.code in {"cash-usd", "ecocash", "onemoney"} and "USD" in self.supported_currencies
 
     def __str__(self):
         return self.name
@@ -103,9 +103,10 @@ class Payment(models.Model):
     )
     status = models.CharField(
         max_length=32,
-        default="pending_cash",
+        default="unverified",
         choices=[
-            ("pending_cash", "Cash due to driver"),
+            ("unverified", "Direct payment — receipt unverified"),
+            ("pending_cash", "Historical cash due to driver"),
             ("awaiting_confirmation", "Awaiting provider confirmation"),
             ("paid", "Paid"),
             ("failed", "Failed"),

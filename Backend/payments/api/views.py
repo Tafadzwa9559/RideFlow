@@ -16,12 +16,10 @@ class MethodsView(APIView):
                         "currencies": m.supported_currencies,
                         "enabled": m.operational,
                         "description": (
-                            "Pay the driver directly after your trip. Cash is not marked paid automatically."
-                            if m.kind == "cash"
-                            else "Payment integration unavailable"
+                            "Pay the driver directly. Trivia does not verify receipt of funds."
                         ),
                     }
-                    for m in PaymentMethod.objects.all().order_by("kind", "code")
+                    for m in PaymentMethod.objects.filter(code__in=["cash-usd", "ecocash", "onemoney"]).order_by("kind", "code")
                 ]
             }
         )

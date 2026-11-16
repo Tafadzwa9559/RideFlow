@@ -1,31 +1,110 @@
+from django.db import transaction
+from django.db.models import F
 from rest_framework import serializers
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
+from accounts.models import PhoneIdentity
+from accounts.services.authentication import normalize_phone, request_code, verify_code
+
+
+class PhoneSerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=40)
+
+    def validate_phone(self, value):
+        return normalize_phone(value)
+
+
+class CodeSerializer(PhoneSerializer):
+    code = serializers.RegexField(r'^\d{6}$')
+
+
+class OTPRequestView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_scope = 'otp_request'
+
+    def post(self, request):
+        data = PhoneSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        request_code(data.validated_data['phone'])
+        return Response({'detail': 'Verification code requested.'}, status=202)
+
+
+class OTPVerifyView(OTPRequestView):
+    throttle_scope = 'otp_verify'
+
+    def post(self, request):
+        data = CodeSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        user, tokens = verify_code(**data.validated_data)
+        return Response({**tokens, 'user': profile(user)})
+
+
+def profile(user):
+    from drivers.models import DriverApplication
+    status = DriverApplication.objects.filter(user=user).values_list('status', flat=True).first()
+    return {'id': user.pk, 'first_name': user.first_name, 'last_name': user.last_name,
+            'email': user.email, 'phone': getattr(getattr(user, 'phone_identity', None), 'phone', user.username),
+            'driver_status': status or 'notRegistered'}
 
 
 class ProfileSerializer(serializers.Serializer):
-    first_name = serializers.CharField(max_length=150)
-    last_name = serializers.CharField(max_length=150)
+    first_name = serializers.CharField(max_length=150, required=False)
+    last_name = serializers.CharField(max_length=150, required=False)
     email = serializers.EmailField(required=False, allow_blank=True)
 
 
 class MeView(APIView):
     def get(self, request):
-        user = request.user
-        return Response(
-            {
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "phone": user.username,
-                "driver_status": "draft",
-            }
-        )
+        return Response(profile(request.user))
 
-    def post(self, request):
-        serializer = ProfileSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        for key, value in serializer.validated_data.items():
+    def patch(self, request):
+        data = ProfileSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        for key, value in data.validated_data.items():
             setattr(request.user, key, value)
-        request.user.save(update_fields=list(serializer.validated_data))
+        if data.validated_data:
+            request.user.save(update_fields=list(data.validated_data))
         return self.get(request)
+
+    post = patch
+
+
+class LogoutView(APIView):
+    @transaction.atomic
+    def post(self, request):
+        # Revoke all access/refresh sessions for this phone account immediately.
+        identity = PhoneIdentity.objects.select_for_update().filter(user=request.user).first()
+        if identity:
+            identity.session_version = F('session_version') + 1
+            identity.save(update_fields=['session_version'])
+        from notifications.models import DeviceToken
+        DeviceToken.objects.filter(user=request.user).delete()
+        raw = request.data.get('refresh')
+        if raw:
+            try:
+                token = RefreshToken(raw)
+                if str(token['user_id']) != str(request.user.pk):
+                    raise InvalidToken('Token does not belong to this account.')
+                token.blacklist()
+            except TokenError:
+                raise InvalidToken('Invalid refresh token.')
+        return Response(status=204)
+
+
+class RefreshView(TokenRefreshView):
+    throttle_scope = 'otp_verify'
+
+    def post(self, request, *args, **kwargs):
+        try:
+            token = RefreshToken(request.data.get('refresh', ''))
+            identity = PhoneIdentity.objects.select_related('user').filter(user_id=token['user_id']).first()
+            if identity and (not identity.user.is_active or token.get('session_version') != identity.session_version):
+                raise InvalidToken('Session revoked.')
+        except TokenError as exc:
+            raise InvalidToken(str(exc))
+        return super().post(request, *args, **kwargs)

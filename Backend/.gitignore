@@ -4,3 +4,8 @@ __pycache__/
 .env
 db.sqlite3
 *.sqlite3
+private_media/
+staticfiles/
+.mongo-test-data/
+.mongo-test.log
+migration_exports/

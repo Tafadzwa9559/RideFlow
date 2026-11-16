@@ -11,6 +11,7 @@ enum RideStatus {
 }
 
 enum DriverStatus {
+  notRegistered,
   draft,
   submitted,
   underReview,
@@ -182,7 +183,7 @@ class Session {
     required this.firstName,
     required this.lastName,
     required this.phone,
-    this.driverStatus = DriverStatus.draft,
+    this.driverStatus = DriverStatus.notRegistered,
   });
   final String firstName, lastName, phone;
   final DriverStatus driverStatus;
@@ -313,3 +314,36 @@ String paymentStatusLabel(String status) => switch (status) {
   'cancelled' => 'Cancelled',
   _ => status,
 };
+
+/// Informational preferences: no payment is initiated by Trivia.
+const directPaymentMethods = [
+  BookingPaymentMethod(
+    id: 'ecocash',
+    name: 'EcoCash',
+    kind: 'mobile_money',
+    currencies: ['USD'],
+    enabled: true,
+    description: 'Mobile money — pay the driver directly.',
+  ),
+  BookingPaymentMethod(
+    id: 'onemoney',
+    name: 'OneMoney',
+    kind: 'mobile_money',
+    currencies: ['USD'],
+    enabled: true,
+    description: 'Mobile money — pay the driver directly.',
+  ),
+  BookingPaymentMethod(
+    id: 'cash-usd',
+    name: 'Cash',
+    kind: 'cash',
+    currencies: ['USD'],
+    enabled: true,
+    description: 'Pay the driver directly using cash.',
+  ),
+];
+
+String directPaymentLabel(String? id, String? name) =>
+    directPaymentMethods.where((m) => m.id == id).firstOrNull?.name ??
+    name ??
+    'Not specified';

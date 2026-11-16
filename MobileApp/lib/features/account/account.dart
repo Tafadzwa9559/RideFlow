@@ -65,11 +65,26 @@ class AccountPage extends StatelessWidget {
           (
             Icons.payments_outlined,
             'Payment methods',
-            ResourcePage(
-              app: app,
-              title: 'Payment methods',
-              resource: 'payments/methods',
-              empty: 'No payment methods are enabled.',
+            Scaffold(
+              appBar: AppBar(title: const Text('Payment methods')),
+              body: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const Text(
+                    'Choose during booking. Pay your driver directly in USD.',
+                  ),
+                  for (final method in directPaymentMethods)
+                    ListTile(
+                      leading: Icon(
+                        method.kind == 'cash'
+                            ? Icons.payments_outlined
+                            : Icons.phone_android_outlined,
+                      ),
+                      title: Text(method.name),
+                      onTap: () => app.selectPayment(method.id, method.name),
+                    ),
+                ],
+              ),
             ),
           ),
           (
@@ -275,10 +290,13 @@ class ReceiptPage extends StatelessWidget {
           money(ride.cents, currency: ride.currency),
           style: Theme.of(context).textTheme.headlineLarge,
         ),
-        Text('Payment status: ${paymentStatusLabel(ride.paymentStatus)}'),
+        const Text(
+          'Please pay your driver directly using your selected payment method.',
+        ),
         const SizedBox(height: 12),
-        if (ride.paymentMethodName != null)
-          Text('Payment method: ${ride.paymentMethodName}'),
+        Text(
+          'Payment method: ${directPaymentLabel(ride.paymentMethod, ride.paymentMethodName)}',
+        ),
         Text('Trip reference: ${ride.id}'),
         if (ride.driver != null)
           Text(
@@ -286,7 +304,7 @@ class ReceiptPage extends StatelessWidget {
           ),
         const SizedBox(height: 24),
         const Text(
-          'This trip summary is not a payment confirmation. Tax receipts require verified backend payment records.',
+          'This trip summary is not a payment confirmation. Trivia does not collect or verify payment.',
         ),
         if (ride.status == RideStatus.completed) ...[
           const SizedBox(height: 20),
