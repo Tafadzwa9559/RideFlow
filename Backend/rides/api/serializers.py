@@ -83,7 +83,7 @@ class RideSerializer(serializers.ModelSerializer):
     suggested_fare_cents = serializers.IntegerField(source="quote.suggested_cents")
     fare_cents = serializers.SerializerMethodField()
     payment_method_id = serializers.CharField(source="payment.method_id")
-    assigned_driver_id = serializers.IntegerField(read_only=True, allow_null=True)
+    assigned_driver_id = serializers.CharField(read_only=True, allow_null=True)
     sequence = serializers.IntegerField(read_only=True)
     payment_status = serializers.CharField(source="payment.status")
     payment_method_name = serializers.CharField(source="payment.method.name")

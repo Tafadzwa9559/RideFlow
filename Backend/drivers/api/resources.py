@@ -1,6 +1,7 @@
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.conf import settings
-from django.db import transaction, IntegrityError
+from django.db import IntegrityError
+from core import transactions as transaction
 from django.db.models import Avg, Count, Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404

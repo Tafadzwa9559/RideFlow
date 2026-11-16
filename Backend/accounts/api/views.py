@@ -1,4 +1,4 @@
-from django.db import transaction
+from core import transactions as transaction
 from django.db.models import F
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
@@ -47,7 +47,7 @@ class OTPVerifyView(OTPRequestView):
 def profile(user):
     from drivers.models import DriverApplication
     status = DriverApplication.objects.filter(user=user).values_list('status', flat=True).first()
-    return {'id': user.pk, 'first_name': user.first_name, 'last_name': user.last_name,
+    return {'id': str(user.pk), 'first_name': user.first_name, 'last_name': user.last_name,
             'email': user.email, 'phone': getattr(getattr(user, 'phone_identity', None), 'phone', user.username),
             'driver_status': status or 'notRegistered'}
 
@@ -78,7 +78,8 @@ class LogoutView(APIView):
     @transaction.atomic
     def post(self, request):
         # Revoke all access/refresh sessions for this phone account immediately.
-        identity = PhoneIdentity.objects.select_for_update().filter(user=request.user).first()
+        transaction.guard(__import__('django.contrib.auth', fromlist=['get_user_model']).get_user_model(), request.user.pk)
+        identity = PhoneIdentity.objects.filter(user=request.user).first()
         if identity:
             identity.session_version = F('session_version') + 1
             identity.save(update_fields=['session_version'])
@@ -102,6 +103,9 @@ class RefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         try:
             token = RefreshToken(request.data.get('refresh', ''))
+            from bson import ObjectId
+            if not ObjectId.is_valid(str(token.get('user_id', ''))):
+                raise InvalidToken('Sign in again after the database migration.')
             identity = PhoneIdentity.objects.select_related('user').filter(user_id=token['user_id']).first()
             if identity and (not identity.user.is_active or token.get('session_version') != identity.session_version):
                 raise InvalidToken('Session revoked.')

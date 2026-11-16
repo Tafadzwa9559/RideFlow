@@ -9,3 +9,5 @@ staticfiles/
 .mongo-test-data/
 .mongo-test.log
 migration_exports/
+.mongo-*.log
+.mongo-local/

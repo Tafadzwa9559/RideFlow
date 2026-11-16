@@ -10,8 +10,10 @@ def health(request):
 def ready(request):
     try:
         from redis import Redis
-        with connection.cursor() as cursor:
-            cursor.execute('SELECT 1')
+        connection.database.command('ping')
+        hello = connection.database.client.admin.command('hello')
+        if not hello.get('setName') and hello.get('msg') != 'isdbgrid':
+            raise RuntimeError('Transactions unavailable')
         Redis.from_url(settings.REDIS_URL, socket_connect_timeout=1, socket_timeout=1).ping()
         from rideflow.celery import app
         if not app.control.ping(timeout=1):

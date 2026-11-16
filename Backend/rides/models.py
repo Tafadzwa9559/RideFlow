@@ -1,3 +1,4 @@
+from core.identifiers import StorageJSONEncoder
 import uuid
 from decimal import Decimal
 from django.conf import settings
@@ -146,16 +147,16 @@ class TimeAdjustment(models.Model):
 class FareQuote(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     passenger = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
-    pickup = models.JSONField()
-    destination = models.JSONField()
+    pickup = models.JSONField(encoder=StorageJSONEncoder, )
+    destination = models.JSONField(encoder=StorageJSONEncoder, )
     category = models.CharField(max_length=30)
     currency = models.CharField(max_length=3, choices=CURRENCIES)
     distance_metres = models.PositiveIntegerField()
     duration_seconds = models.PositiveIntegerField()
-    route_geometry = models.JSONField()
+    route_geometry = models.JSONField(encoder=StorageJSONEncoder, )
     routing_provider = models.CharField(max_length=100)
     pricing = models.ForeignKey(PricingConfiguration, on_delete=models.PROTECT)
-    pricing_snapshot = models.JSONField()
+    pricing_snapshot = models.JSONField(encoder=StorageJSONEncoder, )
     pricing_version = models.CharField(max_length=100, blank=True, default="")
     minimum_cents = models.PositiveBigIntegerField()
     maximum_cents = models.PositiveBigIntegerField()
@@ -276,7 +277,7 @@ class RideEvent(models.Model):
     ride = models.ForeignKey(Ride, on_delete=models.PROTECT, related_name='events')
     sequence = models.PositiveIntegerField()
     event_type = models.CharField(max_length=80)
-    payload = models.JSONField(default=dict)
+    payload = models.JSONField(encoder=StorageJSONEncoder, default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -315,7 +316,7 @@ class SupportTicket(models.Model):
 class SavedPlace(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     label = models.CharField(max_length=80)
-    place = models.JSONField()
+    place = models.JSONField(encoder=StorageJSONEncoder, )
 
 
 class EmergencyContact(models.Model):

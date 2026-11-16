@@ -16,19 +16,11 @@ def dispatch_request(ride_id):
     ride = Ride.objects.select_related('quote__pricing__zone').get(pk=ride_id)
     if ride.status != 'searching' or ride.expires_at <= timezone.now():
         return
-    cutoff = timezone.now() - timedelta(seconds=settings.DRIVER_LOCATION_TTL)
-    point = ride.quote.pickup
-    delta = settings.DRIVER_MATCH_RADIUS_KM / 111
-    import math
-    longitude_delta = delta / max(.01, math.cos(math.radians(point['latitude'])))
-    candidates = DriverApplication.objects.select_related('user', 'active_vehicle').filter(
-        status='approved', availability='online', last_seen__gte=cutoff, active_assignment__isnull=True,
-        latitude__range=(point['latitude']-delta, point['latitude']+delta),
-        longitude__range=(point['longitude']-longitude_delta, point['longitude']+longitude_delta))
-    for app in candidates.iterator(chunk_size=200):
+    from drivers.services.matching import nearby_drivers
+    for app in nearby_drivers(ride):
         try:
             eligible(app, online=True)
-            if nearby(app, ride):
+            if not hasattr(app, 'active_assignment') and nearby(app, ride):
                 # Stable dispatch identifier makes retries safe; no private notes in event.
                 import uuid
                 event_id = str(uuid.uuid5(ride.pk, f'dispatch:{app.pk}'))
@@ -38,11 +30,13 @@ def dispatch_request(ride_id):
 
 
 @shared_task
+@transaction.retry
 def maintenance():
     now = timezone.now()
     for pk in Ride.objects.filter(status='searching', expires_at__lte=now).values_list('pk', flat=True)[:1000]:
         with transaction.atomic():
-            ride = Ride.objects.all().get(pk=pk)
+            transaction.guard(Ride, pk)
+            ride = Ride.objects.get(pk=pk)
             if ride.status != 'searching':
                 continue
             ride.status = 'expired'
@@ -54,7 +48,8 @@ def maintenance():
     for pk in RideOffer.objects.filter(status='pending', expires_at__lte=now).values_list('pk', flat=True)[:1000]:
         with transaction.atomic():
             initial = RideOffer.objects.get(pk=pk)
-            ride = Ride.objects.all().get(pk=initial.ride_id)
+            transaction.guard(Ride, initial.ride_id)
+            ride = Ride.objects.get(pk=initial.ride_id)
             offer = RideOffer.objects.all().get(pk=pk)
             if offer.status == 'pending' and offer.expires_at <= now:
                 offer.status = 'expired'

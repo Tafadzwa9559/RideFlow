@@ -59,7 +59,7 @@ paths:
                       summary: example
                       request_id: example
                       created_at: '2026-11-16T08:00:00Z'
-                      actor: null
+                      actor: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -218,7 +218,7 @@ paths:
                     summary: example
                     request_id: example
                     created_at: '2026-11-16T08:00:00Z'
-                    actor: null
+                    actor: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -671,7 +671,7 @@ paths:
                       summary: example
                       request_id: example
                       created_at: '2026-11-16T08:00:00Z'
-                      actor: null
+                      actor: '000000000000000000000001'
                     count: 1
                     next: null
                     previous: null
@@ -1017,12 +1017,12 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       category: support
                       message: example
                       status: open
                       created_at: '2026-11-16T08:00:00Z'
-                      user: 1
+                      user: '000000000000000000000001'
                       ride: null
           description: ''
         '400':
@@ -1156,7 +1156,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this support ticket.
         required: true
       tags:
@@ -1175,12 +1176,12 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     category: support
                     message: example
                     status: open
                     created_at: '2026-11-16T08:00:00Z'
-                    user: 1
+                    user: '000000000000000000000001'
                     ride: null
           description: ''
         '400':
@@ -1314,7 +1315,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this support ticket.
         required: true
       tags:
@@ -1360,12 +1362,12 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     category: support
                     message: example
                     status: open
                     created_at: '2026-11-16T08:00:00Z'
-                    user: 1
+                    user: '000000000000000000000001'
                     ride: null
           description: ''
         '400':
@@ -2447,7 +2449,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       status: draft
                       legal_name: example
                       licence_number: example
@@ -2597,7 +2599,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this driver application.
         required: true
       tags:
@@ -2616,7 +2619,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -2766,7 +2769,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this driver application.
         required: true
       tags:
@@ -2785,7 +2789,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -2935,7 +2939,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this driver application.
         required: true
       tags:
@@ -2981,7 +2986,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -3131,7 +3136,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this driver application.
         required: true
       tags:
@@ -3177,7 +3183,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -3398,7 +3404,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       status: draft
                       legal_name: example
                       licence_number: example
@@ -3548,7 +3554,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this driver application.
         required: true
       tags:
@@ -3567,7 +3574,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -3717,7 +3724,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this driver application.
         required: true
       tags:
@@ -3736,7 +3744,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -3886,7 +3894,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -3935,7 +3944,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -4085,7 +4094,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this driver application.
         required: true
       tags:
@@ -4131,7 +4141,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -4316,7 +4326,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       status: pending
                       expires_at: null
                       pickup_minutes: null
@@ -4326,8 +4336,8 @@ paths:
                       accepted: false
                       created_at: '2026-11-16T08:00:00Z'
                       updated_at: '2026-11-16T08:00:00Z'
-                      driver: null
-                      vehicle: null
+                      driver: '000000000000000000000001'
+                      vehicle: '000000000000000000000001'
                       ride: 00000000-0000-4000-8000-000000000001
           description: ''
         '400':
@@ -4461,7 +4471,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this ride offer.
         required: true
       tags:
@@ -4480,7 +4491,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: pending
                     expires_at: null
                     pickup_minutes: null
@@ -4490,8 +4501,8 @@ paths:
                     accepted: false
                     created_at: '2026-11-16T08:00:00Z'
                     updated_at: '2026-11-16T08:00:00Z'
-                    driver: null
-                    vehicle: null
+                    driver: '000000000000000000000001'
+                    vehicle: '000000000000000000000001'
                     ride: 00000000-0000-4000-8000-000000000001
           description: ''
         '400':
@@ -4664,7 +4675,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       first_name: Test
                       last_name: Passenger
                       is_active: false
@@ -4801,7 +4812,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this user.
         required: true
       tags:
@@ -4820,7 +4832,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     first_name: Test
                     last_name: Passenger
                     is_active: false
@@ -4956,7 +4968,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this user.
         required: true
       tags:
@@ -5010,7 +5023,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     first_name: Test
                     last_name: Passenger
                     is_active: false
@@ -5147,7 +5160,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this user.
         required: true
       tags:
@@ -5166,7 +5180,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     first_name: Test
                     last_name: Passenger
                     is_active: false
@@ -5303,7 +5317,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this user.
         required: true
       tags:
@@ -5349,7 +5364,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     first_name: Test
                     last_name: Passenger
                     is_active: false
@@ -5521,7 +5536,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       category: Standard
                       enabled: false
                       base_fare_usd: '8.00'
@@ -5533,7 +5548,7 @@ paths:
                       rounding_usd: '8.00'
                       priority: 0
                       updated_at: '2026-11-16T08:00:00Z'
-                      zone: 1
+                      zone: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -5682,7 +5697,7 @@ paths:
                   maximum_offer_usd: '8.00'
                   rounding_usd: '8.00'
                   priority: 0
-                  zone: 1
+                  zone: '000000000000000000000001'
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PriceRequest'
@@ -5700,7 +5715,7 @@ paths:
                   maximum_offer_usd: '8.00'
                   rounding_usd: '8.00'
                   priority: 0
-                  zone: 1
+                  zone: '000000000000000000000001'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PriceRequest'
@@ -5718,7 +5733,7 @@ paths:
                   maximum_offer_usd: '8.00'
                   rounding_usd: '8.00'
                   priority: 0
-                  zone: 1
+                  zone: '000000000000000000000001'
         required: true
       security:
       - jwtAuth: []
@@ -5734,7 +5749,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     category: Standard
                     enabled: false
                     base_fare_usd: '8.00'
@@ -5746,7 +5761,7 @@ paths:
                     rounding_usd: '8.00'
                     priority: 0
                     updated_at: '2026-11-16T08:00:00Z'
-                    zone: 1
+                    zone: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -5879,7 +5894,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this pricing configuration.
         required: true
       tags:
@@ -5898,7 +5914,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     category: Standard
                     enabled: false
                     base_fare_usd: '8.00'
@@ -5910,7 +5926,7 @@ paths:
                     rounding_usd: '8.00'
                     priority: 0
                     updated_at: '2026-11-16T08:00:00Z'
-                    zone: 1
+                    zone: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -6042,7 +6058,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this pricing configuration.
         required: true
       tags:
@@ -6066,7 +6083,7 @@ paths:
                   maximum_offer_usd: '8.00'
                   rounding_usd: '8.00'
                   priority: 0
-                  zone: 1
+                  zone: '000000000000000000000001'
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedPriceRequest'
@@ -6084,7 +6101,7 @@ paths:
                   maximum_offer_usd: '8.00'
                   rounding_usd: '8.00'
                   priority: 0
-                  zone: 1
+                  zone: '000000000000000000000001'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedPriceRequest'
@@ -6102,7 +6119,7 @@ paths:
                   maximum_offer_usd: '8.00'
                   rounding_usd: '8.00'
                   priority: 0
-                  zone: 1
+                  zone: '000000000000000000000001'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -6117,7 +6134,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     category: Standard
                     enabled: false
                     base_fare_usd: '8.00'
@@ -6129,7 +6146,7 @@ paths:
                     rounding_usd: '8.00'
                     priority: 0
                     updated_at: '2026-11-16T08:00:00Z'
-                    zone: 1
+                    zone: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -6261,7 +6278,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this pricing configuration.
         required: true
       tags:
@@ -6416,7 +6434,7 @@ paths:
                     data
                   value:
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       status: draft
                       legal_name: example
                       licence_number: example
@@ -6760,7 +6778,7 @@ paths:
                     data
                   value:
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       first_name: Test
                       last_name: Passenger
                       is_active: false
@@ -7078,7 +7096,8 @@ paths:
       - in: query
         name: assigned_driver
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
       - in: query
         name: category
         schema:
@@ -7108,7 +7127,8 @@ paths:
       - in: query
         name: passenger
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
       - name: search
         required: false
         in: query
@@ -7118,7 +7138,7 @@ paths:
       - in: query
         name: service_area
         schema:
-          type: number
+          type: string
       - in: query
         name: status
         schema:
@@ -7740,7 +7760,7 @@ paths:
                       event_type: example
                       payload:
                         status: searching
-                        offer_id: 1
+                        offer_id: '000000000000000000000001'
                         ride_id: 00000000-0000-4000-8000-000000000001
                         latitude: '-17.829200'
                         longitude: '31.052200'
@@ -7917,7 +7937,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       name: Harare CBD
                       enabled: false
                       south: '8.00'
@@ -8109,7 +8129,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     name: Harare CBD
                     enabled: false
                     south: '8.00'
@@ -8248,7 +8268,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this pricing zone.
         required: true
       tags:
@@ -8267,7 +8288,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     name: Harare CBD
                     enabled: false
                     south: '8.00'
@@ -8405,7 +8426,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this pricing zone.
         required: true
       tags:
@@ -8465,7 +8487,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     name: Harare CBD
                     enabled: false
                     south: '8.00'
@@ -8603,7 +8625,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this pricing zone.
         required: true
       tags:
@@ -8745,7 +8768,8 @@ paths:
       - in: query
         name: application
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
       - in: query
         name: approved
         schema:
@@ -8804,7 +8828,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       archived: false
                       make: example
                       model: example
@@ -8814,7 +8838,7 @@ paths:
                       capacity: 1
                       category: Standard
                       approved: false
-                      application: 1
+                      application: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -8947,7 +8971,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this vehicle.
         required: true
       tags:
@@ -8966,7 +8991,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     archived: false
                     make: example
                     model: example
@@ -8976,7 +9001,7 @@ paths:
                     capacity: 1
                     category: Standard
                     approved: false
-                    application: 1
+                    application: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -9109,7 +9134,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this vehicle.
         required: true
       tags:
@@ -9128,7 +9154,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     archived: false
                     make: example
                     model: example
@@ -9138,7 +9164,7 @@ paths:
                     capacity: 1
                     category: Standard
                     approved: false
-                    application: 1
+                    application: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -9271,7 +9297,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this vehicle.
         required: true
       tags:
@@ -9317,7 +9344,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     archived: false
                     make: example
                     model: example
@@ -9327,7 +9354,7 @@ paths:
                     capacity: 1
                     category: Standard
                     approved: false
-                    application: 1
+                    application: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -9797,7 +9824,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     first_name: Test
                     last_name: Passenger
                     email: example
@@ -10324,7 +10351,7 @@ paths:
                     access: <access-token-from-authorized-OTP-verification>
                     refresh: <refresh-token-from-authorized-OTP-verification>
                     user:
-                      id: 1
+                      id: '000000000000000000000001'
                       first_name: Test
                       last_name: Passenger
                       email: example
@@ -10782,7 +10809,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -10966,7 +10994,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     platform: android
           description: ''
         '400':
@@ -11100,7 +11128,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       - name: ordering
@@ -11141,7 +11170,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       score: 1
                       comment: example
                       created_at: '2026-11-16T08:00:00Z'
@@ -11351,7 +11380,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -11513,7 +11542,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -11738,7 +11767,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -11962,7 +11991,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -12125,7 +12154,7 @@ paths:
                     data
                   value:
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       requirement: configured-licence
                       content_type: example
                       expires_on: null
@@ -12300,7 +12329,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     requirement: configured-licence
           description: ''
         '400':
@@ -12434,7 +12463,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -12594,7 +12624,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -12919,7 +12950,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -13233,7 +13264,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -13399,7 +13430,7 @@ paths:
                     status: searching
                     last_seen: null
                     location_fresh: false
-                    active_vehicle_id: null
+                    active_vehicle_id: '000000000000000000000001'
           description: ''
         '400':
           content:
@@ -14692,7 +14723,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -14915,7 +14946,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -15102,7 +15133,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       score: 1
                       comment: example
                       created_at: '2026-11-16T08:00:00Z'
@@ -15766,7 +15797,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -16136,7 +16167,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       make: example
                       model: example
                       year: 1950
@@ -16334,7 +16365,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     make: example
                     model: example
                     year: 1950
@@ -16476,7 +16507,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this vehicle.
         required: true
       tags:
@@ -16495,7 +16527,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     make: example
                     model: example
                     year: 1950
@@ -16636,7 +16668,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this vehicle.
         required: true
       tags:
@@ -16699,7 +16732,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     make: example
                     model: example
                     year: 1950
@@ -16840,7 +16873,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this vehicle.
         required: true
       tags:
@@ -16982,7 +17016,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this vehicle.
         required: true
       tags:
@@ -17001,7 +17036,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     make: example
                     model: example
                     year: 1950
@@ -17143,7 +17178,8 @@ paths:
       - in: path
         name: vehicle_id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -17163,7 +17199,7 @@ paths:
                     data
                   value:
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       requirement: configured-licence
                       content_type: example
                       expires_on: null
@@ -17303,7 +17339,8 @@ paths:
       - in: path
         name: vehicle_id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -17345,7 +17382,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     requirement: configured-licence
                     content_type: example
                     expires_on: null
@@ -17483,13 +17520,15 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       - in: path
         name: vehicle_id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -17649,13 +17688,15 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       - in: path
         name: vehicle_id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -17811,7 +17852,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     status: draft
                     legal_name: example
                     licence_number: example
@@ -18042,9 +18083,9 @@ paths:
                     minimum_fare_cents: 1
                     maximum_fare_cents: 1
                     pricing_configuration:
-                      id: 1
+                      id: '000000000000000000000001'
                       zone: example
-                      zone_id: 1
+                      zone_id: '000000000000000000000001'
                       updated_at: '2026-11-16T08:00:00Z'
                       category: Standard
                       time_multiplier: '8.00'
@@ -18555,7 +18596,7 @@ paths:
                       sequence: 1
                       payload:
                         status: searching
-                        offer_id: 1
+                        offer_id: '000000000000000000000001'
                         ride_id: 00000000-0000-4000-8000-000000000001
                         latitude: '-17.829200'
                         longitude: '31.052200'
@@ -19140,7 +19181,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -19305,7 +19347,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -22133,7 +22176,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     score: 1
           description: ''
         '200':
@@ -22146,7 +22189,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     score: 1
           description: ''
         '400':
@@ -22489,7 +22532,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     ride_id: null
                     category: support
                     message: example
@@ -22642,7 +22685,7 @@ paths:
               illustrative:
                 summary: Illustrative development input; replace IDs and values
                 value:
-                  offer_id: 1
+                  offer_id: '000000000000000000000001'
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/SelectionRequest'
@@ -22650,7 +22693,7 @@ paths:
               illustrative:
                 summary: Illustrative development input; replace IDs and values
                 value:
-                  offer_id: 1
+                  offer_id: '000000000000000000000001'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/SelectionRequest'
@@ -22658,7 +22701,7 @@ paths:
               illustrative:
                 summary: Illustrative development input; replace IDs and values
                 value:
-                  offer_id: 1
+                  offer_id: '000000000000000000000001'
         required: true
       security:
       - jwtAuth: []
@@ -22851,7 +22894,7 @@ paths:
               illustrative:
                 summary: Illustrative development input; replace IDs and values
                 value:
-                  recipient_id: 1
+                  recipient_id: '000000000000000000000001'
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ShareRequestRequest'
@@ -22859,7 +22902,7 @@ paths:
               illustrative:
                 summary: Illustrative development input; replace IDs and values
                 value:
-                  recipient_id: 1
+                  recipient_id: '000000000000000000000001'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/ShareRequestRequest'
@@ -22867,7 +22910,7 @@ paths:
               illustrative:
                 summary: Illustrative development input; replace IDs and values
                 value:
-                  recipient_id: 1
+                  recipient_id: '000000000000000000000001'
         required: true
       security:
       - jwtAuth: []
@@ -22883,7 +22926,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     expires_at: '2026-11-16T08:00:00Z'
           description: ''
         '400':
@@ -23413,7 +23456,7 @@ paths:
                       event_type: example
                       payload:
                         status: searching
-                        offer_id: 1
+                        offer_id: '000000000000000000000001'
                         ride_id: 00000000-0000-4000-8000-000000000001
                         latitude: '-17.829200'
                         longitude: '31.052200'
@@ -24170,9 +24213,9 @@ paths:
                     minimum_fare_cents: 1
                     maximum_fare_cents: 1
                     pricing_configuration:
-                      id: 1
+                      id: '000000000000000000000001'
                       zone: example
-                      zone_id: 1
+                      zone_id: '000000000000000000000001'
                       updated_at: '2026-11-16T08:00:00Z'
                       category: Standard
                       time_multiplier: '8.00'
@@ -24320,7 +24363,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -24484,7 +24528,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -24639,7 +24684,7 @@ paths:
                     data
                   value:
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       name: Harare CBD
                       south: '8.00'
                       north: '8.00'
@@ -24777,7 +24822,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -24796,7 +24842,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     name: Harare CBD
                     south: '8.00'
                     north: '8.00'
@@ -24991,7 +25037,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       ride_id: null
                       category: support
                       message: example
@@ -25173,7 +25219,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     ride_id: null
                     category: support
                     message: example
@@ -25311,7 +25357,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         required: true
         description: Identifier of the resource; ownership and role restrictions apply.
       tags:
@@ -25330,7 +25377,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     ride_id: null
                     category: support
                     message: example
@@ -25482,7 +25529,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     first_name: Test
                     last_name: Passenger
                     email: example
@@ -25664,7 +25711,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     first_name: Test
                     last_name: Passenger
                     email: example
@@ -26269,7 +26316,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       name: Harare CBD
                       phone: '+263771234567'
           description: ''
@@ -26445,7 +26492,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     name: Harare CBD
                     phone: '+263771234567'
           description: ''
@@ -26580,7 +26627,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this emergency contact.
         required: true
       tags:
@@ -26599,7 +26647,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     name: Harare CBD
                     phone: '+263771234567'
           description: ''
@@ -26733,7 +26781,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this emergency contact.
         required: true
       tags:
@@ -26781,7 +26830,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     name: Harare CBD
                     phone: '+263771234567'
           description: ''
@@ -26915,7 +26964,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this emergency contact.
         required: true
       tags:
@@ -27422,7 +27472,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       score: 1
                       comment: example
                       created_at: '2026-11-16T08:00:00Z'
@@ -27593,7 +27643,7 @@ paths:
                     next: null
                     previous: null
                     results:
-                    - id: 1
+                    - id: '000000000000000000000001'
                       label: example
                       place:
                         name: Harare CBD
@@ -27781,7 +27831,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     label: example
                     place:
                       name: Harare CBD
@@ -27919,7 +27969,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this saved place.
         required: true
       tags:
@@ -27938,7 +27989,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     label: example
                     place:
                       name: Harare CBD
@@ -28075,7 +28126,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this saved place.
         required: true
       tags:
@@ -28132,7 +28184,7 @@ paths:
                   summary: Illustrative response; values are not live operational
                     data
                   value:
-                    id: 1
+                    id: '000000000000000000000001'
                     label: example
                     place:
                       name: Harare CBD
@@ -28269,7 +28321,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         description: A unique integer value identifying this saved place.
         required: true
       tags:
@@ -28427,7 +28480,8 @@ paths:
       - in: query
         name: quote__pricing__zone
         schema:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
       - name: search
         required: false
         in: query
@@ -28663,7 +28717,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         status:
           allOf:
@@ -28684,9 +28739,8 @@ components:
           nullable: true
         experience_years:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         vehicle:
           $ref: '#/components/schemas/Vehicle'
         rejection_reason:
@@ -28722,9 +28776,8 @@ components:
           nullable: true
         experience_years:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         vehicle:
           $ref: '#/components/schemas/VehicleRequest'
     ApplicationState:
@@ -28769,7 +28822,8 @@ components:
           format: date-time
           readOnly: true
         actor:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           nullable: true
       required:
       - action
@@ -28788,7 +28842,8 @@ components:
         location_fresh:
           type: boolean
         active_vehicle_id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           nullable: true
       required:
       - active_vehicle_id
@@ -28893,7 +28948,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         name:
           type: string
@@ -28967,7 +29023,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         platform:
           $ref: '#/components/schemas/PlatformEnum'
       required:
@@ -28990,7 +29047,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         requirement:
           type: string
@@ -29222,7 +29280,8 @@ components:
         status:
           type: string
         offer_id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         ride_id:
           type: string
           format: uuid
@@ -29251,7 +29310,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         make:
           type: string
@@ -29508,7 +29568,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         status:
           $ref: '#/components/schemas/OfferStatusEnum'
@@ -29518,9 +29579,8 @@ components:
           nullable: true
         pickup_minutes:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
         offer_type:
           $ref: '#/components/schemas/OfferTypeEnum'
@@ -29541,10 +29601,12 @@ components:
           format: date-time
           readOnly: true
         driver:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           nullable: true
         vehicle:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           nullable: true
         ride:
           type: string
@@ -29655,7 +29717,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         ride_id:
           type: string
@@ -30082,9 +30145,8 @@ components:
           nullable: true
         experience_years:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
         vehicle:
           $ref: '#/components/schemas/VehicleRequest'
     PatchedContactRequest:
@@ -30199,7 +30261,9 @@ components:
           minimum: 0
           format: int64
         zone:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          minLength: 1
     PatchedProfileRequest:
       type: object
       properties:
@@ -30473,7 +30537,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         category:
           $ref: '#/components/schemas/RideCategoryEnum'
@@ -30517,7 +30582,8 @@ components:
           format: date-time
           readOnly: true
         zone:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
       required:
       - base_fare_usd
       - category
@@ -30569,7 +30635,9 @@ components:
           minimum: 0
           format: int64
         zone:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          minLength: 1
       required:
       - base_fare_usd
       - category
@@ -30582,11 +30650,13 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         zone:
           type: string
         zone_id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         updated_at:
           type: string
           format: date-time
@@ -30642,7 +30712,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         first_name:
           type: string
         last_name:
@@ -30751,7 +30822,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         score:
           type: integer
@@ -30772,7 +30844,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         score:
           type: integer
       required:
@@ -31025,7 +31098,7 @@ components:
           format: uuid
           readOnly: true
         assigned_driver_id:
-          type: integer
+          type: string
           readOnly: true
           nullable: true
         sequence:
@@ -31265,7 +31338,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         label:
           type: string
@@ -31292,15 +31366,17 @@ components:
       type: object
       properties:
         offer_id:
-          type: integer
-          minimum: 1
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          minLength: 1
       required:
       - offer_id
     ServiceArea:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         name:
           type: string
@@ -31341,7 +31417,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         expires_at:
           type: string
           format: date-time
@@ -31352,8 +31429,9 @@ components:
       type: object
       properties:
         recipient_id:
-          type: integer
-          minimum: 1
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          minLength: 1
       required:
       - recipient_id
     SharedTrip:
@@ -31414,7 +31492,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         category:
           allOf:
@@ -31430,7 +31509,8 @@ components:
           format: date-time
           readOnly: true
         user:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         ride:
           type: string
@@ -31548,7 +31628,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
         requirement:
           type: string
           pattern: ^[-a-zA-Z0-9_]+$
@@ -31559,7 +31640,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         first_name:
           type: string
@@ -31614,7 +31696,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         archived:
           type: boolean
@@ -31643,7 +31726,8 @@ components:
         approved:
           type: boolean
         application:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
       required:
       - application
       - capacity
@@ -31668,7 +31752,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         requirement:
           type: string
@@ -31775,7 +31860,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
           readOnly: true
         name:
           type: string

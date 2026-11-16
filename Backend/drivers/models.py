@@ -1,6 +1,8 @@
+from core.identifiers import StorageJSONEncoder
 import uuid
 from django.conf import settings
 from django.db import models
+from django_mongodb_backend.managers import MongoManager
 from django.core.files.storage import FileSystemStorage
 from django.core.validators import MinValueValidator, MaxValueValidator
 
@@ -18,6 +20,8 @@ def document_key(instance, filename):
 
 
 class DriverApplication(models.Model):
+    objects = MongoManager()
+    location = models.JSONField(encoder=StorageJSONEncoder, null=True, default=None, blank=True)
     active_vehicle = models.ForeignKey('Vehicle', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='driver_application')
     status = models.CharField(max_length=20, default='draft', choices=[(s, s) for s in ['draft', 'submitted', 'underReview', 'approved', 'rejected', 'suspended']])
@@ -37,6 +41,15 @@ class DriverApplication(models.Model):
     last_seen = models.DateTimeField(null=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        fields = kwargs.get('update_fields')
+        if fields is None or {'latitude', 'longitude'}.intersection(fields):
+            self.location = None if self.latitude is None or self.longitude is None else {
+                'type': 'Point', 'coordinates': [float(self.longitude), float(self.latitude)]}
+            if fields is not None:
+                kwargs['update_fields'] = [*fields, 'location']
+        return super().save(*args, **kwargs)
 
     @property
     def vehicle(self):

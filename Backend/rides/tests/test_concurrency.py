@@ -10,8 +10,8 @@ from rides.services.lifecycle import make_offer, select_offer, withdraw, transit
 from .helpers import RideFixtures
 
 
-@skipUnless(connection.vendor == 'mysql', 'Requires actual MySQL row locks')
-class MySQLConcurrencyTests(RideFixtures, TransactionTestCase):
+@skipUnless(connection.vendor == 'mongodb', 'Requires an actual MongoDB replica set')
+class MongoConcurrencyTests(RideFixtures, TransactionTestCase):
     def setUp(self):
         self.setup_ride()
 

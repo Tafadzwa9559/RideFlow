@@ -1,3 +1,4 @@
+from core.identifiers import ObjectIdSerializerField
 """Typed wire contracts for computed REST responses and business commands."""
 from rest_framework import serializers as s
 from rides.api.serializers import PlaceSerializer, RideSerializer, QuoteRequestSerializer
@@ -16,7 +17,7 @@ class DetailSerializer(s.Serializer):
 
 
 class IdentifierSerializer(s.Serializer):
-    id = s.IntegerField()
+    id = ObjectIdSerializerField()
 
 
 class StatusSerializer(s.Serializer):
@@ -54,7 +55,7 @@ class ReviewSerializer(ReasonSerializer):
 
 
 class SelectionSerializer(s.Serializer):
-    offer_id = s.IntegerField(min_value=1)
+    offer_id = ObjectIdSerializerField()
 
 
 class LogoutSerializer(s.Serializer):
@@ -62,7 +63,7 @@ class LogoutSerializer(s.Serializer):
 
 
 class ProfileSerializer(s.Serializer):
-    id = s.IntegerField()
+    id = ObjectIdSerializerField()
     first_name = s.CharField()
     last_name = s.CharField()
     email = s.CharField(allow_blank=True)
@@ -77,9 +78,9 @@ class TokensSerializer(s.Serializer):
 
 
 class PricingSnapshotSerializer(s.Serializer):
-    id = s.IntegerField()
+    id = ObjectIdSerializerField()
     zone = s.CharField()
-    zone_id = s.IntegerField()
+    zone_id = ObjectIdSerializerField()
     updated_at = s.DateTimeField()
     category = s.CharField()
     time_multiplier = s.DecimalField(max_digits=6, decimal_places=3)
@@ -179,7 +180,7 @@ class ReceiptSerializer(s.Serializer):
 
 class EventPayloadSerializer(s.Serializer):
     status = s.CharField(required=False)
-    offer_id = s.IntegerField(required=False)
+    offer_id = ObjectIdSerializerField(required=False)
     ride_id = s.UUIDField(required=False)
     latitude = s.CharField(required=False)
     longitude = s.CharField(required=False)
@@ -230,7 +231,7 @@ class DeviceRequestSerializer(s.Serializer):
 
 
 class DeviceSerializer(s.Serializer):
-    id = s.IntegerField()
+    id = ObjectIdSerializerField()
     platform = s.ChoiceField(choices=['android', 'ios'])
 
 
@@ -269,7 +270,7 @@ class AvailabilitySerializer(s.Serializer):
     status = s.CharField()
     last_seen = s.DateTimeField(allow_null=True)
     location_fresh = s.BooleanField()
-    active_vehicle_id = s.IntegerField(allow_null=True)
+    active_vehicle_id = ObjectIdSerializerField(allow_null=True)
 
 
 class LastSeenSerializer(s.Serializer):
@@ -290,7 +291,7 @@ class RatingRequestSerializer(s.Serializer):
 
 
 class RatingCreatedSerializer(s.Serializer):
-    id = s.IntegerField()
+    id = ObjectIdSerializerField()
     score = s.IntegerField()
 
 
@@ -299,11 +300,11 @@ class MessageSerializer(s.Serializer):
 
 
 class ShareRequestSerializer(s.Serializer):
-    recipient_id = s.IntegerField(min_value=1)
+    recipient_id = ObjectIdSerializerField()
 
 
 class ShareSerializer(s.Serializer):
-    id = s.IntegerField()
+    id = ObjectIdSerializerField()
     expires_at = s.DateTimeField()
 
 

@@ -5,7 +5,7 @@ from decimal import Decimal, ROUND_HALF_UP, ROUND_CEILING, ROUND_FLOOR
 from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from core import transactions as transaction
 from django.utils import timezone
 from rest_framework.exceptions import APIException, ValidationError
 from payments.models import Payment, PaymentMethod
@@ -46,9 +46,9 @@ def pricing_snapshot(policy, now):
         "rounding_usd",
     ]
     return {
-        "id": policy.pk,
+        "id": str(policy.pk),
         "zone": policy.zone.name,
-        "zone_id": policy.zone_id,
+        "zone_id": str(policy.zone_id),
         "updated_at": policy.updated_at.isoformat(),
         "category": policy.category,
         "time_multiplier": str(multiplier),
@@ -172,7 +172,7 @@ def _validate_route_quote(quote, data, now):
 
 @transaction.atomic
 def book(user, data):
-    get_user_model().objects.select_for_update().get(pk=user.pk)
+    transaction.guard(get_user_model(), user.pk)
     from rides.models import ActiveAssignment
     if ActiveAssignment.objects.filter(driver__user=user).exists():
         raise ValidationError('Finish your driver assignment before requesting a passenger ride.')
@@ -198,7 +198,7 @@ def book(user, data):
             "Complete or cancel your current ride before requesting another."
         )
     quote = (
-        FareQuote.objects.select_for_update()
+        FareQuote.objects.all()
         .select_related("pricing__zone", "exchange_rate")
         .filter(pk=data["quote_id"], passenger=user)
         .first()
@@ -217,7 +217,7 @@ def book(user, data):
             }
         )
     method = (
-        PaymentMethod.objects.select_for_update()
+        PaymentMethod.objects.all()
         .filter(pk=data["payment_method_id"])
         .first()
     )

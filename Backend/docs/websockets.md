@@ -23,7 +23,7 @@ Close codes: 4400 unsupported input; 4401 missing/invalid/expired/revoked token;
   "resource_id": "00000000-0000-4000-8000-000000000002",
   "timestamp": "2026-11-16T08:00:00Z",
   "sequence": 3,
-  "payload": {"status": "assigned", "offer_id": 12}
+  "payload": {"status": "assigned", "offer_id": "000000000000000000000012"}
 }
 ```
 
@@ -33,8 +33,8 @@ These are illustrative values, never live trips.
 |---|---|
 | `ride.created`, `ride.arriving`, `ride.arrived`, `ride.inProgress`, `ride.completed`, `ride.cancelled`, `ride.expired` | `{status: string}` |
 | `ride.request` | `{ride_id: UUID}`; eligible driver retrieves request through authorized REST |
-| `offer.created`, `offer.declined`, `offer.withdrawn`, `offer.expired` | `{offer_id: integer}` |
-| `driver.assigned` | `{status: "assigned", offer_id: integer}` |
+| `offer.created`, `offer.declined`, `offer.withdrawn`, `offer.expired` | `{offer_id: 24-character ObjectId string}` |
+| `driver.assigned` | `{status: "assigned", offer_id: 24-character ObjectId string}` |
 | `driver.location` | `{latitude: decimal string, longitude: decimal string, at: ISO timestamp}` |
 | `verification.updated` | `{status: draft\|submitted\|underReview\|approved\|rejected\|suspended}` |
 

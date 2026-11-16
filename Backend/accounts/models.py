@@ -1,3 +1,4 @@
+from core.identifiers import StorageJSONEncoder
 import uuid
 from django.conf import settings
 from django.db import models
@@ -25,7 +26,7 @@ class AuditEvent(models.Model):
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     action = models.CharField(max_length=80)
     target = models.CharField(max_length=100)
-    summary = models.JSONField(default=dict)
+    summary = models.JSONField(encoder=StorageJSONEncoder, default=dict)
     request_id = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 

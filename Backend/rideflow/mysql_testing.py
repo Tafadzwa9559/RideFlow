@@ -1,3 +1,9 @@
+# Historical configuration retained for reference; current ObjectId models must
+# never apply the MongoDB migration graph to SQL. Use the prior application
+# revision for SQL testing/rollback or export_legacy_mysql for read-only transfer.
+from django.core.exceptions import ImproperlyConfigured
+raise ImproperlyConfigured('Current tests require the MongoDB replica-set settings; SQL rollback requires the prior application revision.')
+
 """Isolated MySQL tests. Never point this configuration at a production database."""
 import os
 from .testing import *

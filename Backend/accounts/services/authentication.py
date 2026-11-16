@@ -4,7 +4,7 @@ import phonenumbers
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password, check_password
-from django.db import transaction
+from core import transactions as transaction
 from django.utils import timezone
 from django.utils.module_loading import import_string
 from rest_framework.exceptions import ValidationError, Throttled, AuthenticationFailed
@@ -43,12 +43,13 @@ def sms_provider():
 
 @transaction.atomic
 def request_code(phone):
+    transaction.guard('otp', phone)
     provider = sms_provider()
     now = timezone.now()
     # Unique phone row also serializes simultaneous first requests.
     challenge, _ = PhoneChallenge.objects.get_or_create(phone=phone, defaults={
         'digest': '', 'expires_at': now, 'sent_at': now - timedelta(days=1)})
-    challenge = PhoneChallenge.objects.select_for_update().get(pk=challenge.pk)
+    challenge = PhoneChallenge.objects.all().get(pk=challenge.pk)
     remaining = settings.OTP_RESEND_SECONDS - (now - challenge.sent_at).total_seconds()
     if remaining > 0:
         raise Throttled(wait=int(remaining) + 1)
@@ -64,10 +65,12 @@ def request_code(phone):
     challenge.save()
 
 
+@transaction.retry
 def verify_code(phone, code):
     # Invalid attempts must commit before raising an API exception.
     with transaction.atomic():
-        challenge = PhoneChallenge.objects.select_for_update().filter(phone=phone).first()
+        transaction.guard('otp', phone)
+        challenge = PhoneChallenge.objects.all().filter(phone=phone).first()
         valid = False
         if challenge and not challenge.consumed and challenge.expires_at > timezone.now() and challenge.attempts < settings.OTP_MAX_ATTEMPTS:
             challenge.attempts += 1
@@ -76,13 +79,15 @@ def verify_code(phone, code):
                 challenge.consumed = True
             challenge.save(update_fields=['attempts', 'consumed'])
         if valid:
-            identity = PhoneIdentity.objects.select_for_update().filter(phone=phone).first()
+            identity = PhoneIdentity.objects.all().filter(phone=phone).first()
             if identity is None:
                 user, created = get_user_model().objects.get_or_create(username=phone)
                 if created:
                     user.set_unusable_password()
                     user.save(update_fields=['password'])
                 identity = PhoneIdentity.objects.create(user=user, phone=phone, verified_at=timezone.now())
+            transaction.guard(get_user_model(), identity.user_id)
+            identity = PhoneIdentity.objects.select_related('user').get(pk=identity.pk)
             if not identity.user.is_active:
                 raise AuthenticationFailed('Account disabled.')
             refresh = RefreshToken.for_user(identity.user)

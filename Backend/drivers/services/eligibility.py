@@ -32,11 +32,12 @@ def eligible(application, *, online=False):
 
 
 def driver_for(user, lock=False):
-    qs = DriverApplication.objects.select_related('user', 'active_vehicle').prefetch_related('vehicles')
-    if lock:
-        # Lock only the application: MySQL cannot lock nullable outer joins safely.
-        qs = DriverApplication.objects.select_for_update()
+    qs = DriverApplication.objects.select_related('user', 'active_vehicle')
     application = qs.filter(user=user).first()
     if not application:
         raise PermissionDenied('Driver registration is required.')
+    if lock:
+        from core import transactions as transaction
+        transaction.guard(DriverApplication, application.pk)
+        application = DriverApplication.objects.get(pk=application.pk)
     return application

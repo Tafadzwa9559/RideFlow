@@ -2,7 +2,7 @@ import math
 from datetime import timedelta
 from decimal import Decimal
 from django.conf import settings
-from django.db import transaction
+from core import transactions as transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from drivers.models import DriverApplication
@@ -28,7 +28,8 @@ def emit(ride, event_type, payload=None):
     from notifications.services.events import notify
     ride.sequence += 1
     ride.save(update_fields=['sequence', 'updated_at'])
-    event = RideEvent.objects.create(ride=ride, sequence=ride.sequence, event_type=event_type, payload=payload or {'status': ride.status})
+    from core.identifiers import json_safe
+    event = RideEvent.objects.create(ride=ride, sequence=ride.sequence, event_type=event_type, payload=json_safe(payload or {'status': ride.status}))
     users = {ride.passenger_id}
     if ride.assigned_driver_id:
         users.add(ride.assigned_driver.user_id)
@@ -42,7 +43,8 @@ def emit(ride, event_type, payload=None):
 @transaction.atomic
 def make_offer(user, ride_id, cents, note='', decision='counteroffer', pickup_minutes=None):
     # All workflows lock ride -> application -> offer, in this order.
-    ride = Ride.objects.select_for_update().get(pk=ride_id)
+    transaction.guard(Ride, ride_id)
+    ride = Ride.objects.get(pk=ride_id)
     app = driver_for(user, lock=True)
     eligible(app, online=True)
     if hasattr(app, 'active_assignment') or not nearby(app, ride):
@@ -54,7 +56,7 @@ def make_offer(user, ride_id, cents, note='', decision='counteroffer', pickup_mi
     from rides.services.booking import validate_offer
     amount = int(ride.offered_fare * 100) if decision in ['accept', 'decline'] else cents
     validate_offer(ride, amount, offer_type='driver')
-    existing = RideOffer.objects.select_for_update().filter(ride=ride, driver=app).first()
+    existing = RideOffer.objects.all().filter(ride=ride, driver=app).first()
     if existing:
         if existing.status == ('declined' if decision == 'decline' else 'pending') and existing.amount == Decimal(amount)/100 and existing.note == note and existing.expires_at > timezone.now():
             return existing
@@ -68,19 +70,25 @@ def make_offer(user, ride_id, cents, note='', decision='counteroffer', pickup_mi
 
 @transaction.atomic
 def select_offer(user, ride_id, offer_id):
-    ride = Ride.objects.select_for_update().get(pk=ride_id)
+    transaction.guard(Ride, ride_id)
+    ride = Ride.objects.get(pk=ride_id)
     if ride.passenger_id != user.pk:
         raise PermissionDenied()
     initial = RideOffer.objects.filter(pk=offer_id, ride=ride).first()
     if not initial or not initial.driver_id:
         raise ValidationError('Valid driver offer required.')
-    app = DriverApplication.objects.select_for_update().get(pk=initial.driver_id)
-    offer = RideOffer.objects.select_for_update().get(pk=initial.pk)
+    transaction.guard(DriverApplication, initial.driver_id)
+    app = DriverApplication.objects.get(pk=initial.driver_id)
+    offer = RideOffer.objects.all().get(pk=initial.pk)
     if offer.status == 'accepted' and ride.assigned_driver_id == app.pk and ride.status not in ['cancelled', 'expired']:
         return ride
     now = timezone.now()
     if ride.status != 'searching' or not ride.expires_at or ride.expires_at <= now or offer.status != 'pending' or not offer.expires_at or offer.expires_at <= now:
         raise ValidationError('Ride or offer is no longer available.', code='OFFER_EXPIRED' if offer.expires_at and offer.expires_at <= now else 'RIDE_ALREADY_ASSIGNED')
+    from django.contrib.auth import get_user_model
+    transaction.guard(get_user_model(), app.user_id)
+    if Ride.objects.filter(passenger_id=app.user_id).exclude(status__in=TERMINAL).exists():
+        raise ValidationError('Driver has a conflicting passenger request.', code='DRIVER_UNAVAILABLE')
     eligible(app, online=True)
     if offer.vehicle_id != app.vehicle.pk:
         raise ValidationError('The offered vehicle is no longer active.', code='VEHICLE_NOT_APPROVED')
@@ -107,9 +115,10 @@ def select_offer(user, ride_id, offer_id):
 @transaction.atomic
 def withdraw(user, offer_id):
     initial = RideOffer.objects.get(pk=offer_id)
-    ride = Ride.objects.select_for_update().get(pk=initial.ride_id)
+    transaction.guard(Ride, initial.ride_id)
+    ride = Ride.objects.get(pk=initial.ride_id)
     app = driver_for(user, lock=True)
-    offer = RideOffer.objects.select_for_update().get(pk=offer_id)
+    offer = RideOffer.objects.all().get(pk=offer_id)
     if offer.driver_id != app.pk:
         raise PermissionDenied()
     if offer.status == 'withdrawn':
@@ -124,10 +133,12 @@ def withdraw(user, offer_id):
 
 @transaction.atomic
 def transition(user, ride_id, target, reason='', administrative=False):
-    ride = Ride.objects.select_for_update().get(pk=ride_id)
+    transaction.guard(Ride, ride_id)
+    ride = Ride.objects.get(pk=ride_id)
     app = None
     if ride.assigned_driver_id:
-        app = DriverApplication.objects.select_for_update().get(pk=ride.assigned_driver_id)
+        transaction.guard(DriverApplication, ride.assigned_driver_id)
+        app = DriverApplication.objects.get(pk=ride.assigned_driver_id)
     is_driver = app is not None and app.user_id == user.pk
     if administrative:
         if not user.has_perm('drivers.operate_platform'):
@@ -175,7 +186,8 @@ def publish_location(app):
     assignment = ActiveAssignment.objects.filter(driver=app).first()
     if not assignment:
         return
-    ride = Ride.objects.select_for_update().get(pk=assignment.ride_id)
+    transaction.guard(Ride, assignment.ride_id)
+    ride = Ride.objects.get(pk=assignment.ride_id)
     if ride.status in TERMINAL:
         return
     LocationUpdate.objects.create(ride=ride, latitude=app.latitude, longitude=app.longitude)

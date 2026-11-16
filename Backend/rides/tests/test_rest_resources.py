@@ -81,7 +81,7 @@ class ResourceTests(RideFixtures, TestCase):
         self.client.force_authenticate(self.driver_user)
         self.assertEqual(self.client.post(f'{url}{pk}/activate/').status_code, 200)
         self.driver.refresh_from_db()
-        self.assertEqual(self.driver.vehicle.pk, pk)
+        self.assertEqual(str(self.driver.vehicle.pk), str(pk))
         self.assertEqual(self.driver.availability, 'offline')
         self.assertEqual(self.client.patch(f'{url}{pk}/', {'colour': 'red'}).status_code, 200)
         self.assertFalse(Vehicle.objects.get(pk=pk).approved)

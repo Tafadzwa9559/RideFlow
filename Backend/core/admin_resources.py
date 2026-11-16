@@ -43,6 +43,8 @@ class PassengerViewSet(mixins.UpdateModelMixin, UserViewSet):
         # Status changes must use the audited actions; administrative flags are never writable.
         if set(self.request.data) - {'first_name', 'last_name'}:
             raise ValidationError('Only personal names can be edited here.')
+        transaction.guard(get_user_model(), serializer.instance.pk)
+        serializer.instance.refresh_from_db()
         user = serializer.save()
         audit(self.request.user, 'account.profile', user, {'fields': sorted(self.request.data)}, getattr(self.request, 'request_id', ''))
 
@@ -129,7 +131,8 @@ class DisputeViewSet(viewsets.ReadOnlyModelViewSet):
     def resolve(self, request, pk=None):
         if not request.user.has_perm('rides.change_supportticket'):
             raise PermissionDenied()
-        item = get_object_or_404(SupportTicket.objects.all(), pk=pk)
+        transaction.guard(SupportTicket, pk)
+        item = get_object_or_404(SupportTicket, pk=pk)
         resolution = reason(request)
         item.status = 'resolved'
         item.save(update_fields=['status'])

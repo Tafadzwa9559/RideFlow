@@ -1,5 +1,5 @@
 """Typed HTTP contracts and curated, permission-aware OpenAPI presentation."""
-from drf_spectacular.extensions import OpenApiAuthenticationExtension
+from drf_spectacular.extensions import OpenApiAuthenticationExtension, OpenApiSerializerFieldExtension
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer
 from drf_spectacular.types import OpenApiTypes
@@ -13,6 +13,13 @@ class JWTAuthenticationScheme(OpenApiAuthenticationExtension):
 
     def get_security_definition(self, auto_schema):
         return {'type': 'http', 'scheme': 'bearer', 'bearerFormat': 'JWT'}
+
+
+class ObjectIdFieldSchema(OpenApiSerializerFieldExtension):
+    target_class = 'core.identifiers.ObjectIdSerializerField'
+
+    def map_serializer_field(self, auto_schema, direction):
+        return {'type': 'string', 'pattern': '^[0-9a-fA-F]{24}$'}
 
 
 def canonical_paths(endpoints):
@@ -46,7 +53,7 @@ def contract(view, method, path):
         a.LogoutView: {'POST': result(None, c.LogoutSerializer, 204)},
         d.ApplicationView: {'GET': result(PolymorphicProxySerializer(component_name='ApplicationState', serializers=[ApplicationSerializer, c.StatusSerializer], resource_type_field_name=None)), 'POST': result(ApplicationSerializer, ApplicationSerializer), 'PATCH': result(ApplicationSerializer, ApplicationSerializer)},
         d.SubmitView: {'POST': result(ApplicationSerializer)},
-        d.DocumentView: {'POST': result(type('UploadedDocumentSerializer',(s.Serializer,),{'id':s.IntegerField(),'requirement':s.SlugField()}), dr.VehicleDocumentUploadSerializer, 201), 'GET': result(c.collection('DriverDocumentPage', dr.DocumentSerializer, paginated=True))},
+        d.DocumentView: {'POST': result(type('UploadedDocumentSerializer',(s.Serializer,),{'id':__import__('core.identifiers', fromlist=['ObjectIdSerializerField']).ObjectIdSerializerField(),'requirement':s.SlugField()}), dr.VehicleDocumentUploadSerializer, 201), 'GET': result(c.collection('DriverDocumentPage', dr.DocumentSerializer, paginated=True))},
         d.DocumentDownloadView: {'GET': (None, {(200, 'image/jpeg'): OpenApiTypes.BINARY, (200, 'image/png'): OpenApiTypes.BINARY})},
         dr.DocumentDeleteView: {'GET': (None, {(200, 'image/jpeg'): OpenApiTypes.BINARY, (200, 'image/png'): OpenApiTypes.BINARY}), 'DELETE': result(None, status=204)},
         d.RequirementsView: {'GET': result(c.collection('Requirements', c.RequirementSerializer))},
@@ -181,6 +188,8 @@ def annotate():
 def examples_hook(result, generator, request, public):
     """Illustrative examples follow the resolved schema; never credentials/live data."""
     def sample(schema, depth=0, name=""):
+        if schema.get('pattern') == '^[0-9a-fA-F]{24}$':
+            return '000000000000000000000001'
         if name == 'pickup':
             return {'name': 'Harare CBD', 'latitude': -17.8292, 'longitude': 31.0522}
         if name == 'destination':

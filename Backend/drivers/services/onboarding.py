@@ -1,4 +1,4 @@
-from django.db import transaction
+from core import transactions as transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from accounts.models import AuditEvent
@@ -9,9 +9,10 @@ from drivers.services.eligibility import check_documents
 @transaction.atomic
 def save_draft(user, data, allow_revision=False):
     from django.contrib.auth import get_user_model
-    get_user_model().objects.select_for_update().get(pk=user.pk)
+    transaction.guard(get_user_model(), user.pk)
     application, _ = DriverApplication.objects.get_or_create(user=user)
-    application = DriverApplication.objects.select_for_update().get(pk=application.pk)
+    transaction.guard(DriverApplication, application.pk)
+    application = DriverApplication.objects.get(pk=application.pk)
     if application.status == 'approved' and allow_revision:
         if hasattr(application, 'active_assignment'):
             raise ValidationError('Finish the assigned trip before revising verification details.')
@@ -64,7 +65,8 @@ def review(actor, application_id, decision, reason='', request_id=''):
     if not actor.has_perm('drivers.review_driver'):
         raise PermissionDenied('Driver verification permission required.')
     from django.shortcuts import get_object_or_404
-    application = get_object_or_404(DriverApplication.objects.select_for_update(), pk=application_id)
+    transaction.guard(DriverApplication, application_id)
+    application = get_object_or_404(DriverApplication, pk=application_id)
     if actor.pk == application.user_id:
         raise PermissionDenied('Self review is prohibited.')
     if decision not in ['underReview', 'approved', 'rejected', 'suspended']:

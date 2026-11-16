@@ -1,6 +1,6 @@
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.conf import settings
-from django.db import transaction
+from core import transactions as transaction
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone

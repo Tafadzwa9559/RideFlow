@@ -108,7 +108,7 @@ class BookingAPITests(TestCase):
         self.assertEqual(q["suggested_fare_cents"], 500)
         self.assertEqual(q["distance_metres"], 5800)
         self.assertEqual(q["geometry"], ROAD["geometry"])
-        self.assertEqual(q["pricing_configuration"]["id"], self.policy.pk)
+        self.assertEqual(q["pricing_configuration"]["id"], str(self.policy.pk))
 
     def test_fee_and_time_adjustment(self):
         self.policy.booking_fee_usd = "0.50"

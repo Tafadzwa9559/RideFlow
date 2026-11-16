@@ -9,3 +9,7 @@ CELERY_TASK_ALWAYS_EAGER = True
 DEBUG = True
 SMS_PROVIDER = 'accounts.services.authentication.LocalSMS'
 TRIVIA_LOCAL_OTP = True
+# Test creation destroys its selected database. Reject accidental application names.
+from django.core.exceptions import ImproperlyConfigured
+if not DATABASES['default']['TEST']['NAME'].startswith('test_') or DATABASES['default']['TEST']['NAME'] == os.environ.get('MONGODB_DATABASE', 'trivia'):
+    raise ImproperlyConfigured('MONGODB_TEST_NAME must be an isolated test_* database, distinct from the application database.')

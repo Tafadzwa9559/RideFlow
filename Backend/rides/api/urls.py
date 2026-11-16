@@ -30,7 +30,7 @@ urlpatterns += [
     path('rides/<uuid:pk>/complete/', RideStatusView.as_view(http_method_names=['post', 'options']), {'action': 'complete'}),
     path('rides/<uuid:pk>/events/', EventsView.as_view()),
     path('rides/<uuid:pk>/ratings/', RatingView.as_view()),
-    path('offers/<int:pk>/withdraw/', WithdrawView.as_view()),
+    path('offers/<objectid:pk>/withdraw/', WithdrawView.as_view()),
     path('support/tickets/', TicketView.as_view()),
     path('service-areas/', ServiceAreasView.as_view()),
     path('locations/saved/', SavedPlacesView.as_view()),
@@ -38,4 +38,4 @@ urlpatterns += [
 ]
 from .views import EmergencyContactsView, TripShareView, SharedTripView
 urlpatterns += [path('safety/contacts/', EmergencyContactsView.as_view()),
-    path('rides/<uuid:pk>/share/', TripShareView.as_view()), path('safety/shares/<int:pk>/', SharedTripView.as_view())]
+    path('rides/<uuid:pk>/share/', TripShareView.as_view()), path('safety/shares/<objectid:pk>/', SharedTripView.as_view())]

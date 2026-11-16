@@ -1,10 +1,12 @@
 # Trivia REST integration guide
 
+**Database update:** use [MongoDB migration and operations](mongodb.md) for current setup/testing. Former integer entity IDs are now 24-character ObjectId strings; ride/quote/event UUIDs and API field names remain stable. Historical MySQL setup paragraphs below are superseded by that guide.
+
 Trivia — Your Journey. Your Choice. Developed by MOrdec Solutions (Private) Limited for Zimbabwe.
 
 ## Setup and documentation
 
-Use Python 3.12 and the pinned `requirements.txt`. MySQL is the default and production database; SQLite is confined to explicit test settings. Provision MySQL and Redis, copy `.env.example` to `.env`, fill generated secrets and real connection values, and export the values before native commands. Django does not automatically load `.env`; Docker Compose does.
+Use Python 3.12 and the pinned `requirements.txt`. MongoDB replica sets are the default, production and integration-test database. Provision a MongoDB replica set and Redis, copy `.env.example` to `.env`, fill generated secrets and real connection values, and export the values before native commands. Django does not automatically load `.env`; Docker Compose does.
 
 ```sh
 cd Backend
@@ -21,7 +23,7 @@ set +a
 .venv/bin/celery -A rideflow beat --loglevel=INFO --schedule=/tmp/trivia-beat
 ```
 
-`docker compose up --build` provides MySQL, Redis, migration job, Daphne, worker and one Beat scheduler. Full environment, storage and production configuration are described in [the backend README](../README.md). No provider credentials, operational cities or commercial fare rates are seeded. Configure explicit enabled service areas/pricing and driver/vehicle document requirements first. Phone OTP requires `SMS_PROVIDER`; routing/geocoding require licensed HTTPS OSRM/Nominatim-compatible services. An unconfigured provider fails instead of inventing data.
+`docker compose up --build` provides MongoDB replica-set initialization, Redis, migration job, Daphne, worker and one Beat scheduler. Full environment, storage and production configuration are described in [the backend README](../README.md). No provider credentials, operational cities or commercial fare rates are seeded. Configure explicit enabled service areas/pricing and driver/vehicle document requirements first. Phone OTP requires `SMS_PROVIDER`; routing/geocoding require licensed HTTPS OSRM/Nominatim-compatible services. An unconfigured provider fails instead of inventing data.
 
 | Documentation | Local URL |
 |---|---|
@@ -83,7 +85,7 @@ curl -X POST http://localhost:8000/api/v1/rides/RIDE_UUID/offers/ \
 # Passenger compares offers and explicitly selects one.
 curl http://localhost:8000/api/v1/rides/RIDE_UUID/offers/ -H 'Authorization: Bearer ACCESS_TOKEN'
 curl -X POST http://localhost:8000/api/v1/rides/RIDE_UUID/select-offer/ \
-  -H 'Authorization: Bearer ACCESS_TOKEN' -H 'Content-Type: application/json' -d '{"offer_id":12}'
+  -H 'Authorization: Bearer ACCESS_TOKEN' -H 'Content-Type: application/json' -d '{"offer_id":"000000000000000000000012"}'
 
 # Assigned driver progresses the trip in order.
 curl -X POST http://localhost:8000/api/v1/rides/RIDE_UUID/driver-en-route/ -H 'Authorization: Bearer DRIVER_ACCESS_TOKEN'
@@ -137,7 +139,7 @@ DJANGO_SETTINGS_MODULE=rideflow.testing .venv/bin/python manage.py test accounts
 DJANGO_SETTINGS_MODULE=rideflow.testing .venv/bin/python manage.py makemigrations --check --dry-run
 DJANGO_SETTINGS_MODULE=rideflow.testing .venv/bin/python manage.py spectacular --file docs/openapi.yaml --validate
 # Use disposable MySQL credentials/configuration, never a production test database.
-DJANGO_SETTINGS_MODULE=rideflow.mysql_testing .venv/bin/python manage.py test accounts drivers rides core --noinput --keepdb
+DJANGO_SETTINGS_MODULE=rideflow.testing .venv/bin/python manage.py test accounts drivers rides core --noinput --keepdb
 DJANGO_SETTINGS_MODULE=rideflow.production .venv/bin/python manage.py check --deploy
 ```
 

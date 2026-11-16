@@ -7,3 +7,6 @@ private_media
 media
 staticfiles
 .git
+.mongo-test-data
+.mongo-*.log
+migration_exports

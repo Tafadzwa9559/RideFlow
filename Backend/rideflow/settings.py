@@ -13,11 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 import environ
-import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
 environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
 
 
@@ -120,9 +118,9 @@ TRIVIA_EXCHANGE_MAX_AGE_SECONDS = int(
 TRIVIA_EXCHANGE_SOURCE_HOSTS = os.environ.get(
     "TRIVIA_EXCHANGE_SOURCE_HOSTS", "www.rbz.co.zw,rbz.co.zw"
 ).split(",")
-# Trivia operational configuration. MySQL is the default; SQLite is test-only.
+# Trivia operational configuration. MongoDB is authoritative.
 from datetime import timedelta
-INSTALLED_APPS += ['accounts', 'drivers', 'notifications', 'channels', 'corsheaders', 'rideflow.apps.MongoBlacklistConfig', 'drf_spectacular']
+INSTALLED_APPS += ['accounts', 'drivers', 'notifications', 'channels', 'corsheaders', 'rest_framework_simplejwt.token_blacklist', 'drf_spectacular']
 MIDDLEWARE.insert(1, 'corsheaders.middleware.CorsMiddleware')
 MIDDLEWARE.insert(0, 'core.middleware.RequestIDMiddleware')
 ASGI_APPLICATION = 'rideflow.asgi.application'
@@ -130,7 +128,7 @@ DATABASES = {'default': {
     'ENGINE': 'django_mongodb_backend',
     'HOST': os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/'),
     'NAME': os.environ.get('MONGODB_DATABASE', 'trivia'),
-    'OPTIONS': {'serverSelectionTimeoutMS': 5000, 'uuidRepresentation': 'standard'},
+    'OPTIONS': {'serverSelectionTimeoutMS': 5000, 'uuidRepresentation': 'standard', 'w': 'majority', 'retryWrites': True},
 }}
 # Legacy configuration is retained separately for non-destructive export/rollback.
 
@@ -213,10 +211,11 @@ INSTALLED_APPS = [
     {'django.contrib.admin': 'rideflow.apps.MongoAdminConfig',
      'django.contrib.auth': 'rideflow.apps.MongoAuthConfig',
      'django.contrib.contenttypes': 'rideflow.apps.MongoContentTypesConfig',
-     'rest_framework_simplejwt.token_blacklist': 'rideflow.apps.MongoTokenBlacklistConfig'}.get(app, app)
+     'rest_framework_simplejwt.token_blacklist': 'rest_framework_simplejwt.token_blacklist'}.get(app, app)
     for app in INSTALLED_APPS
 ] + ['core.apps.CoreConfig']
 MIGRATION_MODULES = {app: f'mongo_migrations.{app}' for app in [
     'admin', 'auth', 'contenttypes', 'sessions', 'token_blacklist',
     'accounts', 'drivers', 'rides', 'payments', 'notifications', 'core']}
 REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = ['core.identifiers.MongoJSONRenderer', 'rest_framework.renderers.BrowsableAPIRenderer']
+SPECTACULAR_SETTINGS['PATH_CONVERTER_OVERRIDES'] = {'objectid': {'type': 'string', 'pattern': '^[0-9a-fA-F]{24}$'}}

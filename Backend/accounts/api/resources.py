@@ -1,5 +1,5 @@
 from rest_framework.parsers import MultiPartParser, FormParser
-from django.db import transaction
+from core import transactions as transaction
 from django.http import FileResponse
 from rest_framework import generics, serializers, viewsets
 from rest_framework.response import Response

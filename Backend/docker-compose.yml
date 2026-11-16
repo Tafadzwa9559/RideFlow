@@ -1,8 +1,10 @@
+# Local development only: internal MongoDB replica set, no public DB/broker ports.
 x-backend: &backend
   build: .
   env_file: .env
   environment:
-    MYSQL_HOST: mysql
+    MONGODB_URI: mongodb://mongodb:27017/?replicaSet=trivia-rs
+    MONGODB_DATABASE: ${MONGODB_DATABASE:-trivia}
     REDIS_URL: redis://redis:6379/0
     CELERY_BROKER_URL: redis://redis:6379/1
     CACHE_REDIS_URL: redis://redis:6379/2
@@ -10,24 +12,38 @@ x-backend: &backend
     - private_media:/app/private_media
     - staticfiles:/app/staticfiles
   depends_on:
-    mysql:
-      condition: service_healthy
+    mongo-init:
+      condition: service_completed_successfully
     redis:
       condition: service_healthy
 services:
-  mysql:
-    image: mysql:8.4
-    environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-trivia}
-      MYSQL_USER: ${MYSQL_USER:-trivia}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+  mongodb:
+    image: mongo:8.0
+    command: [mongod, --replSet, trivia-rs, --bind_ip_all]
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mongodb_data:/data/db
     healthcheck:
-      test: [CMD-SHELL, 'mysqladmin ping -h localhost -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      test: [CMD, mongosh, --quiet, --eval, 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)']
       interval: 5s
       retries: 30
+  mongo-init:
+    image: mongo:8.0
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: [mongosh, --host, 'mongodb:27017', --quiet, --eval]
+    command:
+      - >-
+        try { rs.status(); } catch(e) {
+          if (e.code !== 94) throw e;
+          rs.initiate({_id:'trivia-rs',members:[{_id:0,host:'mongodb:27017'}]});
+        }
+        for (let i=0;i<60;i++) {
+          if (db.hello().isWritablePrimary) quit(0);
+          sleep(1000);
+        }
+        quit(1);
+    restart: 'no'
   redis:
     image: redis:7.4-alpine
     command: [redis-server, --appendonly, 'yes']
@@ -68,7 +84,7 @@ services:
       migrate:
         condition: service_completed_successfully
 volumes:
-  mysql_data:
+  mongodb_data:
   redis_data:
   private_media:
   staticfiles:

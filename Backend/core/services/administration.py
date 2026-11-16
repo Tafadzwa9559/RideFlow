@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from core import transactions as transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -16,7 +16,8 @@ def audit(actor, action, obj, summary, request_id=''):
 def account_status(actor, pk, active, request_id=''):
     if not actor.is_staff or not actor.has_perm('auth.change_user'):
         raise PermissionDenied()
-    user = get_object_or_404(get_user_model().objects.select_for_update(), pk=pk, is_staff=False, is_superuser=False)
+    transaction.guard(get_user_model(), pk)
+    user = get_object_or_404(get_user_model(), pk=pk, is_staff=False, is_superuser=False)
     user.is_active = active
     user.save(update_fields=['is_active'])
     PhoneIdentity.objects.filter(user=user).update(session_version=F('session_version')+1)
@@ -29,7 +30,8 @@ def account_status(actor, pk, active, request_id=''):
 def request_changes(actor, pk, reason, request_id=''):
     if not actor.is_staff or not actor.has_perm('drivers.review_driver'):
         raise PermissionDenied()
-    app = get_object_or_404(DriverApplication.objects.select_for_update(), pk=pk)
+    transaction.guard(DriverApplication, pk)
+    app = get_object_or_404(DriverApplication, pk=pk)
     if app.user_id == actor.pk:
         raise PermissionDenied('Self review is prohibited.')
     if app.status not in ['submitted', 'underReview']:
@@ -48,8 +50,9 @@ def vehicle_review(actor, pk, approved, reason='', request_id=''):
     if not actor.is_staff or not actor.has_perm('drivers.review_driver'):
         raise PermissionDenied()
     initial = get_object_or_404(Vehicle, pk=pk)
-    app = DriverApplication.objects.select_for_update().get(pk=initial.application_id)
-    vehicle = Vehicle.objects.select_for_update().get(pk=pk)
+    transaction.guard(DriverApplication, initial.application_id)
+    app = DriverApplication.objects.get(pk=initial.application_id)
+    vehicle = Vehicle.objects.all().get(pk=pk)
     if app.user_id == actor.pk or vehicle.archived:
         raise PermissionDenied('Self review or archived vehicle review is prohibited.')
     if approved:

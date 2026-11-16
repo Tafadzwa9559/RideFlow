@@ -42,3 +42,8 @@ class StorageJSONEncoder(DjangoJSONEncoder):
         if isinstance(value, ObjectId):
             return str(value)
         return super().default(value)
+
+
+def json_safe(value):
+    import json
+    return json.loads(json.dumps(value, cls=StorageJSONEncoder))

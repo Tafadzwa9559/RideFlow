@@ -1,4 +1,5 @@
-from django.db import transaction
+from core.identifiers import ObjectIdSerializerField
+from core import transactions as transaction
 from django.db.models import Q, Sum, Avg, Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -10,9 +11,107 @@ from rest_framework.views import APIView
 from drivers.services.eligibility import driver_for, eligible
 from rides.models import Ride, RideOffer, Rating, SupportTicket, SavedPlace, PricingZone
 from rides.services.booking import book, quote_route
-from rides.services.lifecycle import make_offer, select_offer, transition, withdraw, nearby
+from rides.services.lifecycle import make_offer, select_offer, transition, withdraw, nearby, emit
 from rides.services.routing import search_places
 from .serializers import BookingRequestSerializer, QuoteRequestSerializer, RideSerializer, quote_json, PlaceSerializer
+
+
+def normalize_offer_decision(value):
+    if value is None:
+        return 'counteroffer'
+    normalized = str(value).strip().lower()
+    aliases = {
+        'accept_passenger_fare': 'accept',
+        'accept-passenger-fare': 'accept',
+        'counteroffer': 'counteroffer',
+        'accept': 'accept',
+        'decline': 'decline',
+        'decline_request': 'decline',
+    }
+    return aliases.get(normalized, normalized)
+
+
+def offer_json(offer):
+    app = offer.driver
+    vehicle = offer.vehicle
+    return {'id': str(offer.pk), 'driver_name': app.user.get_full_name(),
+        'vehicle': f'{vehicle.make} {vehicle.model}', 'colour': vehicle.colour, 'registration': vehicle.registration,
+        'fare_cents': int(offer.amount * 100), 'currency': 'USD', 'status': offer.status,
+        'rating': Rating.objects.filter(subject=app.user).aggregate(v=Avg('score'))['v'],
+        'completed_trips': app.trips.filter(status='completed').count(), 'pickup_minutes': offer.pickup_minutes,
+        'verified': app.status == 'approved', 'expires_at': offer.expires_at, 'note': offer.note}
+
+
+class OfferSerializer(serializers.Serializer):
+    fare_cents = serializers.IntegerField(min_value=1, max_value=999999999999, required=False)
+    note = serializers.CharField(max_length=250, required=False, default='', allow_blank=True)
+    decision = serializers.CharField(required=False, allow_blank=True, default='counteroffer')
+    pickup_minutes = serializers.IntegerField(min_value=1, max_value=180, required=False, allow_null=True)
+
+    def validate(self, data):
+        data['decision'] = normalize_offer_decision(data.get('decision', 'counteroffer'))
+        if data['decision'] == 'counteroffer' and 'fare_cents' not in data:
+            raise serializers.ValidationError({'fare_cents': 'Required for a counteroffer.'})
+        if data['decision'] == 'accept' and 'fare_cents' in data:
+            data['fare_cents'] = int(data['fare_cents'])
+        return data
+
+
+class DriverRequestDeclineView(APIView):
+    def post(self, request, pk):
+        app = driver_for(request.user)
+        eligible(app, online=True)
+        ride = get_object_or_404(Ride.objects.select_related('quote__pricing__zone'), pk=pk, status='searching', currency='USD', expires_at__gt=timezone.now())
+        if not nearby(app, ride) or hasattr(app, 'active_assignment'):
+            raise PermissionDenied('Request is outside current eligibility.', code='DRIVER_UNAVAILABLE')
+        if RideOffer.objects.filter(ride=ride, driver=app, status='declined').exists():
+            return Response({'id': str(ride.pk), 'status': 'declined', 'message': 'This request was already declined by this driver.'})
+        offer = make_offer(request.user, str(ride.pk), None, decision='decline', note='Driver declined this request.')
+        return Response({'id': str(ride.pk), 'offer_id': str(offer.pk), 'status': offer.status})
+
+
+class RideSyncView(APIView):
+    def get(self, request, pk):
+        ride = get_object_or_404(visible_rides(request.user), pk=pk)
+        return Response({
+            'id': str(ride.pk),
+            'status': ride.status,
+            'assigned_driver_id': str(ride.assigned_driver_id) if ride.assigned_driver_id else None,
+            'assigned_vehicle_id': str(ride.assigned_vehicle_id) if ride.assigned_vehicle_id else None,
+            'agreed_fare': str(ride.agreed_fare) if ride.agreed_fare is not None else None,
+            'payment_preference': ride.payment_preference,
+            'current_trip_stage': ride.status,
+            'latest_sequence': ride.sequence,
+            'server_timestamp': timezone.now().isoformat(),
+            'pending_actions': [] if ride.status in ['completed', 'cancelled', 'expired'] else ['await_driver_offer', 'await_trip_start'][0:1] if ride.status == 'searching' else ['await_driver_arrival'],
+            'request_expires_at': ride.expires_at,
+            'updated_at': ride.updated_at,
+        })
+
+
+class OfferUpdateView(APIView):
+    def patch(self, request, pk):
+        offer = get_object_or_404(RideOffer.objects.select_related('ride', 'driver__user', 'vehicle'), pk=pk)
+        if offer.driver.user_id != request.user.pk:
+            raise PermissionDenied()
+        if offer.status != 'pending':
+            raise ValidationError('Only pending offers can be updated.')
+        data = OfferSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = dict(data.validated_data)
+        amount = values.pop('fare_cents', None)
+        if amount is not None:
+            offer.amount = Decimal(amount) / 100
+        if 'note' in values:
+            offer.note = values['note']
+        if 'pickup_minutes' in values:
+            offer.pickup_minutes = values['pickup_minutes']
+        offer.offer_type = 'driver'
+        if offer.expires_at and offer.expires_at <= timezone.now():
+            raise ValidationError('This offer has expired.')
+        offer.save(update_fields=['amount', 'note', 'pickup_minutes', 'offer_type', 'updated_at'])
+        emit(offer.ride, 'offer.updated', {'offer_id': offer.pk})
+        return Response({'id': str(offer.pk), 'status': offer.status, 'fare_cents': int(offer.amount * 100)})
 
 
 def passenger_rides(user):
@@ -65,29 +164,6 @@ class ActiveRideView(APIView):
         return Response({'ride': RideSerializer(ride).data if ride else None})
 
 
-class OfferSerializer(serializers.Serializer):
-    fare_cents = serializers.IntegerField(min_value=1, max_value=999999999999, required=False)
-    note = serializers.CharField(max_length=250, required=False, default='', allow_blank=True)
-    decision = serializers.ChoiceField(choices=['accept', 'counteroffer', 'decline'], default='counteroffer')
-    pickup_minutes = serializers.IntegerField(min_value=1, max_value=180, required=False, allow_null=True)
-
-    def validate(self, data):
-        if data['decision'] == 'counteroffer' and 'fare_cents' not in data:
-            raise serializers.ValidationError({'fare_cents': 'Required for a counteroffer.'})
-        return data
-
-
-def offer_json(offer):
-    app = offer.driver
-    vehicle = offer.vehicle
-    return {'id': str(offer.pk), 'driver_name': app.user.get_full_name(),
-        'vehicle': f'{vehicle.make} {vehicle.model}', 'colour': vehicle.colour, 'registration': vehicle.registration,
-        'fare_cents': int(offer.amount * 100), 'currency': 'USD', 'status': offer.status,
-        'rating': Rating.objects.filter(subject=app.user).aggregate(v=Avg('score'))['v'],
-        'completed_trips': app.trips.filter(status='completed').count(), 'pickup_minutes': offer.pickup_minutes,
-        'verified': app.status == 'approved', 'expires_at': offer.expires_at, 'note': offer.note}
-
-
 class OffersView(APIView):
     def get(self, request, pk):
         ride = get_object_or_404(passenger_rides(request.user), pk=pk)
@@ -107,7 +183,38 @@ class OffersView(APIView):
 class RideStatusView(APIView):
     def get(self, request, pk):
         ride = get_object_or_404(visible_rides(request.user), pk=pk)
-        return Response({'id': ride.pk, 'status': ride.status, 'sequence': ride.sequence, 'updated_at': ride.updated_at})
+        valid_offer_count = ride.counteroffers.filter(status='pending', expires_at__gt=timezone.now()).count()
+        search_states = {
+            'searching': 'searching',
+            'assigned': 'driver_selected',
+            'arriving': 'driver_assigned',
+            'arrived': 'driver_arrived',
+            'inProgress': 'trip_in_progress',
+            'completed': 'trip_completed',
+            'cancelled': 'ride_cancelled',
+            'expired': 'request_expired',
+        }
+        suggested_action = {
+            'searching': 'Waiting for eligible drivers to respond.',
+            'assigned': 'Driver selected; finalise trip advance status.',
+            'arriving': 'Driver is arriving. Track location.',
+            'arrived': 'Driver has arrived. Begin the trip when ready.',
+            'inProgress': 'Trip in progress. Monitor updates.',
+            'completed': 'Ride completed. Rate the trip if needed.',
+            'cancelled': 'Ride cancelled. No further action.',
+            'expired': 'Ride request expired. Submit a new fare request.',
+        }.get(ride.status, 'Review the ride state.')
+        return Response({
+            'id': str(ride.pk),
+            'status': ride.status,
+            'search_state': search_states.get(ride.status, 'searching'),
+            'request_expiry': ride.expires_at,
+            'valid_offers_count': valid_offer_count,
+            'server_timestamp': timezone.now().isoformat(),
+            'suggested_next_action': suggested_action,
+            'sequence': ride.sequence,
+            'updated_at': ride.updated_at,
+        })
 
     def post(self, request, pk, action=None):
         get_object_or_404(visible_rides(request.user), pk=pk)
@@ -124,7 +231,7 @@ class RideStatusView(APIView):
 class RideAcceptView(APIView):
     def post(self, request, pk):
         get_object_or_404(passenger_rides(request.user), pk=pk)
-        offer_id = serializers.IntegerField(min_value=1).run_validation(request.data.get('offer_id'))
+        offer_id = ObjectIdSerializerField().run_validation(request.data.get('offer_id'))
         return Response(RideSerializer(select_offer(request.user, pk, offer_id)).data)
 
 
@@ -149,8 +256,7 @@ class DriverRequestsView(APIView):
         app = driver_for(request.user)
         eligible(app, online=True)
         qs = Ride.objects.select_related('quote__pricing__zone', 'payment__method').filter(status='searching', currency='USD', expires_at__gt=timezone.now()).exclude(passenger=request.user).order_by('-created_at')
-        # Bound queries by service/category before exact spherical distance filtering.
-        qs = qs.filter(quote__category=app.vehicle.category, quote__pricing__zone__enabled=True)
+        qs = qs.filter(quote__category=app.vehicle.category, quote__pricing__zone__enabled=True).exclude(counteroffers__driver=app, counteroffers__status='declined')
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(qs, request)
         return paginator.get_paginated_response(RideSerializer([r for r in page if nearby(app, r)], many=True).data)
@@ -188,7 +294,8 @@ class EventsView(APIView):
 class RatingView(APIView):
     @transaction.atomic
     def post(self, request, pk):
-        ride = get_object_or_404(visible_rides(request.user).select_for_update(), pk=pk)
+        transaction.guard(Ride, pk)
+        ride = get_object_or_404(visible_rides(request.user), pk=pk)
         if ride.status != 'completed':
             raise ValidationError('Only completed trips can be rated.')
         class Data(serializers.Serializer):
@@ -255,8 +362,9 @@ class EmergencyContactsView(APIView):
 
     def delete(self, request):
         from rides.models import EmergencyContact
-        pk = serializers.IntegerField(min_value=1).run_validation(request.data.get('id'))
-        get_object_or_404(EmergencyContact, pk=pk, user=request.user).delete()
+        pk = ObjectIdSerializerField().run_validation(request.data.get('id'))
+        item = get_object_or_404(EmergencyContact, pk=pk, user=request.user)
+        item.delete()
         return Response(status=204)
 
 
@@ -271,7 +379,7 @@ class TripShareView(APIView):
         from accounts.models import UserPreferences
         if UserPreferences.objects.filter(user=request.user, allow_trip_sharing=False).exists():
             raise PermissionDenied('Trip sharing is disabled in your preferences.')
-        recipient_id = serializers.IntegerField(min_value=1).run_validation(request.data.get('recipient_id'))
+        recipient_id = ObjectIdSerializerField().run_validation(request.data.get('recipient_id'))
         recipient = get_object_or_404(get_user_model(), pk=recipient_id, is_active=True)
         share = TripShare.objects.create(ride=ride, owner=request.user, recipient=recipient, expires_at=timezone.now()+timedelta(hours=6))
         return Response({'id': share.pk, 'expires_at': share.expires_at}, status=201)

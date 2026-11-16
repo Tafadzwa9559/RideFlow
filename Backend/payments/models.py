@@ -1,3 +1,4 @@
+from core.identifiers import StorageJSONEncoder
 from decimal import Decimal
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -13,7 +14,7 @@ class PaymentMethod(models.Model):
     kind = models.CharField(
         max_length=16, choices=[("cash", "Cash"), ("mobile_money", "Mobile money")]
     )
-    supported_currencies = models.JSONField(default=list)
+    supported_currencies = models.JSONField(encoder=StorageJSONEncoder, default=list)
     enabled = models.BooleanField(default=False)
 
     def clean(self):

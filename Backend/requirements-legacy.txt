@@ -1,0 +1,2 @@
+# Optional read-only MySQL snapshot export; not part of MongoDB runtime.
+mysqlclient==2.3.1
