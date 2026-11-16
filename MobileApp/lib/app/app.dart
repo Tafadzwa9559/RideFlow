@@ -141,7 +141,6 @@ class _MainShellState extends State<MainShell> {
       body: SafeArea(
         child: Column(
           children: [
-            const DemoBanner(),
             Expanded(
               child: IndexedStack(index: tab, children: pages),
             ),

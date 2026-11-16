@@ -1,16 +1,17 @@
+import 'support/fixture_repository.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rideflow_mobile/features/passenger/home.dart';
 import 'package:rideflow_mobile/app/controller.dart';
 import 'package:rideflow_mobile/app/theme.dart';
-import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/features/entry/entry.dart';
 
 void main() {
   testWidgets('Onboarding swipes and persists completion', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final app = AppController(DemoRepository());
+    final app = AppController(TestRepository());
     await app.initialize();
     await tester.pumpWidget(
       MaterialApp(
@@ -27,7 +28,7 @@ void main() {
     await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
     expect(app.onboarded, isTrue);
-    final reopened = AppController(DemoRepository());
+    final reopened = AppController(TestRepository());
     await reopened.initialize();
     expect(reopened.onboarded, isTrue);
     reopened.dispose();
@@ -36,7 +37,7 @@ void main() {
   testWidgets('Phone validation rejects incomplete Zimbabwe number', (
     tester,
   ) async {
-    final app = AppController(DemoRepository());
+    final app = AppController(TestRepository());
     await tester.pumpWidget(
       MaterialApp(
         theme: triviaTheme(),
@@ -57,7 +58,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final app = AppController(DemoRepository());
+      final app = AppController(TestRepository());
       await app.verify('+263771234567', '123456');
       await app.updateProfile('Tariro', 'Test', '');
       await tester.pumpWidget(

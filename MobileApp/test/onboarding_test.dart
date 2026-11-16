@@ -1,3 +1,5 @@
+import 'support/fixture_repository.dart';
+
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -5,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rideflow_mobile/app/controller.dart';
 import 'package:rideflow_mobile/app/theme.dart';
-import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/features/entry/entry.dart';
 
 const paths = [
@@ -57,7 +58,7 @@ void main() {
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
-        final app = AppController(DemoRepository());
+        final app = AppController(TestRepository());
         await tester.pumpWidget(
           MaterialApp(
             theme: triviaTheme(),
@@ -136,7 +137,7 @@ void main() {
   testWidgets('Swipe back and Skip preserve the existing completion flow', (
     tester,
   ) async {
-    final app = AppController(DemoRepository());
+    final app = AppController(TestRepository());
     await tester.pumpWidget(
       MaterialApp(
         theme: triviaTheme(),
@@ -163,7 +164,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final app = AppController(DemoRepository());
+    final app = AppController(TestRepository());
     await tester.pumpWidget(
       MaterialApp(
         theme: triviaTheme(),

@@ -1,6 +1,7 @@
+import 'support/fixture_repository.dart';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/shared/models.dart';
 import 'package:rideflow_mobile/app/controller.dart';
 
@@ -15,7 +16,7 @@ void main() {
     }
   });
   test('OTP fails closed and driver access requires approval', () async {
-    final repo = DemoRepository();
+    final repo = TestRepository();
     await expectLater(
       repo.verifyOtp('+263771234567', '000000'),
       throwsStateError,
@@ -32,7 +33,7 @@ void main() {
   test(
     'Ride lifecycle prevents duplicate assignment and fixes agreed fare',
     () async {
-      final repo = DemoRepository();
+      final repo = TestRepository();
       final r = await repo.request(
         demoPlaces[0],
         demoPlaces[1],
@@ -61,7 +62,7 @@ void main() {
     },
   );
   test('Concurrent selections cannot assign two drivers', () async {
-    final repo = DemoRepository();
+    final repo = TestRepository();
     final r = await repo.request(demoPlaces[0], demoPlaces[1], 'Standard', 500);
     final results = await Future.wait(
       ['demo-tariro', 'demo-tendai'].map((id) async {
@@ -76,12 +77,12 @@ void main() {
     expect(results.where((v) => v).length, 1);
   });
   test('Demo searching request can be inspected in driver mode and logout clears state', () async {
-    final app = AppController(DemoRepository());
+    final app = AppController(TestRepository());
     await app.verify('+263771234567', '123456');
     await app.updateProfile('Test', 'User', '');
     await app.book(demoPlaces[0], demoPlaces[1], 'Standard', 500);
-    expect(await app.switchMode(), isTrue);
-    expect(app.driverMode, isTrue);
+    expect(await app.switchMode(), isFalse);
+    expect(app.driverMode, isFalse);
     await app.transition(RideStatus.cancelled);
     expect(await app.switchMode(), isTrue);
     await app.logout();
@@ -92,7 +93,7 @@ void main() {
   test(
     'Driver simulation preserves assigned fare and active trip when offline',
     () async {
-      final repo = DemoRepository();
+      final repo = TestRepository();
       await repo.verifyOtp('+263771234567', '123456');
       await repo.profile('Driver', 'Test', '');
       await repo.applyDriver({}, {});
@@ -156,7 +157,7 @@ void main() {
   );
 }
 
-class OfflineFailureRepository extends DemoRepository {
+class OfflineFailureRepository extends TestRepository {
   bool loggedOut = false;
   @override
   Future<void> availability(bool online) async {

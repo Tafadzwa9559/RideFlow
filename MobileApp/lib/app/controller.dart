@@ -12,9 +12,7 @@ import '../core/realtime.dart';
 import '../shared/models.dart';
 
 final appProvider = Provider<AppController>((ref) {
-  final controller = AppController(
-    AppConfig.demo ? DemoRepository() : ApiRepository(),
-  );
+  final controller = AppController(ApiRepository());
   ref.onDispose(controller.dispose);
   return controller;
 });
@@ -33,12 +31,15 @@ class AppController extends ChangeNotifier {
   String currency = 'USD';
   Session? session;
   Ride? ride;
+  String? historyNext;
   List<DriverOffer> offers = [];
   List<Ride> history = [];
   List<Place> saved = [], recent = [];
   Realtime? realtime;
   StreamSubscription<void>? _expiration;
-  Timer? _poll;
+  Timer? _poll, _gpsHeartbeat;
+  bool _locationUploading = false;
+  DateTime? _lastLocationUpload;
   StreamSubscription<Position>? _positions;
   bool _syncing = false;
   bool initializationFailed = false;
@@ -85,7 +86,8 @@ class AppController extends ChangeNotifier {
           online = false;
           driverMode = false;
           _stopSync();
-          _positions?.cancel();
+          _gpsHeartbeat?.cancel();
+    _positions?.cancel();
           saved = [];
           recent = [];
           offers = [];
@@ -130,7 +132,7 @@ class AppController extends ChangeNotifier {
       final refreshed = await repository.restore();
       final current = await repository.activeRide();
       final records = await repository.history();
-      final bids = current?.status == RideStatus.searching
+      final bids = !driverMode && current?.status == RideStatus.searching
           ? await repository.offers(current!.id)
           : <DriverOffer>[];
       if (session == null || session?.phone != identity?.phone || _disposed) {
@@ -139,13 +141,27 @@ class AppController extends ChangeNotifier {
       session = refreshed ?? session;
       if (online && session?.driverStatus != DriverStatus.approved) {
         online = false;
-        await _positions?.cancel();
+        _gpsHeartbeat?.cancel();
+      await _positions?.cancel();
         try {
           await repository.availability(false);
         } catch (_) {}
       }
-      ride = current ?? (ride?.active == false ? ride : null);
+      ride = current == null
+          ? (ride?.active == false ? ride : null)
+          : current.id == ride?.id && ride?.driver != null
+          ? current.copy(driver: ride!.driver)
+          : current;
       history = records;
+      if (repository is ApiRepository) {
+        historyNext = (repository as ApiRepository).historyNext;
+      }
+      final places = await repository.read('users/me/saved-places');
+      saved = ((places['results'] as List?) ?? [])
+          .map(
+            (p) => Place.fromJson(Map<String, dynamic>.from(p['place'] as Map)),
+          )
+          .toList();
       offers = bids;
       notifyListeners();
     } finally {
@@ -158,13 +174,12 @@ class AppController extends ChangeNotifier {
     if (repository is ApiRepository && AppConfig.websocket.isNotEmpty) {
       realtime = Realtime(
         url: AppConfig.websocket,
-        ticket: () async =>
-            (await repository.read('realtime/ticket'))['ticket'] as String,
+        ticket: () async => (repository as ApiRepository).accessToken(),
         reconcile: sync,
       )..addListener(notifyListeners);
       realtime!.connect();
     }
-    if (!AppConfig.demo) {
+    if (repository is ApiRepository) {
       _poll = Timer.periodic(const Duration(seconds: 15), (_) async {
         try {
           await sync();
@@ -194,7 +209,7 @@ class AppController extends ChangeNotifier {
     String? paymentPreference,
     String? passengerNote,
   }) => perform(() async {
-    if (!AppConfig.demo && (methodId ?? paymentMethod) == null) {
+    if ((methodId ?? paymentMethod) == null) {
       throw StateError('Choose an enabled payment method before booking.');
     }
     ride = await repository.request(
@@ -213,7 +228,7 @@ class AppController extends ChangeNotifier {
     await sync();
   });
   Future<bool> accept(DriverOffer offer) => perform(() async {
-    ride = await repository.accept(ride!.id, offer.id);
+    ride = (await repository.accept(ride!.id, offer.id)).copy(driver: offer);
     offers = [];
     await sync();
   });
@@ -225,7 +240,7 @@ class AppController extends ChangeNotifier {
     if (session?.driverStatus != DriverStatus.approved) {
       throw StateError('Driver approval is required.');
     }
-    if (value && !AppConfig.demo) {
+    if (value) {
       if (!await Geolocator.isLocationServiceEnabled()) {
         throw StateError('Turn on location services before going online.');
       }
@@ -251,9 +266,13 @@ class AppController extends ChangeNotifier {
       });
     }
     await repository.availability(value);
-    online = value;
-    await _positions?.cancel();
-    if (value && !AppConfig.demo) {
+    final confirmed = await repository.read('drivers/me/availability');
+    online =
+        confirmed['status'] == 'online' ||
+        confirmed['availability'] == 'online';
+    _gpsHeartbeat?.cancel();
+      await _positions?.cancel();
+    if (value) {
       _positions =
           Geolocator.getPositionStream(
             locationSettings: const LocationSettings(
@@ -263,11 +282,7 @@ class AppController extends ChangeNotifier {
           ).listen(
             (p) async {
               try {
-                await repository.write('driver/location', {
-                  'latitude': p.latitude,
-                  'longitude': p.longitude,
-                  'timestamp': p.timestamp.toUtc().toIso8601String(),
-                });
+                await publishPosition(p);
               } catch (_) {
                 error = 'Location upload interrupted. Check your connection.';
                 notifyListeners();
@@ -278,11 +293,30 @@ class AppController extends ChangeNotifier {
               notifyListeners();
             },
           );
+      _gpsHeartbeat = Timer.periodic(const Duration(seconds: 30), (_) async {
+        if (!online || _disposed) return;
+        try {
+          final p = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 10)));
+          await publishPosition(p);
+        } catch (_) {
+          error = 'Fresh GPS unavailable. Driver eligibility expires without fresh locations.';
+          notifyListeners();
+        }
+      });
     }
   });
+  Future<void> publishPosition(Position p) async {
+    if (!online || _disposed || _locationUploading || session == null) return;
+    final now = DateTime.now().toUtc();
+    if (now.difference(p.timestamp.toUtc()).inSeconds > 30 || (_lastLocationUpload != null && now.difference(_lastLocationUpload!).inSeconds < 3)) return;
+    _locationUploading = true;
+    try {
+      await repository.write('drivers/me/location', {'latitude': p.latitude, 'longitude': p.longitude});
+      _lastLocationUpload = now;
+    } finally { _locationUploading = false; }
+  }
   Future<bool> switchMode() => perform(() async {
-    if (ride?.active == true &&
-        !(AppConfig.demo && ride?.status == RideStatus.searching)) {
+    if (ride?.active == true) {
       throw StateError(
         'Complete or cancel your current trip before switching modes.',
       );
@@ -290,12 +324,14 @@ class AppController extends ChangeNotifier {
     if (online) {
       await repository.availability(false);
       online = false;
+      _gpsHeartbeat?.cancel();
       await _positions?.cancel();
     }
     driverMode = !driverMode;
   });
   Future<bool> logout() => perform(() async {
-    await _positions?.cancel();
+    _gpsHeartbeat?.cancel();
+      await _positions?.cancel();
     try {
       if (online) {
         try {
@@ -307,6 +343,7 @@ class AppController extends ChangeNotifier {
       await repository.logout();
     } finally {
       _stopSync();
+      _gpsHeartbeat?.cancel();
       await _positions?.cancel();
       session = null;
       ride = null;
@@ -332,16 +369,35 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void savePlace(Place p) {
-    if (!saved.any((v) => v.name == p.name)) {
-      saved.add(p);
-      notifyListeners();
-    }
+  Future<void> savePlace(Place p) async {
+    await perform(() async {
+      await repository.write('users/me/saved-places', {
+        'label': p.name,
+        'place': p.toJson(),
+      });
+      await sync();
+    });
+  }
+
+  Future<void> moreHistory() async {
+    if (historyNext == null) return;
+    await perform(() async {
+      final page = await repository.read(historyNext!);
+      final rows = (page['results'] as List).map(
+        (j) => Ride.fromJson(Map<String, dynamic>.from(j as Map)),
+      );
+      history = [
+        ...history,
+        ...rows.where((r) => !history.any((old) => old.id == r.id)),
+      ];
+      historyNext = page['next'] as String?;
+    });
   }
 
   Future<void> pause() async {
     _stopSync();
-    await _positions?.cancel();
+    _gpsHeartbeat?.cancel();
+      await _positions?.cancel();
     if (online) {
       try {
         await repository.availability(false);
@@ -366,6 +422,7 @@ class AppController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _stopSync();
+    _gpsHeartbeat?.cancel();
     _positions?.cancel();
     _expiration?.cancel();
     if (repository is ApiRepository) {

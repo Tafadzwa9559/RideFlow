@@ -1,6 +1,7 @@
+import 'support/fixture_repository.dart';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/shared/models.dart';
 
 void main() {
@@ -10,7 +11,7 @@ void main() {
     test(
       '${method.name} demo booking completes without a payment service',
       () async {
-        final repo = DemoRepository();
+        final repo = TestRepository();
         final quote = await repo.quote(
           demoPlaces[0],
           demoPlaces[1],
@@ -26,9 +27,9 @@ void main() {
         );
         expect(ride.paymentMethodName, method.name);
         await repo.verifyOtp('+263771234567', '123456');
-      await repo.applyDriver({}, {});
-      await repo.approveSimulation();
-      repo.online = true;
+        await repo.applyDriver({}, {});
+        await repo.approveSimulation();
+        repo.online = true;
         expect((await repo.requests()).single.paymentMethod, method.id);
         await repo.counteroffer(ride.id, 600);
         final offer = (await repo.offers(ride.id)).first;
@@ -49,7 +50,7 @@ void main() {
     );
   }
   test('Cancelled demo ride leaves no active request', () async {
-    final repo = DemoRepository();
+    final repo = TestRepository();
     final ride = await repo.request(
       demoPlaces[0],
       demoPlaces[1],

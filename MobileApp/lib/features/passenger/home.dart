@@ -5,7 +5,6 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../app/controller.dart';
 import '../../app/theme.dart';
-import '../../core/config.dart';
 import '../../core/map_view.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
@@ -398,14 +397,6 @@ class _PlacePickerState extends State<PlacePicker> {
             padding: const EdgeInsets.all(16),
             child: Text(error!, style: const TextStyle(color: Colors.red)),
           ),
-        if (AppConfig.demo && !map)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'Demo landmarks • Examples do not confirm service availability.',
-              style: TextStyle(fontSize: 12),
-            ),
-          ),
         Expanded(
           child: map
               ? Stack(
@@ -492,11 +483,7 @@ class TripPanel extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 6),
-        Text(
-          AppConfig.demo
-              ? 'Simulated trip • No real vehicle is on the way.'
-              : app.realtime?.state ?? 'Updates refresh every 15 seconds',
-        ),
+        Text(app.realtime?.state ?? 'Updates refresh every 15 seconds'),
         const SizedBox(height: 16),
         Text('${r.pickup.name}\n↓\n${r.destination.name}'),
         const Divider(height: 32),
@@ -599,14 +586,14 @@ class TripPanel extends StatelessWidget {
             icon: const Icon(Icons.shield_outlined),
             label: const Text('Safety & trip details'),
           ),
-          if ((AppConfig.demo || app.driverMode) && next != null) ...[
-            const SizedBox(height: 12),
-            ActionButton(
-              '${AppConfig.demo ? 'Simulate: ' : ''}${statusLabel(next)}',
-              () => app.transition(next),
-              busy: app.busy,
-            ),
-          ],
+        ],
+        if (app.driverMode && next != null) ...[
+          const SizedBox(height: 12),
+          ActionButton(
+            statusLabel(next),
+            () => app.transition(next),
+            busy: app.busy,
+          ),
         ],
         ErrorNotice(app),
         if (!r.active)

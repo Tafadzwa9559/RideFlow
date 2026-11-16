@@ -246,7 +246,6 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const DemoBanner(),
                 const SizedBox(height: 44),
                 const Brand(large: true),
                 const SizedBox(height: 10),
@@ -299,14 +298,6 @@ class _AuthScreenState extends State<AuthScreen> {
                     },
                   ),
                 ] else ...[
-                  if (AppConfig.demo)
-                    const Text(
-                      'Demo verification code: 123456',
-                      style: TextStyle(
-                        color: darkGreen,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: code,

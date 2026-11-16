@@ -4,8 +4,9 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/io.dart';
 
-/// Gets a short-lived, single-use socket ticket from the authenticated REST API.
+/// Uses the documented first-frame JWT authentication; no ticket endpoint.
 /// Tokens are never included in the URL. Every event triggers an authoritative read.
 class Realtime extends ChangeNotifier {
   Realtime({required this.url, required this.ticket, required this.reconcile});
@@ -36,14 +37,22 @@ class Realtime extends ChangeNotifier {
       if (_closed) {
         return;
       }
-      final channel = WebSocketChannel.connect(Uri.parse(url));
+      final uri = Uri.parse(url);
+      final channel = IOWebSocketChannel.connect(
+        uri,
+        headers: {
+          'Origin': uri
+              .replace(scheme: 'https', path: '', query: '', fragment: '')
+              .toString(),
+        },
+      );
       _channel = channel;
       await channel.ready.timeout(const Duration(seconds: 15));
       if (_closed) {
         await channel.sink.close();
         return;
       }
-      channel.sink.add(jsonEncode({'type': 'authenticate', 'ticket': auth}));
+      channel.sink.add(jsonEncode({'token': auth}));
       _liveness = Timer(const Duration(seconds: 15), _reconnect);
       _subscription = channel.stream.listen(
         (raw) async {
@@ -51,12 +60,9 @@ class Realtime extends ChangeNotifier {
             _liveness?.cancel();
             _liveness = Timer(const Duration(seconds: 60), _reconnect);
             final event = jsonDecode(raw as String) as Map<String, dynamic>;
-            if (event['type'] == 'authenticated') {
+            if (event['type'] == 'connection.ready') {
               _attempt = 0;
               _state('Connected');
-              channel.sink.add(
-                jsonEncode({'type': 'subscribe', 'channel': 'user'}),
-              );
               await reconcile();
             } else if (event['type'] != 'pong') {
               await reconcile();

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../app/controller.dart';
 import '../app/theme.dart';
-import '../core/config.dart';
 
 class Brand extends StatelessWidget {
   const Brand({super.key, this.large = false});
@@ -25,27 +24,6 @@ class Brand extends StatelessWidget {
       ),
     ),
   );
-}
-
-class DemoBanner extends StatelessWidget {
-  const DemoBanner({super.key});
-  @override
-  Widget build(BuildContext context) => AppConfig.demo
-      ? Container(
-          width: double.infinity,
-          color: pale,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-          child: const Text(
-            'DEMO  •  Simulated rides. No real dispatch or payments.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
-              color: darkGreen,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        )
-      : const SizedBox.shrink();
 }
 
 class ActionButton extends StatelessWidget {

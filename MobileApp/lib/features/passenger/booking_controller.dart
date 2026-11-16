@@ -30,8 +30,13 @@ class BookingController extends ChangeNotifier {
 
   void adjustFare(int deltaCents) {
     if (quote == null || fare.text.trim().isEmpty) {
-      final current = quote == null ? 0 : quote!.suggestedCents ?? quote!.minimumCents;
-      final next = (current + deltaCents).clamp(quote?.minimumCents ?? 0, quote?.maximumCents ?? current + deltaCents);
+      final current = quote == null
+          ? 0
+          : quote!.suggestedCents ?? quote!.minimumCents;
+      final next = (current + deltaCents).clamp(
+        quote?.minimumCents ?? 0,
+        quote?.maximumCents ?? current + deltaCents,
+      );
       fare.text = (next / 100).toStringAsFixed(2);
       manuallyEdited = true;
       notifyListeners();
@@ -60,6 +65,7 @@ class BookingController extends ChangeNotifier {
     manuallyEdited = false;
     notifyListeners();
   }
+
   @override
   void notifyListeners() {
     if (!_disposed) {
@@ -76,7 +82,7 @@ class BookingController extends ChangeNotifier {
     }
     if (!selected.enabled) {
       return selected.kind == 'mobile_money'
-          ? 'Payment integration unavailable. Choose an enabled cash method.'
+          ? 'This offline payment preference is currently unavailable.'
           : 'This payment method is unavailable.';
     }
     if (!selected.supports(currency)) {
@@ -120,7 +126,15 @@ class BookingController extends ChangeNotifier {
     configurationError = null;
     notifyListeners();
     try {
-      methods = directPaymentMethods;
+      final config = await app.repository.read('payments/methods');
+      methods = (config['items'] as List)
+          .map(
+            (j) => BookingPaymentMethod.fromJson(
+              Map<String, dynamic>.from(j as Map),
+            ),
+          )
+          .where((m) => m.enabled && m.supports('USD'))
+          .toList();
       currencies = ['USD'];
       currency = 'USD';
       if (method == null) {
@@ -250,14 +264,18 @@ class BookingController extends ChangeNotifier {
     submitting = true;
     error = null;
     notifyListeners();
-    final signature = '${quote!.id}|${method!.id}|$currency|${fare.text}|${note.text}';
+    final signature =
+        '${quote!.id}|${method!.id}|$currency|${fare.text}|${note.text}';
     if (signature != _lastSubmission) {
       _requestKey = _uuid();
       _lastSubmission = signature;
     }
     _requestKey ??= _uuid();
-    final paymentPreference =
-        method?.id == 'ecocash' ? 'ecocash' : method?.id == 'onemoney' ? 'onemoney' : 'cash';
+    final paymentPreference = method?.id == 'ecocash'
+        ? 'ecocash'
+        : method?.id == 'onemoney'
+        ? 'onemoney'
+        : 'cash';
     final ok = await app.book(
       pickup!,
       destination!,

@@ -8,6 +8,7 @@ enum RideStatus {
   inProgress,
   completed,
   cancelled,
+  expired,
 }
 
 enum DriverStatus {
@@ -32,28 +33,10 @@ class Place {
   };
   factory Place.fromJson(Map<String, dynamic> j) => Place(
     j['name'] as String,
-    (j['latitude'] as num).toDouble(),
-    (j['longitude'] as num).toDouble(),
+    double.parse('${j['latitude']}'),
+    double.parse('${j['longitude']}'),
   );
 }
-
-const demoPlaces = [
-  Place('Harare Gardens', -17.8225, 31.0456),
-  Place('Avondale Shopping Centre', -17.8002, 31.0328),
-  Place('Sam Levy’s Village', -17.7626, 31.0863),
-  Place('Robert Gabriel Mugabe Airport', -17.9318, 31.0928),
-  Place('Eastgate Centre', -17.8331, 31.0528),
-  Place(
-    'National University of Science and Technology, Bulawayo',
-    -20.163,
-    28.643,
-  ),
-  Place('Mutare city centre', -18.9707, 32.6709),
-  Place('Gweru city centre', -19.4500, 29.8167),
-  Place('Masvingo city centre', -20.0744, 30.8328),
-  Place('Chitungwiza town centre', -18.0127, 31.0755),
-  Place('Norton town centre', -17.8833, 30.7000),
-];
 
 class DriverOffer {
   const DriverOffer({
@@ -73,9 +56,9 @@ class DriverOffer {
   final bool verified;
   factory DriverOffer.fromJson(Map<String, dynamic> j) => DriverOffer(
     id: '${j['id']}',
-    name: j['driver_name'] as String,
-    vehicle: j['vehicle'] as String,
-    plate: j['registration'] as String,
+    name: j['driver_name'] as String? ?? 'Driver details unavailable',
+    vehicle: j['vehicle'] as String? ?? 'Vehicle details unavailable',
+    plate: j['registration'] as String? ?? '',
     cents: j['fare_cents'] as int,
     rating: (j['rating'] as num?)?.toDouble(),
     minutes: j['pickup_minutes'] as int?,
@@ -116,16 +99,18 @@ class Ride {
   final List<LatLng> route;
   bool get freshLocation {
     final stamp = locationUpdatedAt;
-    if (stamp == null || driverLocation == null || driver == null) {
+    if (stamp == null || driverLocation == null) {
       return false;
     }
     final age = DateTime.now().toUtc().difference(stamp.toUtc());
     return age >= const Duration(seconds: -30) &&
-        age <= const Duration(minutes: 2);
+        age <= const Duration(seconds: 90);
   }
 
   bool get active =>
-      status != RideStatus.completed && status != RideStatus.cancelled;
+      status != RideStatus.completed &&
+      status != RideStatus.cancelled &&
+      status != RideStatus.expired;
   Ride copy({RideStatus? status, DriverOffer? driver}) => Ride(
     id: id,
     pickup: pickup,
@@ -192,12 +177,12 @@ class Session {
     lastName: j['last_name'] as String? ?? '',
     phone: j['phone'] as String,
     driverStatus: DriverStatus.values.byName(
-      j['driver_status'] as String? ?? 'draft',
+      j['driver_status'] as String? ?? 'notRegistered',
     ),
   );
 }
 
-String currencySymbol(String currency) => currency == 'ZWG' ? 'ZiG' : 'US\$';
+String currencySymbol(String currency) => 'US\$';
 String money(int cents, {String currency = 'USD'}) =>
     '${currencySymbol(currency)} ${(cents / 100).toStringAsFixed(2)}';
 int parseFare(String input) {
@@ -224,6 +209,7 @@ String statusLabel(RideStatus s) => switch (s) {
   RideStatus.inProgress => 'Enjoy your journey',
   RideStatus.completed => 'Trip completed',
   RideStatus.cancelled => 'Trip cancelled',
+  RideStatus.expired => 'Ride request expired',
 };
 
 class RouteQuote {
@@ -309,7 +295,8 @@ class BookingPaymentMethod {
 String paymentStatusLabel(String status) => switch (status) {
   'pending_cash' => 'Cash due to driver',
   'awaiting_confirmation' => 'Awaiting payment confirmation',
-  'paid' => 'Paid',
+  'unverified' => 'Direct payment — not verified by Trivia',
+  'paid' => 'Driver-reported receipt',
   'failed' => 'Payment failed',
   'cancelled' => 'Cancelled',
   _ => status,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
-import '../../core/repository.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
 import 'booking_controller.dart';
@@ -41,10 +40,6 @@ class BookingFields extends StatelessWidget {
             const Text('Calculating driving route and fare…'),
           ],
           if (q != null) ...[
-            if (booking.app.repository is DemoRepository)
-              const Text(
-                'Demo estimate: fictional distance, duration and fare.',
-              ),
             Text(
               '${(q.metres / 1000).toStringAsFixed(1)} km · ${(q.seconds / 60).ceil()} min',
               style: Theme.of(context).textTheme.titleMedium,
@@ -97,12 +92,16 @@ class BookingFields extends StatelessWidget {
                   controller: booking.fare,
                   enabled: !booking.submitting,
                   onChanged: booking.editFare,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Offer your fare',
                     prefixText: '${currencySymbol(currency)} ',
                     hintText: '0.00',
-                    errorText: booking.fare.text.isEmpty ? null : booking.fareError,
+                    errorText: booking.fare.text.isEmpty
+                        ? null
+                        : booking.fareError,
                   ),
                 ),
               ),
@@ -110,12 +109,14 @@ class BookingFields extends StatelessWidget {
               Column(
                 children: [
                   IconButton(
-                    onPressed: () => booking.adjustFare(BookingController.fareStepCents),
+                    onPressed: () =>
+                        booking.adjustFare(BookingController.fareStepCents),
                     icon: const Icon(Icons.add_circle_outline),
                     tooltip: 'Increase offer by 0.50 USD',
                   ),
                   IconButton(
-                    onPressed: () => booking.adjustFare(-BookingController.fareStepCents),
+                    onPressed: () =>
+                        booking.adjustFare(-BookingController.fareStepCents),
                     icon: const Icon(Icons.remove_circle_outline),
                     tooltip: 'Decrease offer by 0.50 USD',
                   ),
@@ -126,13 +127,14 @@ class BookingFields extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Text(
+              const Expanded(child: Text(
                 'Suggested fare — you can change this amount',
                 style: TextStyle(fontSize: 12),
-              ),
-              const Spacer(),
+              )),
               TextButton(
-                onPressed: booking.quote?.suggestedCents == null ? null : booking.resetFareToSuggested,
+                onPressed: booking.quote?.suggestedCents == null
+                    ? null
+                    : booking.resetFareToSuggested,
                 child: const Text('Reset to Suggested Fare'),
               ),
             ],

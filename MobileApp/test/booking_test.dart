@@ -1,3 +1,5 @@
+import 'support/fixture_repository.dart';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'dart:async';
@@ -7,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:rideflow_mobile/app/theme.dart';
 import 'package:rideflow_mobile/features/passenger/booking_fields.dart';
 import 'package:rideflow_mobile/app/controller.dart';
-import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/features/passenger/booking_controller.dart';
 import 'package:rideflow_mobile/shared/models.dart';
 
@@ -26,7 +27,7 @@ RouteQuote quoteFixture(String currency, {String id = 'test-quote'}) =>
       expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
     );
 
-class BookingRepositoryFixture extends DemoRepository {
+class BookingRepositoryFixture extends TestRepository {
   bool noRoute = false, noExchange = false, failBooking = false;
   final calls = <String>[];
   final keys = <String?>[];
@@ -60,6 +61,8 @@ class BookingRepositoryFixture extends DemoRepository {
     String currency = 'USD',
     String? quoteId,
     String? requestKey,
+    String? passengerNote,
+    String? paymentPreference,
   }) async {
     keys.add(requestKey);
     currencies.add(currency);
@@ -207,15 +210,15 @@ void main() {
       ),
     );
     expect(
-      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      tester.widget<TextField>(find.byWidgetPredicate((w) => w is TextField && w.controller == draft.fare)).controller!.text,
       '4.25',
     );
     expect(find.textContaining('ZiG'), findsNothing);
     await tester.ensureVisible(find.text('EcoCash'));
     await tester.tap(find.text('EcoCash'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byType(TextField));
-    await tester.enterText(find.byType(TextField), '99.00');
+    await tester.ensureVisible(find.byWidgetPredicate((w) => w is TextField && w.controller == draft.fare));
+    await tester.enterText(find.byWidgetPredicate((w) => w is TextField && w.controller == draft.fare), '99.00');
     await tester.pumpAndSettle();
     tester.testTextInput.hide();
     await tester.ensureVisible(find.text('Request ride'));

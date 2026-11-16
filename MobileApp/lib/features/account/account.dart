@@ -4,7 +4,6 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../app/controller.dart';
 import '../../app/theme.dart';
-import '../../core/config.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
 import '../entry/entry.dart';
@@ -241,10 +240,7 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
             ErrorNotice(widget.app),
             if (records.isEmpty)
-              const EmptyState(
-                'Your journeys start here',
-                'Completed and cancelled rides will appear in your activity.',
-              ),
+              const EmptyState('No rides yet.', 'Your trips will appear here.'),
             for (final r in records)
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -259,6 +255,16 @@ class _HistoryPageState extends State<HistoryPage> {
                 trailing: Text(money(r.cents, currency: r.currency)),
                 onTap: () =>
                     openPage(context, ReceiptPage(app: widget.app, ride: r)),
+              ),
+            if (widget.app.historyNext != null)
+              OutlinedButton(
+                onPressed: widget.app.busy
+                    ? null
+                    : () async {
+                        await widget.app.moreHistory();
+                        if (mounted) setState(() {});
+                      },
+                child: const Text('Load more'),
               ),
           ],
         ),
@@ -363,6 +369,27 @@ class _ResourcePageState extends State<ResourcePage> {
     }
   }
 
+  Future<void> more(Map<String, dynamic> current) async {
+    try {
+      final page = await widget.app.repository.read(current['next'] as String);
+      if (mounted)
+        setState(
+          () => data = Future.value({
+            ...page,
+            'items': [
+              ...(current['items'] as List),
+              ...(page['items'] as List? ?? []),
+            ],
+          }),
+        );
+    } catch (_) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to load the next page. Retry.')),
+        );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -433,10 +460,17 @@ class _ResourcePageState extends State<ResourcePage> {
                       ? Icons.payments_outlined
                       : Icons.notifications_outlined,
                 ),
-                title: Text('${item['name'] ?? item['title'] ?? 'Update'}'),
+                title: Text(
+                  '${item['name'] ?? item['title'] ?? item['type'] ?? 'Notification'}',
+                ),
                 subtitle: item['description'] == null
                     ? null
                     : Text('${item['description']}'),
+              ),
+            if (s.data!['next'] != null)
+              OutlinedButton(
+                onPressed: () => more(s.data!),
+                child: const Text('Load more'),
               ),
           ],
         );
@@ -479,7 +513,7 @@ class SafetyPage extends StatelessWidget {
               await SharePlus.instance.share(
                 ShareParams(
                   text:
-                      '${AppConfig.demo ? 'SIMULATED DEMO TRIP\n' : ''}Trivia trip ${r.id}\n${r.pickup.name} → ${r.destination.name}\n${r.driver?.vehicle ?? 'Driver not assigned'} ${r.driver?.plate ?? ''}\n${statusLabel(r.status)}\nThis is a trip summary, not live tracking.',
+                      'Trivia trip ${r.id}\n${r.pickup.name} → ${r.destination.name}\n${r.driver?.vehicle ?? 'Driver not assigned'} ${r.driver?.plate ?? ''}\n${statusLabel(r.status)}\nThis is a trip summary, not live tracking.',
                   sharePositionOrigin: box == null
                       ? null
                       : box.localToGlobal(Offset.zero) & box.size,
@@ -538,10 +572,6 @@ class SafetyPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        if (AppConfig.demo)
-          const Text(
-            'Demo submissions are simulated. No support agent or emergency service will receive them.',
-          ),
       ],
     ),
   );
@@ -581,10 +611,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
       listenable: widget.app,
       builder: (_, _) => sent
           ? EmptyState(
-              AppConfig.demo ? 'Demo submission recorded' : 'Submitted',
-              AppConfig.demo
-                  ? 'Nothing was sent to a live service.'
-                  : 'The platform received your submission.',
+              'Submitted',
+              'The platform received your submission.',
               icon: Icons.check_circle_outline,
             )
           : SingleChildScrollView(
@@ -640,25 +668,21 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     ),
                     ErrorNotice(widget.app),
                     const SizedBox(height: 24),
-                    ActionButton(
-                      AppConfig.demo ? 'Simulate submission' : 'Submit',
-                      () async {
-                        if (form.currentState!.validate()) {
-                          final ok = await widget.app.perform(
-                            () => widget.app.repository.write(widget.resource, {
-                              'message': message.text.trim(),
-                              if (widget.contact) 'name': name.text.trim(),
-                              if (widget.resource.endsWith('/review'))
-                                'rating': rating,
-                            }),
-                          );
-                          if (ok && mounted) {
-                            setState(() => sent = true);
-                          }
+                    ActionButton('Submit', () async {
+                      if (form.currentState!.validate()) {
+                        final ok = await widget.app.perform(
+                          () => widget.app.repository.write(widget.resource, {
+                            'message': message.text.trim(),
+                            if (widget.contact) 'name': name.text.trim(),
+                            if (widget.resource.endsWith('/review'))
+                              'rating': rating,
+                          }),
+                        );
+                        if (ok && mounted) {
+                          setState(() => sent = true);
                         }
-                      },
-                      busy: widget.app.busy,
-                    ),
+                      }
+                    }, busy: widget.app.busy),
                   ],
                 ),
               ),
@@ -675,7 +699,32 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool notifications = true;
+  bool? notifications;
+  String? settingsError;
+  @override
+  void initState() {
+    super.initState();
+    loadPreferences();
+  }
+
+  Future<void> loadPreferences() async {
+    try {
+      final data = await widget.app.repository.read('users/me/preferences');
+      if (mounted) {
+        setState(() {
+          notifications = data['push_notifications'] as bool;
+          settingsError = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(
+          () => settingsError = 'Preferences unavailable. Please retry.',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Settings & privacy')),
@@ -684,14 +733,20 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (_, _) => ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          if (notifications == null && settingsError == null)
+            const LinearProgressIndicator(),
+          if (settingsError != null) ...[
+            Text(settingsError!),
+            TextButton(onPressed: loadPreferences, child: const Text('Retry')),
+          ],
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Trip notifications'),
             subtitle: const Text(
               'In-app preference. Push delivery requires platform configuration.',
             ),
-            value: notifications,
-            onChanged: widget.app.busy
+            value: notifications ?? false,
+            onChanged: widget.app.busy || notifications == null
                 ? null
                 : (v) async {
                     final ok = await widget.app.perform(
@@ -724,33 +779,9 @@ class _SettingsPageState extends State<SettingsPage> {
             'Location is requested when you choose your current position. No background location permission is requested. Tokens are stored using the platform’s secure storage.',
           ),
           const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: () async {
-              if (await confirm(
-                context,
-                'Request account deletion?',
-                'The platform will process your deletion request according to its retention policy.',
-              )) {
-                await widget.app.perform(
-                  () => widget.app.repository.write('me/deletion-request', {}),
-                );
-                if (context.mounted && widget.app.error == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppConfig.demo
-                            ? 'Demo deletion request simulated.'
-                            : 'Deletion request submitted.',
-                      ),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text(
-              'Request account deletion',
-              style: TextStyle(color: Color(0xFFDC2626)),
-            ),
+          const OutlinedButton(
+            onPressed: null,
+            child: Text('Account deletion unavailable — contact support'),
           ),
           ErrorNotice(widget.app),
         ],

@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -50,380 +48,36 @@ abstract class TriviaRepository {
   Future<void> write(String resource, Map<String, dynamic> data);
 }
 
-class DemoRepository implements TriviaRepository {
-  Session? _session;
-  final registrationStorage = const FlutterSecureStorage();
-  Map<String, dynamic> registration = {};
-  Future<void> saveRegistration(
-    Map<String, dynamic> data,
-    DriverStatus status,
-  ) async {
-    if (_session == null) throw StateError('Sign in first.');
-    registration = {...data, 'status': status.name};
-    await registrationStorage.write(
-      key: 'trivia_driver_${_session!.phone}',
-      value: jsonEncode(registration),
-    );
-    _session = Session(
-      firstName: _session!.firstName,
-      lastName: _session!.lastName,
-      phone: _session!.phone,
-      driverStatus: status,
-    );
-  }
-
-  final List<Ride> _rides = [];
-  bool online = false;
-  final Map<String, DriverOffer> _localOffers = {};
-  @override
-  Future<Session?> restore() async => _session;
-  @override
-  Future<void> requestOtp(String phone) async {}
-  @override
-  Future<Session> verifyOtp(String phone, String code) async {
-    if (code != '123456') {
-      throw StateError('Use the displayed demo code: 123456.');
-    }
-    final saved = await registrationStorage.read(key: 'trivia_driver_$phone');
-    registration = saved == null
-        ? {}
-        : jsonDecode(saved) as Map<String, dynamic>;
-    return _session = Session(
-      firstName: '',
-      lastName: '',
-      phone: phone,
-      driverStatus: DriverStatus.values.byName(
-        registration['status'] as String? ?? 'notRegistered',
-      ),
-    );
-  }
-
-  @override
-  Future<Session> profile(String first, String last, String email) async =>
-      _session = Session(
-        firstName: first,
-        lastName: last,
-        phone: _session!.phone,
-        driverStatus: _session!.driverStatus,
-      );
-  @override
-  Future<void> logout() async {
-    _session = null;
-    registration = {};
-    _rides.clear();
-    _localOffers.clear();
-    online = false;
-  }
-
-  @override
-  Future<List<Place>> search(String query) async => demoPlaces
-      .where((p) => p.name.toLowerCase().contains(query.toLowerCase()))
-      .toList();
-  @override
-  Future<RouteQuote?> quote(
-    Place pickup,
-    Place destination,
-    String category, {
-    String currency = 'USD',
-  }) async => RouteQuote(
-    id: 'demo-quote-${DateTime.now().microsecondsSinceEpoch}',
-    currency: 'USD',
-    points: [pickup.point, destination.point],
-    metres: 5000,
-    seconds: 900,
-    available: true,
-    minimumCents: 200,
-    maximumCents: 10000,
-    suggestedCents: category == 'XL'
-        ? 900
-        : category == 'Comfort'
-        ? 700
-        : 500,
-    expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 10)),
-  );
-  @override
-  Future<List<Ride>> history() async => _rides.reversed.toList();
-  @override
-  Future<Ride?> activeRide() async => _rides.where((r) => r.active).firstOrNull;
-  Ride _get(String id) => _rides.firstWhere((r) => r.id == id);
-  Ride _save(Ride ride) {
-    final i = _rides.indexWhere((r) => r.id == ride.id);
-    if (i < 0) {
-      _rides.add(ride);
-    } else {
-      _rides[i] = ride;
-    }
-    return ride;
-  }
-
-  @override
-  Future<Ride> request(
-    Place pickup,
-    Place destination,
-    String category,
-    int cents, {
-    String? paymentMethod,
-    String currency = 'USD',
-    String? quoteId,
-    String? requestKey,
-    String? paymentPreference,
-    String? passengerNote,
-  }) async {
-    if (_rides.any((r) => r.active)) {
-      throw StateError('Finish or cancel your current demo ride first.');
-    }
-    if (cents <= 0 || pickup.point == destination.point) {
-      throw StateError('Choose different locations and a positive fare.');
-    }
-    return _save(
-      Ride(
-        id: 'demo-${DateTime.now().microsecondsSinceEpoch}',
-        pickup: pickup,
-        destination: destination,
-        cents: cents,
-        category: category,
-        status: RideStatus.searching,
-        createdAt: DateTime.now().toUtc(),
-        currency: 'USD',
-        paymentMethodName: directPaymentLabel(paymentMethod, null),
-        offeredCents: cents,
-        paymentMethod: paymentMethod,
-        paymentStatus: 'pending_cash',
-      ),
-    );
-  }
-
-  @override
-  Future<List<DriverOffer>> offers(String rideId) async {
-    final ride = _get(rideId);
-    if (ride.status != RideStatus.searching) {
-      return [];
-    }
-    return [
-      if (_localOffers[rideId] != null) _localOffers[rideId]!,
-      DriverOffer(
-        id: 'demo-tariro',
-        name: 'Tariro · Demo driver',
-        vehicle: 'White Toyota Aqua',
-        plate: 'DEMO 01',
-        cents: ride.cents,
-        rating: 4.9,
-        minutes: 4,
-        verified: false,
-      ),
-      DriverOffer(
-        id: 'demo-tendai',
-        name: 'Tendai · Demo driver',
-        vehicle: 'Silver Honda Fit',
-        plate: 'DEMO 02',
-        cents: ride.cents + 100,
-        rating: 4.8,
-        minutes: 6,
-      ),
-    ];
-  }
-
-  @override
-  Future<Ride> accept(String rideId, String offerId) async {
-    final ride = _get(rideId);
-    if (ride.status != RideStatus.searching) {
-      throw StateError('This ride already has a driver.');
-    }
-    final offer = (await offers(rideId)).firstWhere((o) => o.id == offerId);
-    // Recheck after the asynchronous read, so two selections cannot both win.
-    if (_get(rideId).status != RideStatus.searching) {
-      throw StateError('An offer was already selected.');
-    }
-    return _save(ride.copy(status: RideStatus.assigned, driver: offer));
-  }
-
-  @override
-  Future<Ride> transition(String rideId, RideStatus status) async {
-    final r = _get(rideId);
-    final allowed = <RideStatus, Set<RideStatus>>{
-      RideStatus.searching: {RideStatus.cancelled},
-      RideStatus.assigned: {RideStatus.arriving, RideStatus.cancelled},
-      RideStatus.arriving: {RideStatus.arrived, RideStatus.cancelled},
-      RideStatus.arrived: {RideStatus.inProgress, RideStatus.cancelled},
-      RideStatus.inProgress: {RideStatus.completed},
-    };
-    if (!(allowed[r.status]?.contains(status) ?? false)) {
-      throw StateError('This trip transition is not allowed.');
-    }
-    return _save(r.copy(status: status));
-  }
-
-  @override
-  Future<DriverStatus> applyDriver(
-    Map<String, dynamic> fields,
-    Map<String, String> documents,
-  ) async {
-    await saveRegistration({
-      'fields': fields,
-      'documents': documents,
-      'step': 4,
-    }, DriverStatus.submitted);
-    return DriverStatus.submitted;
-  }
-
-  // Explicit developer simulation, never used by the API adapter.
-  Future<void> approveSimulation() async {
-    if (!kDebugMode ||
-        !AppConfig.demo ||
-        ![
-          DriverStatus.submitted,
-          DriverStatus.underReview,
-        ].contains(_session?.driverStatus)) {
-      throw StateError(
-        'Only submitted debug demo applications may be approved.',
-      );
-    }
-    await saveRegistration(registration, DriverStatus.approved);
-    _session = Session(
-      firstName: _session!.firstName,
-      lastName: _session!.lastName,
-      phone: _session!.phone,
-      driverStatus: DriverStatus.approved,
-    );
-  }
-
-  @override
-  Future<void> availability(bool value) async {
-    if (_session?.driverStatus != DriverStatus.approved) {
-      throw StateError('Driver approval is required.');
-    }
-    online = value;
-  }
-
-  @override
-  Future<List<Ride>> requests() async =>
-      online && _session?.driverStatus == DriverStatus.approved
-      ? _rides.where((r) => r.status == RideStatus.searching).toList()
-      : [];
-  @override
-  Future<void> counteroffer(String rideId, int cents) async {
-    if (!online || cents <= 0 || _get(rideId).status != RideStatus.searching) {
-      throw StateError(
-        'Go online and choose an open request with a valid fare.',
-      );
-    }
-    _localOffers[rideId] = DriverOffer(
-      id: 'demo-self',
-      name: 'Local demo driver',
-      vehicle: 'Demo Toyota Aqua',
-      plate: 'DEMO 03',
-      cents: cents,
-    );
-  }
-
-  int get _demoGross => _rides
-      .where(
-        (r) => r.driver?.id == 'demo-self' && r.status == RideStatus.completed,
-      )
-      .fold(0, (sum, r) => sum + r.cents);
-  Future<Ride> simulatePassengerSelection(Ride request, int cents) async {
-    if (!online || _session?.driverStatus != DriverStatus.approved) {
-      throw StateError('Go online as an approved demo driver first.');
-    }
-    final current = _get(request.id);
-    if (current.status != RideStatus.searching) {
-      throw StateError('This demo request is no longer available.');
-    }
-    return _save(
-      current.copy(
-        status: RideStatus.assigned,
-        driver: DriverOffer(
-          id: 'demo-self',
-          name: 'Local demo driver',
-          vehicle: 'Demo Toyota Aqua',
-          plate: 'DEMO 03',
-          cents: cents,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Future<Map<String, dynamic>> read(String resource) async =>
-      switch (resource) {
-        'currencies' => {
-          'items': [
-            {'code': 'USD', 'name': 'United States Dollar', 'symbol': 'US\$'},
-          ],
-          'default': 'USD',
-        },
-        'payments/methods' => {
-          'items': [
-            for (final m in directPaymentMethods)
-              {
-                'id': m.id,
-                'name': m.name,
-                'kind': m.kind,
-                'currencies': m.currencies,
-                'enabled': true,
-                'description': m.description,
-              },
-          ],
-        },
-        'driver/earnings' => {
-          'gross_cents': _demoGross,
-          'commission_cents': 0,
-          'net_cents': _demoGross,
-          'trips': _rides
-              .where(
-                (r) =>
-                    r.driver?.id == 'demo-self' &&
-                    r.status == RideStatus.completed,
-              )
-              .length,
-          'payout_status': 'Simulated · No funds',
-        },
-        'driver/requirements' => {
-          'documents': [
-            {'key': 'national_id', 'label': 'National identification'},
-            {
-              'key': 'transport_permission',
-              'label': 'Passenger transport permission (demo requirement)',
-            },
-            {'key': 'licence', 'label': 'Driver’s licence'},
-            {'key': 'registration', 'label': 'Vehicle registration'},
-            {'key': 'vehicle_photo', 'label': 'Vehicle photograph'},
-          ],
-        },
-        'notifications' => {
-          'items': _rides
-              .map(
-                (r) => {
-                  'title': statusLabel(r.status),
-                  'description':
-                      '${r.pickup.name} → ${r.destination.name} · Demo trip',
-                },
-              )
-              .toList(),
-        },
-        _ => {'items': <dynamic>[]},
-      };
-  @override
-  Future<void> write(String resource, Map<String, dynamic> data) async {}
-}
-
-/// Proposed mobile contract. Enable only against a backend implementing README.md.
+/// HTTP-only application repository. Synthetic fixtures live exclusively in tests.
 class ApiRepository implements TriviaRepository {
-  ApiRepository() {
-    dio = Dio(
-      BaseOptions(
-        baseUrl:
-            '${(AppConfig.api.isEmpty ? 'https://unconfigured.invalid' : AppConfig.api).replaceFirst(RegExp(r'/+$'), '')}/',
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 20),
-      ),
+  ApiRepository({Dio? client, FlutterSecureStorage? tokenStorage})
+    : storage = tokenStorage ?? const FlutterSecureStorage() {
+    dio = client ?? Dio();
+    dio.options = BaseOptions(
+      baseUrl: '${AppConfig.api.replaceFirst(RegExp(r'/+$'), '')}/api/v1/',
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 25),
+      sendTimeout: const Duration(seconds: 25),
     );
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          final origin = Uri.parse(AppConfig.api);
+          if (options.uri.host != origin.host ||
+              options.uri.scheme != origin.scheme ||
+              options.uri.port != origin.port ||
+              !options.uri.path.startsWith('/api/v1/')) {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                error: StateError('Untrusted API URL.'),
+              ),
+            );
+            return;
+          }
           try {
             final token = await storage.read(key: 'access');
-            if (token != null) {
+            if (token != null && !options.path.contains('auth/otp/')) {
               options.headers['Authorization'] = 'Bearer $token';
             }
             handler.next(options);
@@ -432,38 +86,113 @@ class ApiRepository implements TriviaRepository {
           }
         },
         onError: (error, handler) async {
-          try {
-            if (error.response?.statusCode == 401) {
-              try {
-                await storage.deleteAll();
-              } finally {
-                if (!expired.isClosed) {
-                  expired.add(null);
-                }
-              }
-            }
-          } catch (_) {
-            /* Still propagate the original request failure. */
-          } finally {
+          final request = error.requestOptions;
+          if (error.response?.statusCode == 401 && request.extra['retry'] == true) await clearSession();
+          if (error.response?.statusCode != 401 ||
+              request.extra['retry'] == true ||
+              (request.path.contains('auth/otp/') || request.path.contains('auth/token/refresh/'))) {
             handler.next(error);
+            return;
+          }
+          try {
+            final current = await storage.read(key: 'access');
+            if (current == null ||
+                request.headers['Authorization'] == 'Bearer $current') {
+              await refreshAccess();
+            }
+            request.extra['retry'] = true;
+            handler.resolve(await dio.fetch<dynamic>(request));
+          } catch (failure) {
+            if (failure is DioException &&
+                failure.response?.statusCode == 401) {
+              await clearSession();
+            }
+            handler.next(failure is DioException ? failure : error);
           }
         },
       ),
     );
   }
   late final Dio dio;
-  final storage = const FlutterSecureStorage();
+  final FlutterSecureStorage storage;
   final expired = StreamController<void>.broadcast();
+  Future<void>? _refreshing;
+  Future<void> clearSession() async {
+    await storage.delete(key: 'access');
+    await storage.delete(key: 'refresh');
+    if (!expired.isClosed) expired.add(null);
+  }
+
+  Future<void> refreshAccess() async {
+    if (_refreshing != null) return _refreshing!;
+    final pending = _rotate();
+    _refreshing = pending;
+    try {
+      await pending;
+    } finally {
+      _refreshing = null;
+    }
+  }
+
+  Future<void> _rotate() async {
+    final refresh = await storage.read(key: 'refresh');
+    if (refresh == null) {
+      await clearSession();
+      throw DioException(
+        requestOptions: RequestOptions(path: 'auth/token/refresh/'),
+        response: Response(requestOptions: RequestOptions(), statusCode: 401),
+      );
+    }
+    final data = await _post('auth/token/refresh/', {'refresh': refresh});
+    await storage.write(key: 'access', value: data['access'] as String);
+    await storage.write(
+      key: 'refresh',
+      value: data['refresh'] as String? ?? refresh,
+    );
+  }
+
+  Future<String> accessToken() async {
+    var token = await storage.read(key: 'access');
+    try {
+      final payload = jsonDecode(
+        utf8.decode(
+          base64Url.decode(base64Url.normalize(token!.split('.')[1])),
+        ),
+      ) as Map;
+      if ((payload['exp'] as num) * 1000 <=
+          DateTime.now().millisecondsSinceEpoch + 30000) {
+        await refreshAccess();
+        token = await storage.read(key: 'access');
+      }
+    } catch (error) {
+      if (error is DioException) rethrow;
+      await refreshAccess();
+      token = await storage.read(key: 'access');
+    }
+    if (token == null) throw StateError('Sign in to continue.');
+    return token;
+  }
+
   Future<Map<String, dynamic>> _get(String path) async =>
       (await dio.get<Map<String, dynamic>>(path)).data!;
   Future<Map<String, dynamic>> _post(
     String path,
     Map<String, dynamic> body,
-  ) async => (await dio.post<Map<String, dynamic>>(path, data: body)).data!;
+  ) async => (await dio.post<Map<String, dynamic>>(path, data: body)).data ?? <String, dynamic>{};
   @override
-  Future<Session?> restore() async => await storage.read(key: 'access') == null
-      ? null
-      : Session.fromJson(await _get('me/'));
+  Future<Session?> restore() async {
+    if (await storage.read(key: 'access') == null) return null;
+    try {
+      return Session.fromJson(await _get('users/me/'));
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 401) {
+        await clearSession();
+        return null;
+      }
+      rethrow;
+    }
+  }
+
   @override
   Future<void> requestOtp(String phone) async {
     await _post('auth/otp/request/', {'phone': phone});
@@ -482,7 +211,7 @@ class ApiRepository implements TriviaRepository {
   @override
   Future<Session> profile(String first, String last, String email) async =>
       Session.fromJson(
-        await _post('me/', {
+        await _patch('users/me/', {
           'first_name': first,
           'last_name': last,
           'email': email,
@@ -491,11 +220,9 @@ class ApiRepository implements TriviaRepository {
   @override
   Future<void> logout() async {
     try {
-      await _post('auth/logout/', {
-        'refresh': await storage.read(key: 'refresh'),
-      });
+      await _post('auth/logout/', {});
     } finally {
-      await storage.deleteAll();
+      await clearSession();
     }
   }
 
@@ -515,24 +242,39 @@ class ApiRepository implements TriviaRepository {
     String category, {
     String currency = 'USD',
   }) async => RouteQuote.fromJson(
-    await _post('routes/quote/', {
+    await _post('fares/estimate/', {
       'pickup': pickup.toJson(),
       'destination': destination.toJson(),
       'category': category,
       'currency': currency,
     }),
   );
+  String? historyNext;
   @override
-  Future<List<Ride>> history() async =>
-      ((await _get('rides/'))['results'] as List)
-          .map((j) => Ride.fromJson(j as Map<String, dynamic>))
-          .toList();
+  Future<List<Ride>> history() async {
+    final data = await _get('rides/');
+    historyNext = data['next'] as String?;
+    return (data['results'] as List)
+        .map((j) => Ride.fromJson(Map<String, dynamic>.from(j as Map)))
+        .toList();
+  }
+
   @override
   Future<Ride?> activeRide() async {
     final j = await _get('rides/active/');
-    return j['ride'] == null
-        ? null
-        : Ride.fromJson(j['ride'] as Map<String, dynamic>);
+    if (j['ride'] == null) return null;
+    final ride = Map<String, dynamic>.from(j['ride'] as Map);
+    final tracking = await _get('rides/${ride['id']}/tracking/');
+    if (tracking['location'] is Map) {
+      final location = Map<String, dynamic>.from(tracking['location'] as Map);
+      ride['driver_location'] = {
+        'name': 'Assigned driver',
+        'latitude': location['latitude'],
+        'longitude': location['longitude'],
+      };
+      ride['location_updated_at'] = location['created_at'];
+    }
+    return Ride.fromJson(ride);
   }
 
   @override
@@ -580,14 +322,53 @@ class ApiRepository implements TriviaRepository {
     Map<String, dynamic> fields,
     Map<String, String> documents,
   ) async {
-    final form = FormData.fromMap(fields);
-    for (final d in documents.entries) {
-      form.files.add(MapEntry(d.key, await MultipartFile.fromFile(d.value)));
+    final f = Map<String, dynamic>.from(fields['fields'] as Map? ?? fields);
+    await _patch('users/me/', {
+      'first_name': f['firstName'],
+      'last_name': f['lastName'],
+      'email': f['email'] ?? '',
+    });
+    await _patch('drivers/applications/me/', {
+      'legal_name': '${f['firstName']} ${f['lastName']}',
+      'licence_number': f['licenceNumber'],
+      'licence_class': f['licenceClass'],
+      'licence_expires': f['licenceExpiry'],
+      'vehicle': {
+        'make': f['make'],
+        'model': f['model'],
+        'year': int.parse('${f['year']}'),
+        'colour': f['colour'],
+        'registration': f['registration'],
+        'capacity': int.parse('${f['seats']}'),
+        'category': f['category'],
+      },
+    });
+    final requirements =
+        (await _get('drivers/document-requirements/'))['results'] as List;
+    final vehicles = (await _get('drivers/me/vehicles/'))['results'] as List;
+    for (final entry in documents.entries) {
+      final requirement = requirements.cast<Map>().firstWhere(
+        (r) => r['code'] == entry.key,
+      );
+      final vehicleScope = requirement['scope'] == 'vehicle';
+      final path = vehicleScope
+          ? 'drivers/me/vehicles/${vehicles.cast<Map>().firstWhere((v) => v['registration'] == '${f['registration']}'.toUpperCase())['id']}/documents/'
+          : 'drivers/applications/me/documents/';
+      final expiry = fields['expiry_${entry.key}'];
+      if (requirement['expiry_required'] == true &&
+          (expiry == null || '$expiry'.isEmpty)) {
+        throw StateError('Enter an expiry date for ${requirement['label']}.');
+      }
+      await dio.post<dynamic>(
+        path,
+        data: FormData.fromMap({
+          'requirement': entry.key,
+          'file': await MultipartFile.fromFile(entry.value),
+          if (expiry != null && '$expiry'.isNotEmpty) 'expires_on': expiry,
+        }),
+      );
     }
-    final j = (await dio.post<Map<String, dynamic>>(
-      'driver/application/',
-      data: form,
-    )).data!;
+    final j = await _post('drivers/applications/me/submit/', {});
     return DriverStatus.values.byName(j['status'] as String);
   }
 
@@ -606,15 +387,70 @@ class ApiRepository implements TriviaRepository {
     await _post('rides/$rideId/offers/', {'fare_cents': cents});
   }
 
+  Future<Map<String, dynamic>> _patch(
+    String path,
+    Map<String, dynamic> body,
+  ) async => (await dio.patch<Map<String, dynamic>>(path, data: body)).data!;
+  String resourcePath(String resource) {
+    if (resource == 'me/deletion-request') {
+      throw UnsupportedError(
+        'Account deletion requests are not supported by the documented API. Contact support.',
+      );
+    }
+    if (resource == 'me/preferences') return 'users/me/preferences';
+    if (resource == 'safety/contacts') return 'users/me/emergency-contacts';
+    if (resource == 'driver/requirements') {
+      return 'drivers/document-requirements';
+    }
+    if (resource.startsWith('driver/earnings')) {
+      return resource.replaceFirst('driver/earnings', 'drivers/me/earnings');
+    }
+    return resource;
+  }
+
   @override
-  Future<Map<String, dynamic>> read(String resource) {
-    final uri = Uri.parse(resource);
-    return _get('${uri.path}/${uri.hasQuery ? '?${uri.query}' : ''}');
+  Future<Map<String, dynamic>> read(String resource) async {
+    final uri = Uri.parse(resourcePath(resource));
+    final value = await _get(
+      uri.hasScheme
+          ? uri.toString()
+          : '${uri.path.replaceFirst(RegExp(r'/+$'), '')}/${uri.hasQuery ? '?${uri.query}' : ''}',
+    );
+    if (value['results'] is List) {
+      value['items'] = value['results'];
+    }
+    return value;
   }
 
   @override
   Future<void> write(String resource, Map<String, dynamic> data) async {
-    await _post('$resource/', data);
+    if (resource == 'me/preferences') {
+      await _patch('users/me/preferences/', {
+        'push_notifications': data['trip_notifications'],
+      });
+      return;
+    }
+    if (resource == 'safety/contacts') {
+      data = {'name': data['name'], 'phone': data['message']};
+    }
+    if (resource == 'support/tickets' || resource == 'safety/incidents') {
+      data = {
+        'message': data['message'],
+        'category': resource == 'safety/incidents' ? 'safety' : 'support',
+      };
+      resource = 'support/tickets';
+    }
+    if (resource.endsWith('/review')) {
+      resource = resource.replaceFirst('/review', '/ratings');
+      data = {'score': data['rating'], 'comment': data['message']};
+    }
+    if (resource.endsWith('/dispute')) {
+      resource = resource.replaceFirst('/dispute', '/report');
+    }
+    await _post(
+      '${resourcePath(resource).replaceFirst(RegExp(r'/+$'), '')}/',
+      data,
+    );
   }
 
   void dispose() {

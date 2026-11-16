@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/controller.dart';
-import '../../app/theme.dart';
-import '../../core/config.dart';
 import '../../core/map_view.dart';
-import '../../core/repository.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
 import '../passenger/home.dart';
@@ -75,10 +72,7 @@ class DriverHome extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           Text('Verification: ${status.name}'),
-                          if (app.repository is DemoRepository)
-                            Text(
-                              'Demo vehicle: ${((app.repository as DemoRepository).registration['fields'] as Map?)?['make'] ?? ''} ${((app.repository as DemoRepository).registration['fields'] as Map?)?['model'] ?? ''} • ${((app.repository as DemoRepository).registration['fields'] as Map?)?['registration'] ?? ''}',
-                            ),
+
                           const SizedBox(height: 12),
                           Text(
                             status == DriverStatus.approved
@@ -273,35 +267,19 @@ class _DriverRequestsState extends State<DriverRequests> {
                             child: const Text('Make a counteroffer'),
                           ),
                           TextButton(
-                            onPressed: () => setState(() => declined.add(r.id)),
+                            onPressed: () async {
+                              final ok = await widget.app.perform(
+                                () => widget.app.repository.write(
+                                  'rides/${r.id}/driver-request-decline',
+                                  {},
+                                ),
+                              );
+                              if (ok && mounted) {
+                                setState(() => declined.add(r.id));
+                              }
+                            },
                             child: const Text('Decline'),
                           ),
-                          if (AppConfig.demo)
-                            TextButton(
-                              onPressed: () async {
-                                final ok = await widget.app.perform(() async {
-                                  await (widget.app.repository
-                                          as DemoRepository)
-                                      .simulatePassengerSelection(
-                                        r,
-                                        submittedCents[r.id] ?? r.cents,
-                                      );
-                                  await widget.app.sync();
-                                });
-                                if (context.mounted && ok) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Demo passenger selected you. Open driver Home for trip controls.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: const Text(
-                                'Developer demo: simulate passenger selection',
-                              ),
-                            ),
                         ],
                       ),
                     ),
@@ -388,11 +366,8 @@ class _EarningsPageState extends State<EarningsPage> {
       return;
     }
     data = widget.app.repository.read(
-      'driver/earnings?period=${period.toLowerCase()}',
+      'drivers/me/earnings?period=${period == 'Today' ? 'day' : period.toLowerCase()}',
     );
-    if (AppConfig.demo) {
-      data = widget.app.repository.read('driver/earnings');
-    }
   }
 
   @override
@@ -444,28 +419,20 @@ class _EarningsPageState extends State<EarningsPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Net earnings'),
+                      const Text('Completed trip fares (USD)'),
                       Text(
-                        money(j['net_cents'] as int),
+                        'US\$ ${j['agreed_fares'] ?? 'Unavailable'}',
                         style: Theme.of(context).textTheme.headlineLarge,
                       ),
                       const SizedBox(height: 24),
-                      for (final e in [
-                        ('Gross earnings', money(j['gross_cents'] as int)),
-                        ('Commission', money(j['commission_cents'] as int)),
-                        ('Completed trips', '${j['trips']}'),
-                        ('Payout', '${j['payout_status']}'),
-                      ])
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(e.$1),
-                          trailing: Text(e.$2),
+                      ListTile(
+                        title: const Text('Completed trips'),
+                        trailing: Text(
+                          '${j['completed_trips'] ?? 'Unavailable'}',
                         ),
-                      const Divider(),
-                      const EmptyState(
-                        'No transactions to show',
-                        'Verified transactions and payouts will appear here.',
-                        icon: Icons.account_balance_wallet_outlined,
+                      ),
+                      const Text(
+                        'Passengers pay drivers directly. Trivia does not verify receipt of funds.',
                       ),
                     ],
                   );

@@ -1,13 +1,14 @@
+import 'support/fixture_repository.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/shared/models.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
   test('Draft resumes per identity and approval requires submission', () async {
-    final repo = DemoRepository();
+    final repo = TestRepository();
     await repo.verifyOtp('+263771234567', '123456');
     await expectLater(repo.approveSimulation(), throwsStateError);
     await repo.saveRegistration({
@@ -33,7 +34,7 @@ void main() {
     DriverStatus.suspended,
   ]) {
     test('$status cannot go online', () async {
-      final repo = DemoRepository();
+      final repo = TestRepository();
       await repo.verifyOtp('+263771234567', '123456');
       await repo.saveRegistration({}, status);
       await expectLater(repo.availability(true), throwsStateError);

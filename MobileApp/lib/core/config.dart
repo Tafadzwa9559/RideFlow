@@ -1,7 +1,22 @@
+const String baseUrl = String.fromEnvironment(
+  'TRIVIA_API_BASE_URL',
+  defaultValue: 'https://trivia-backend-bze2.onrender.com',
+);
+
 class AppConfig {
-  static const demo = bool.fromEnvironment('TRIVIA_DEMO', defaultValue: true);
-  static const api = String.fromEnvironment('TRIVIA_API_URL');
-  static const websocket = String.fromEnvironment('TRIVIA_WS_URL');
+  static const api = baseUrl;
+  static String get websocket {
+    final origin = Uri.parse(api);
+    return origin
+        .replace(
+          scheme: 'wss',
+          path: '/ws/v1/notifications/',
+          query: '',
+          fragment: '',
+        )
+        .toString();
+  }
+
   static const mapTiles = String.fromEnvironment(
     'TRIVIA_MAP_TILES',
     defaultValue: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -9,15 +24,17 @@ class AppConfig {
   static const privacy = String.fromEnvironment('TRIVIA_PRIVACY_URL');
   static const terms = String.fromEnvironment('TRIVIA_TERMS_URL');
   static void validate() {
-    if (!demo &&
-        (Uri.tryParse(api)?.scheme != 'https' ||
-            Uri.tryParse(api)?.host.isEmpty != false)) {
+    final uri = Uri.tryParse(api);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        (uri.path.isNotEmpty && uri.path != '/')) {
       throw StateError(
-        'Live service is not configured. Set an HTTPS TRIVIA_API_URL.',
+        'Configure TRIVIA_API_BASE_URL as an HTTPS backend origin.',
       );
-    }
-    if (websocket.isNotEmpty && Uri.tryParse(websocket)?.scheme != 'wss') {
-      throw StateError('A secure WebSocket URL is required.');
     }
   }
 }
