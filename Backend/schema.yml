@@ -21954,7 +21954,7 @@ paths:
                 value:
                   fare_cents: 1
                   note: Please call at the entrance.
-                  decision: accept
+                  decision: counteroffer
                   pickup_minutes: null
           application/x-www-form-urlencoded:
             schema:
@@ -21965,7 +21965,7 @@ paths:
                 value:
                   fare_cents: 1
                   note: Please call at the entrance.
-                  decision: accept
+                  decision: counteroffer
                   pickup_minutes: null
           multipart/form-data:
             schema:
@@ -21976,7 +21976,7 @@ paths:
                 value:
                   fare_cents: 1
                   note: Please call at the entrance.
-                  decision: accept
+                  decision: counteroffer
                   pickup_minutes: null
       security:
       - jwtAuth: []
@@ -29012,6 +29012,18 @@ components:
       - USD
       type: string
       description: '* `USD` - USD'
+    DecisionEnum:
+      enum:
+      - underReview
+      - approved
+      - rejected
+      - suspended
+      type: string
+      description: |-
+        * `underReview` - underReview
+        * `approved` - approved
+        * `rejected` - rejected
+        * `suspended` - suspended
     Detail:
       type: object
       properties:
@@ -29627,16 +29639,6 @@ components:
       required:
       - id
       - status
-    OfferDecisionEnum:
-      enum:
-      - accept
-      - counteroffer
-      - decline
-      type: string
-      description: |-
-        * `accept` - accept
-        * `counteroffer` - counteroffer
-        * `decline` - decline
     OfferRequest:
       type: object
       properties:
@@ -29650,8 +29652,7 @@ components:
           default: ''
           maxLength: 250
         decision:
-          allOf:
-          - $ref: '#/components/schemas/OfferDecisionEnum'
+          type: string
           default: counteroffer
         pickup_minutes:
           type: integer
@@ -31048,18 +31049,6 @@ components:
             $ref: '#/components/schemas/Requirement'
       required:
       - results
-    ReviewDecisionEnum:
-      enum:
-      - underReview
-      - approved
-      - rejected
-      - suspended
-      type: string
-      description: |-
-        * `underReview` - underReview
-        * `approved` - approved
-        * `rejected` - rejected
-        * `suspended` - suspended
     ReviewHistory:
       type: object
       properties:
@@ -31087,7 +31076,7 @@ components:
           minLength: 1
           maxLength: 500
         decision:
-          $ref: '#/components/schemas/ReviewDecisionEnum'
+          $ref: '#/components/schemas/DecisionEnum'
       required:
       - decision
     Ride:

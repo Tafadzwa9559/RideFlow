@@ -8,6 +8,18 @@ from .views import (
     RideStatusView,
     OffersView,
     PlacesView,
+    RideSyncView,
+    DriverRequestDeclineView,
+    OfferUpdateView,
+    WithdrawView,
+    EventsView,
+    RatingView,
+    TicketView,
+    ServiceAreasView,
+    SavedPlacesView,
+    EmergencyContactsView,
+    TripShareView,
+    SharedTripView,
 )
 
 urlpatterns = [
@@ -18,10 +30,9 @@ urlpatterns = [
     path("rides/<uuid:pk>/", RideDetailView.as_view()),
     path("rides/<uuid:pk>/status/", RideStatusView.as_view()),
     path("rides/<uuid:pk>/accept/", RideAcceptView.as_view()),
+    path("rides/<uuid:pk>/sync/", RideSyncView.as_view()),
+    path("rides/<uuid:pk>/driver-request-decline/", DriverRequestDeclineView.as_view()),
     path("rides/<uuid:pk>/offers/", OffersView.as_view()),
-]
-from .views import WithdrawView, EventsView, RatingView, TicketView, ServiceAreasView, SavedPlacesView
-urlpatterns += [
     path('rides/<uuid:pk>/select-offer/', RideAcceptView.as_view()),
     path('rides/<uuid:pk>/cancel/', RideStatusView.as_view(http_method_names=['post', 'options']), {'action': 'cancel'}),
     path('rides/<uuid:pk>/arriving/', RideStatusView.as_view(http_method_names=['post', 'options']), {'action': 'arriving'}),
@@ -31,11 +42,12 @@ urlpatterns += [
     path('rides/<uuid:pk>/events/', EventsView.as_view()),
     path('rides/<uuid:pk>/ratings/', RatingView.as_view()),
     path('offers/<objectid:pk>/withdraw/', WithdrawView.as_view()),
+    path('offers/<objectid:pk>/', OfferUpdateView.as_view()),
     path('support/tickets/', TicketView.as_view()),
     path('service-areas/', ServiceAreasView.as_view()),
     path('locations/saved/', SavedPlacesView.as_view()),
     path('fares/estimate/', QuoteView.as_view()),
+    path('safety/contacts/', EmergencyContactsView.as_view()),
+    path('rides/<uuid:pk>/share/', TripShareView.as_view()),
+    path('safety/shares/<objectid:pk>/', SharedTripView.as_view()),
 ]
-from .views import EmergencyContactsView, TripShareView, SharedTripView
-urlpatterns += [path('safety/contacts/', EmergencyContactsView.as_view()),
-    path('rides/<uuid:pk>/share/', TripShareView.as_view()), path('safety/shares/<objectid:pk>/', SharedTripView.as_view())]
