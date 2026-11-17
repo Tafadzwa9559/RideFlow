@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../core/config.dart';
 import '../core/api_error.dart';
-import '../core/repository.dart';
+import '../core/config.dart';
 import '../core/realtime.dart';
+import '../core/repository.dart';
 import '../shared/models.dart';
 
 final appProvider = Provider<AppController>((ref) {
@@ -114,8 +114,16 @@ class AppController extends ChangeNotifier {
 
   Future<bool> sendOtp(String phone) =>
       perform(() => repository.requestOtp(phone));
-  Future<bool> verify(String phone, String code) => perform(() async {
-    session = await repository.verifyOtp(phone, code);
+  Future<bool> verify(
+    String phone,
+    String code, {
+    Map<String, dynamic>? legalAcknowledgement,
+  }) => perform(() async {
+    session = await repository.verifyOtp(
+      phone,
+      code,
+      legalAcknowledgement: legalAcknowledgement,
+    );
     await sync();
     startSync();
   });

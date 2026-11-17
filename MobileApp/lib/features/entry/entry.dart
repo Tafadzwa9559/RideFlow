@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/controller.dart';
 import '../../app/theme.dart';
-import '../../core/config.dart';
+import '../legal/legal_content.dart';
+import '../legal/legal_page.dart';
 import '../../shared/widgets.dart';
 
 class Onboarding extends StatefulWidget {
@@ -173,7 +173,9 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   final phone = TextEditingController(), code = TextEditingController();
   final form = GlobalKey<FormState>();
-  bool otp = false;
+  bool otp = false, acceptedTerms = false;
+  String? consentError;
+  final legalContent = LegalContent.load();
   String prefix = '+263', submittedPhone = '';
   Timer? timer;
   int remaining = 0;
@@ -204,6 +206,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!form.currentState!.validate()) {
       return;
     }
+    if (!checkTerms()) return;
     final local = phone.text
         .replaceAll(RegExp(r'\D'), '')
         .replaceFirst(RegExp(r'^0+'), '');
@@ -215,22 +218,33 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Future<void> policy(String url, String name) async {
-    if (url.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '$name has not been configured for this development build.',
-            ),
-          ),
-        );
+  bool checkTerms() {
+    if (acceptedTerms) return true;
+    setState(
+      () => consentError =
+          'Please acknowledge the Terms & Conditions before continuing.',
+    );
+    return false;
+  }
+
+  Future<void> verify() async {
+    if (!form.currentState!.validate() || !checkTerms()) return;
+    final app = widget.app;
+    final verifiedPhone = submittedPhone;
+    try {
+      final content = await legalContent;
+      if (!await app.verify(
+        verifiedPhone,
+        code.text,
+        legalAcknowledgement: content.acknowledgement(),
+      ))
+        return;
+      if (app.session?.phone == verifiedPhone) {
+        await LegalAcknowledgementStore().record(verifiedPhone, content);
       }
-      return;
-    }
-    final uri = Uri.tryParse(url);
-    if (uri?.scheme == 'https') {
-      await launchUrl(uri!, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      app.error = 'Unable to save the local legal acknowledgement. Please retry or contact support.';
+      app.notifyListeners();
     }
   }
 
@@ -332,38 +346,60 @@ class _AuthScreenState extends State<AuthScreen> {
                     onPressed: () => setState(() {
                       otp = false;
                       code.clear();
+                      acceptedTerms = false;
+                      consentError = null;
                     }),
                     child: const Text('Change phone number'),
                   ),
                 ],
                 ErrorNotice(widget.app),
                 const SizedBox(height: 16),
+                FutureBuilder<LegalContent>(
+                  future: legalContent,
+                  builder: (context, snapshot) => CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    value: acceptedTerms,
+                    onChanged: widget.app.busy || !snapshot.hasData
+                        ? null
+                        : (value) => setState(() {
+                            acceptedTerms = value ?? false;
+                            consentError = null;
+                          }),
+                    title: Text(
+                      snapshot.data?.status == 'published'
+                          ? 'I agree to the Terms & Conditions.'
+                          : 'I acknowledge the draft Terms & Conditions.',
+                    ),
+                    subtitle: snapshot.hasData
+                        ? (snapshot.data!.status == 'published'
+                              ? null
+                              : Text(snapshot.data!.reviewNotice))
+                        : Text(
+                            snapshot.hasError
+                                ? 'Legal documents could not be loaded.'
+                                : 'Loading legal documents…',
+                          ),
+                  ),
+                ),
+                if (consentError != null)
+                  Text(
+                    consentError!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                const Text(
+                  'The Privacy Policy explains how information is used. This is not consent to optional marketing or other optional processing.',
+                ),
+                const LegalLinks(),
+                const SizedBox(height: 16),
                 ActionButton(otp ? 'Verify & continue' : 'Continue', () {
                   if (otp) {
-                    if (form.currentState!.validate()) {
-                      widget.app.verify(submittedPhone, code.text);
-                    }
+                    verify();
                   } else {
                     send();
                   }
                 }, busy: widget.app.busy),
                 const SizedBox(height: 24),
-                const Text(
-                  'By continuing, you agree to Trivia’s Terms and Privacy Policy.',
-                ),
-                Wrap(
-                  children: [
-                    TextButton(
-                      onPressed: () => policy(AppConfig.terms, 'Terms'),
-                      child: const Text('Terms'),
-                    ),
-                    TextButton(
-                      onPressed: () =>
-                          policy(AppConfig.privacy, 'Privacy Policy'),
-                      child: const Text('Privacy Policy'),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -445,6 +481,7 @@ class _ProfileSetupState extends State<ProfileSetup> {
               ),
               const SizedBox(height: 12),
               Text(widget.app.session!.phone),
+              const LegalLinks(),
               ErrorNotice(widget.app),
               const SizedBox(height: 20),
               ActionButton('Save profile', () async {

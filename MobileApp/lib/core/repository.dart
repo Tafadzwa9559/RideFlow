@@ -10,7 +10,11 @@ import 'config.dart';
 abstract class TriviaRepository {
   Future<Session?> restore();
   Future<void> requestOtp(String phone);
-  Future<Session> verifyOtp(String phone, String code);
+  Future<Session> verifyOtp(
+    String phone,
+    String code, {
+    Map<String, dynamic>? legalAcknowledgement,
+  });
   Future<Session> profile(String first, String last, String email);
   Future<void> logout();
   Future<List<Place>> search(String query);
@@ -48,7 +52,7 @@ abstract class TriviaRepository {
   Future<void> write(String resource, Map<String, dynamic> data);
 }
 
-/// HTTP-only application repository. Synthetic fixtures live exclusively in tests.
+/// Backend API access with secure token storage and rotating access tokens.
 class ApiRepository implements TriviaRepository {
   ApiRepository({Dio? client, FlutterSecureStorage? tokenStorage})
     : storage = tokenStorage ?? const FlutterSecureStorage() {
@@ -208,8 +212,17 @@ class ApiRepository implements TriviaRepository {
   }
 
   @override
-  Future<Session> verifyOtp(String phone, String code) async {
-    final j = await _post('auth/otp/verify/', {'phone': phone, 'code': code});
+  Future<Session> verifyOtp(
+    String phone,
+    String code, {
+    Map<String, dynamic>? legalAcknowledgement,
+  }) async {
+    final j = await _post('auth/otp/verify/', {
+      'phone': phone,
+      'code': code,
+      if (legalAcknowledgement != null)
+        'legal_acknowledgement': legalAcknowledgement,
+    });
     await storage.write(key: 'access', value: j['access'] as String);
     if (j['refresh'] != null) {
       await storage.write(key: 'refresh', value: j['refresh'] as String);
@@ -459,26 +472,6 @@ class ApiRepository implements TriviaRepository {
     await _post(
       '${resourcePath(resource).replaceFirst(RegExp(r'/+$'), '')}/',
       data,
-    );
-  }
-
-  Future<Map<String, dynamic>> updateResource(
-    String resource,
-    Map<String, dynamic> data, {
-    bool replace = false,
-  }) async {
-    final path = '${resourcePath(resource).replaceFirst(RegExp(r'/+$'), '')}/';
-    final response = await dio.request<Map<String, dynamic>>(
-      path,
-      data: data,
-      options: Options(method: replace ? 'PUT' : 'PATCH'),
-    );
-    return response.data ?? {};
-  }
-
-  Future<void> deleteResource(String resource) async {
-    await dio.delete<dynamic>(
-      '${resourcePath(resource).replaceFirst(RegExp(r'/+$'), '')}/',
     );
   }
 

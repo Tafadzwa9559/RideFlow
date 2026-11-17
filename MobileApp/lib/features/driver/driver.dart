@@ -28,10 +28,7 @@ class DriverHome extends StatelessWidget {
               ),
               Switch(
                 value: app.online,
-                onChanged:
-                    app.busy ||
-                        app.ride?.active == true ||
-                        status != DriverStatus.approved
+                onChanged: app.busy || app.ride?.active == true
                     ? null
                     : (v) => app.goOnline(v),
               ),
@@ -68,9 +65,7 @@ class DriverHome extends StatelessWidget {
                           TripPanel(app: app)
                         else ...[
                           Text(
-                            status == DriverStatus.approved
-                                ? 'Drive on your terms.'
-                                : 'Your next chapter starts here.',
+                            'Drive on your terms.',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 10),
@@ -78,30 +73,19 @@ class DriverHome extends StatelessWidget {
 
                           const SizedBox(height: 12),
                           Text(
-                            status == DriverStatus.approved
-                                ? 'Go online to review available requests. Location is used only while you’re actively working.'
-                                : 'Submit your application for review. Only approved drivers can receive live requests.',
+                            'Go online to review available requests. Location is used only while you’re actively working.',
                           ),
                           const SizedBox(height: 20),
-                          if (status != DriverStatus.approved)
-                            ActionButton(
-                              'Driver application',
-                              () => openPage(
-                                context,
-                                DriverApplication(app: app),
-                              ),
-                            ),
-                          if (status == DriverStatus.approved)
-                            ActionButton(
-                              app.online ? 'View ride requests' : 'Go online',
-                              app.online
-                                  ? () => openPage(
-                                      context,
-                                      DriverRequests(app: app),
-                                    )
-                                  : () => app.goOnline(true),
-                              busy: app.busy,
-                            ),
+                          ActionButton(
+                            app.online ? 'View ride requests' : 'Go online',
+                            app.online
+                                ? () => openPage(
+                                    context,
+                                    DriverRequests(app: app),
+                                  )
+                                : () => app.goOnline(true),
+                            busy: app.busy,
+                          ),
                         ],
                         ErrorNotice(app),
                       ],
@@ -117,13 +101,6 @@ class DriverHome extends StatelessWidget {
   }
 }
 
-class DriverApplication extends StatelessWidget {
-  const DriverApplication({super.key, required this.app});
-  final AppController app;
-  @override
-  Widget build(BuildContext context) => DriverRegistration(app: app);
-}
-
 class DriverRequests extends StatefulWidget {
   const DriverRequests({super.key, required this.app});
   final AppController app;
@@ -134,7 +111,6 @@ class DriverRequests extends StatefulWidget {
 class _DriverRequestsState extends State<DriverRequests> {
   List<Ride> requests = [];
   final declined = <String>{};
-  final submittedCents = <String, int>{};
   String? error;
   bool loading = false;
   bool lastOnline = false;
@@ -193,7 +169,6 @@ class _DriverRequestsState extends State<DriverRequests> {
       () => widget.app.repository.counteroffer(r.id, cents),
     );
     if (ok && mounted) {
-      setState(() => submittedCents[r.id] = cents);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(

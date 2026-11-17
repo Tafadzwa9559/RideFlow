@@ -20,6 +20,7 @@ class PhoneSerializer(serializers.Serializer):
 
 class CodeSerializer(PhoneSerializer):
     code = serializers.RegexField(r'^\d{6}$')
+    legal_acknowledgement = serializers.JSONField(required=False)
 
 
 class OTPRequestView(APIView):
@@ -113,6 +114,9 @@ class RefreshView(TokenRefreshView):
             # Revalidate after acquiring guards: another rotation may have committed.
             token = RefreshToken(request.data.get('refresh', ''))
             identity = PhoneIdentity.objects.select_related('user').filter(user_id=token['user_id']).first()
+            if token.get('development_otp'):
+                from accounts.services.authentication import validate_development_session
+                validate_development_session(identity)
             if identity and (not identity.user.is_active or token.get('session_version') != identity.session_version):
                 raise InvalidToken('Session revoked.')
         except TokenError as exc:

@@ -5,6 +5,8 @@ if not os.environ.get('DJANGO_SECRET_KEY') or SECRET_KEY.startswith('django-inse
     raise ImproperlyConfigured('Production requires a secret from the secret manager.')
 if DATABASES['default']['ENGINE'] != 'django_mongodb_backend':
     raise ImproperlyConfigured('Production requires the official MongoDB backend.')
+if TRIVIA_TEST_OTP_ENABLED:
+    raise ImproperlyConfigured('Test OTP is prohibited in production.')
 if TRIVIA_LOCAL_OTP or SMS_PROVIDER.endswith('LocalSMS'):
     raise ImproperlyConfigured('Local OTP is prohibited in production.')
 SECURE_SSL_REDIRECT = True

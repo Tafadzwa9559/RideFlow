@@ -1,3 +1,4 @@
+import legalManifest from "../../legal/content-digest.json";
 import ScrollToTop from "../common/ScrollToTop";
 import { projectConfig, publicMetadata } from "../../config/project";
 import { env } from "../../config/env";
@@ -32,7 +33,9 @@ export default function PublicLayout() {
       .querySelector('meta[name="robots"]')
       ?.setAttribute(
         "content",
-        publicMetadata[pathname] ? "index, follow" : "noindex, follow",
+        publicMetadata[pathname] && (!["/terms", "/privacy"].includes(pathname) || legalManifest.status === "published")
+          ? "index, follow"
+          : "noindex, follow",
       );
     if (env.siteUrl && publicMetadata[pathname]) {
       let canonical = document.querySelector<HTMLLinkElement>(

@@ -162,9 +162,7 @@ class Ride {
     locationUpdatedAt: j['location_updated_at'] == null
         ? null
         : DateTime.parse(j['location_updated_at'] as String),
-    route: (j['route_geometry'] as List? ?? [])
-        .map((p) => LatLng((p[1] as num).toDouble(), (p[0] as num).toDouble()))
-        .toList(),
+    route: _parseGeometry(j['route_geometry'] as List? ?? []),
   );
 }
 
@@ -251,9 +249,7 @@ class RouteQuote {
       seconds > 0 &&
       (expiresAt == null || expiresAt!.isAfter(DateTime.now().toUtc()));
   factory RouteQuote.fromJson(Map<String, dynamic> j) => RouteQuote(
-    points: (j['geometry'] as List)
-        .map((p) => LatLng((p[1] as num).toDouble(), (p[0] as num).toDouble()))
-        .toList(),
+    points: _parseGeometry(j['geometry'] as List),
     metres: j['distance_metres'] as int,
     seconds: j['duration_seconds'] as int,
     available: j['service_available'] == true,
@@ -339,3 +335,11 @@ String directPaymentLabel(String? id, String? name) =>
     directPaymentMethods.where((m) => m.id == id).firstOrNull?.name ??
     name ??
     'Not specified';
+
+// API geometry uses longitude/latitude; map coordinates use latitude/longitude.
+List<LatLng> _parseGeometry(List<dynamic> coordinates) => coordinates
+    .map(
+      (point) =>
+          LatLng((point[1] as num).toDouble(), (point[0] as num).toDouble()),
+    )
+    .toList();

@@ -31,7 +31,11 @@ def env_list(name: str, default: str = "") -> list[str]:
 # Security and reverse proxy (Render)
 # ------------------------------------------------------------
 DEBUG = env_bool("DJANGO_DEBUG", False)
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+SECRET_KEY = (
+    os.environ.get("TRIVIA_DEV_SECRET_KEY", "")
+    if os.environ.get("DJANGO_SETTINGS_MODULE") == "rideflow.development"
+    else os.environ.get("DJANGO_SECRET_KEY", "")
+)
 if not SECRET_KEY:
     if os.environ.get("DJANGO_SETTINGS_MODULE") == "rideflow.testing":
         SECRET_KEY = "test-only-secret-key-not-for-production-0123456789"
@@ -352,6 +356,8 @@ CELERY_BEAT_SCHEDULE = {
 SMS_PROVIDER = os.environ.get("SMS_PROVIDER", "")
 PUSH_PROVIDER = os.environ.get("PUSH_PROVIDER", "")
 TRIVIA_LOCAL_OTP = env_bool("TRIVIA_LOCAL_OTP", False)
+TRIVIA_TEST_OTP_ENABLED = env_bool("TRIVIA_TEST_OTP_ENABLED", False)
+TRIVIA_TEST_OTP_PHONES = env_list("TRIVIA_TEST_OTP_PHONES")
 OTP_TTL_SECONDS = 300
 OTP_RESEND_SECONDS = 60
 OTP_MAX_ATTEMPTS = 5

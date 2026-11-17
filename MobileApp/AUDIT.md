@@ -1,5 +1,7 @@
 # Existing project audit
 
+Historical baseline from 15 November 2026, before the backend integration. Runtime demo repositories described below have since been removed. See README.md for the current structure and CLEANUP_REPORT.md for the latest cleanup.
+
 Audit performed before implementation, 15 November 2026.
 
 - `MobileApp` already contained Android and iOS projects. No project regeneration was needed.

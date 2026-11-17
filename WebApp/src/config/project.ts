@@ -49,6 +49,14 @@ export const serviceAvailability: {
 } = Object.freeze({ coverageCities: [], enabledPaymentMethods: [] });
 
 export const publicMetadata: Record<string, readonly [string, string]> = {
+  "/terms": [
+    "Terms & Conditions | Trivia",
+    "Review Trivia’s draft Terms & Conditions for passengers and drivers in Zimbabwe.",
+  ],
+  "/privacy": [
+    "Privacy Policy | Trivia",
+    "Review Trivia’s draft Privacy Policy and the information used for passenger and driver services.",
+  ],
   "/": [projectConfig.homeTitle, projectConfig.metaDescription],
   "/how-it-works": [
     "How It Works | Trivia",

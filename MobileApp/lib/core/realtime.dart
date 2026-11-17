@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 /// Uses the documented first-frame JWT authentication; no ticket endpoint.
 /// Tokens are never included in the URL. Every event triggers an authoritative read.
@@ -42,7 +42,12 @@ class Realtime extends ChangeNotifier {
         uri,
         headers: {
           'Origin': uri
-              .replace(scheme: 'https', path: '', query: '', fragment: '')
+              .replace(
+                scheme: uri.scheme == 'ws' ? 'http' : 'https',
+                path: '',
+                query: '',
+                fragment: '',
+              )
               .toString(),
         },
       );

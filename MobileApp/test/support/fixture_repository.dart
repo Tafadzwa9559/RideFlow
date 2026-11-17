@@ -53,7 +53,11 @@ class TestRepository implements TriviaRepository {
   @override
   Future<void> requestOtp(String phone) async {}
   @override
-  Future<Session> verifyOtp(String phone, String code) async {
+  Future<Session> verifyOtp(
+    String phone,
+    String code, {
+    Map<String, dynamic>? legalAcknowledgement,
+  }) async {
     if (code != '123456') {
       throw StateError('Use the displayed demo code: 123456.');
     }

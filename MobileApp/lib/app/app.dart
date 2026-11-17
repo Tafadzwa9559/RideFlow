@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'controller.dart';
-import 'theme.dart';
-import '../features/entry/entry.dart';
-import '../features/passenger/home.dart';
+import '../features/account/account.dart';
 import '../features/driver/driver.dart';
 import '../features/driver/registration.dart';
-import '../features/account/account.dart';
-import '../shared/widgets.dart';
+import '../features/entry/entry.dart';
+import '../features/passenger/home.dart';
 import '../shared/models.dart';
+import '../shared/widgets.dart';
+import 'controller.dart';
+import 'theme.dart';
 
 class TriviaApp extends ConsumerStatefulWidget {
   const TriviaApp({super.key});

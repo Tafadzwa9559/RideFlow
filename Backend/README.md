@@ -23,3 +23,6 @@ Current enhancement deliverables: [backend audit](BACKEND_AUDIT.md), [API docume
 Production uses Atlas through `MONGODB_URI`, with shared private object storage (`requirements-storage.txt`); `rideflow.production` rejects local/unsafe configuration. Tests are restricted to a loopback MongoDB replica set and never run on Atlas. See the local startup commands in [MongoDB operations](docs/mongodb.md). Render web, Celery worker and singleton beat are independent services; the Blueprint is prepared for review and has not been deployed.
 
 Session/delivery follow-up: refresh rotation is serialized with logout, transport failures use bounded retries, and internal per-device push receipts reduce repeat sends after partial delivery. See the current implementation report for test results and the additive notification migration.
+
+Local authentication testing: [guarded development OTP setup](docs/development-otp.md).
+The fixed code is disabled by default and prohibited in production settings.

@@ -1,5 +1,7 @@
 # Mock-data audit
 
+Historical record of simulation removal during backend integration. The table describes the pre-integration sources and their replacements. Current account screens are split across lib/features/account/.
+
 Scope: existing Flutter app; preserve screens/navigation/style. No Django changes authorized or required by this task.
 
 | Source | Finding | Replacement |

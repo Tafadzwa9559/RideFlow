@@ -1,5 +1,5 @@
 name: rideflow_mobile
-description: Trivia — Your Journey. Your Choice. By MOrdec Solutions.
+description: Passenger and driver mobile application for Trivia.
 publish_to: 'none'
 version: 1.0.0+1
 environment:
@@ -26,6 +26,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/legal/
     - assets/images/onboarding/
   fonts:
     - family: Inter

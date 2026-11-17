@@ -1,5 +1,7 @@
 # Trivia Android installation investigation
 
+Historical artifact investigation. The production-only signing policy described below is no longer the current Gradle behavior. Consult ../../README.md for current signing setup and ../../VALIDATION.md for the latest checks.
+
 ## Follow-up signing setup
 
 Rechecked the configuration following the missing-credentials build report.

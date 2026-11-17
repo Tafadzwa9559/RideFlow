@@ -3,6 +3,7 @@ import { lazy } from "react";
 import { createBrowserRouter, Link, Navigate } from "react-router-dom";
 const Guard = lazy(() => import("../components/common/ProtectedRoute"));
 import PublicLayout from "../components/layout/PublicLayout";
+const LegalPage = lazy(() => import("../features/legal/LegalPage"));
 const Landing = lazy(() => import("../pages/Home/HomePage"));
 const PublicPages = lazy(() => import("../features/shared/PublicPages"));
 const Login = lazy(() => import("../pages/Auth/LoginPage"));
@@ -50,6 +51,8 @@ export const router = createBrowserRouter([
         path: `/${path}`,
         element: <PublicPages pathname={`/${path}`} />,
       })),
+      { path: "/terms", element: <LegalPage documentId="terms" /> },
+      { path: "/privacy", element: <LegalPage documentId="privacy" /> },
       { path: "*", element: <NotFound /> },
     ],
   },

@@ -1,22 +1,53 @@
-# Validation record — 15 November 2026
+# Mobile validation — 17 November 2026
+
+Checks apply only to `MobileApp`. No production OTP, ride, payment, upload or
+user mutation was performed. All test records are synthetic.
+
+## Baseline
+
+An unchanged copy of the tracked mobile application was extracted from `HEAD`
+into `/tmp/mobile-cleanup-baseline/MobileApp` for comparison.
+
+- Analyzer: two existing `curly_braces_in_flow_control_structures` findings in
+  `test/api_repository_test.dart`, lines 203 and 209. Both are fixed in this cleanup.
+- The initial baseline test process was interrupted before completion. After
+  cleanup, all 48 existing tests and the new registration test passed.
+- The normal Snap Flutter launcher could not start in this shell. The underlying
+  installed SDK required cache access outside the workspace; checks used that SDK
+  with approved access. This is an environment limitation, not an application error.
+
+## Cleanup verification
 
 | Check | Result |
 |---|---|
-| `flutter pub get` | Passed; compatible dependency versions resolved and lockfile updated. |
-| `flutter analyze --no-pub` | Passed: **No issues found**. |
-| `flutter test --no-pub` | Passed: **11 tests**. |
-| Dart formatting | Passed; application and tests formatted. |
-| Android manifest XML | Parsed successfully; Trivia label, internet/foreground location, no background location, backup disabled and cleartext disabled. |
-| iOS Info.plist and icon catalog | Parsed/checked successfully; Trivia display name, foreground location/photo-library descriptions, all catalog images exist. This is configuration validation, not an Xcode build. |
-| Android APK release | Attempted repeatedly; the build sessions were interrupted before Gradle returned a final result. No APK artifact was found. Release compilation remains unverified. |
-| Android App Bundle release | Attempted; interrupted before a final result. No successful AAB is claimed. |
-| iOS build / IPA signing | Not run: macOS/Xcode unavailable in this Linux environment. |
-| Live ride / live OTP / payment / push | Not run: backend mobile endpoints and provider integrations are unavailable. |
+| Dart formatting | Passed: 32 application/test files, no further changes required |
+| Existing tests after initial refactor | Passed: 48 tests |
+| Final analyzer | Passed: no issues found |
+| Final suite including registration flow | Passed: 49 tests, run with `--concurrency=1` |
+| Android debug APK | Attempted; sessions interrupted during `assembleDebug` before a final result. Compilation remains unverified |
+| Tracked XML, plist and JSON | Parsed successfully |
+| iOS asset catalogs | Referenced images exist |
+| Onboarding asset references | All bundled images referenced by the entry screen |
+| Signing helper | `bash -n tool/signing-env.sh` passed |
+| Diff whitespace | `git diff --check` passed |
+| AI attribution scan | No irrelevant references found in tracked mobile files |
 
-The installed Flutter Snap launcher cannot start in the managed shell. Commands used the installed underlying executable `/home/taflowork/snap/flutter/common/flutter/bin/flutter` with access to its SDK cache. Android SDK platform 36 was missing and was installed; Gradle also installed platform 35 and CMake 3.22.1 for dependencies. Gradle heap/workers were reduced from the template defaults to fit this machine. Native builds were interrupted in earlier sessions; their partial output is not evidence of successful compilation.
+The registration flow test exercises local edits, explicit submission, payload
+preservation and confirmed submitted status. Existing contract, fare, session,
+driver gating, booking, branding, onboarding and layout tests remain in place.
 
-The passing suite covers exact-cent fare parsing, invalid OTP rejection, approved-driver gating, invalid trip transitions, concurrent/duplicate offer selection, agreed fare immutability, passenger/driver switching, logout cleanup including an offline-network failure, driver counteroffer/selection simulation, active-trip preservation when offline, simulated earnings from completed driver trips, backend road-quote parsing, persisted onboarding completion, phone-entry validation and passenger layout at 320×640 with 1.5× text scaling. Flutter widget tests intentionally do not make real tile-network requests.
+## Limits
 
-The final map-attribution adjustment was included in the passing analysis and 11-test run. Final tool output is retained in [verification/trivia-analysis-final.txt](verification/trivia-analysis-final.txt) and [verification/trivia-tests-final.txt](verification/trivia-tests-final.txt).
+The Android build attempts did not return a final compiler result. Gradle emitted
+a Java native-access warning; no terminating application build error was captured.
+No new debug APK was produced. The existing release APK predates this cleanup.
 
-Required before launch: implement and verify the proposed backend contract, signed Android builds, physical Android/iPhone QA, production map/geocoding/routing/pricing services, payment checkout and reconciliation, APNs/FCM configuration, privacy/terms URLs, operational safety/support processes, secure document policy, Apple signing, TestFlight, App Store/Play review and a real staging ride. Do not publish a demo-mode artifact as the operational service.
+Android release signing and physical-device installation were not run. The current Gradle configuration permits debug-key fallback for
+release builds; check the signing certificate before distribution. No signing
+policy or credentials were changed during cleanup.
+
+iOS compilation and signing require macOS/Xcode and were not run. Staging and
+device acceptance are still required for SMS, secure storage, location,
+notification reconnects, document uploads and complete passenger/driver trips.
+Earlier raw validation output remains under `verification/`; it records previous
+revisions rather than the results of this cleanup.

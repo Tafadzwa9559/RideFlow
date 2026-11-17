@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../app/controller.dart';
 import '../../core/api_error.dart';
 import '../../shared/models.dart';
+import '../legal/legal_page.dart';
 
 class DriverRegistration extends StatefulWidget {
   const DriverRegistration({super.key, required this.app});
@@ -33,30 +34,17 @@ class _DriverRegistrationState extends State<DriverRegistration> {
   @override
   void initState() {
     super.initState();
-    final data = <String, dynamic>{};
-    final savedFields = Map<String, dynamic>.from(data['fields'] as Map? ?? {});
-    for (final key in sections.expand((s) => s)) {
+    for (final key in sections.expand((section) => section)) {
       fields[key] = TextEditingController(
-        text:
-            savedFields[key]?.toString() ??
-            switch (key) {
-              'firstName' => widget.app.session?.firstName ?? '',
-              'lastName' => widget.app.session?.lastName ?? '',
-              'phone' => widget.app.session?.phone ?? '',
-              'category' => 'Standard',
-              _ => '',
-            },
+        text: switch (key) {
+          'firstName' => widget.app.session?.firstName ?? '',
+          'lastName' => widget.app.session?.lastName ?? '',
+          'phone' => widget.app.session?.phone ?? '',
+          'category' => 'Standard',
+          _ => '',
+        },
       );
     }
-    final savedDocs = Map<String, dynamic>.from(
-      data['documents'] as Map? ?? {},
-    );
-    for (final entry in savedDocs.entries) {
-      if (File(entry.value as String).existsSync()) {
-        documents[entry.key] = entry.value as String;
-      }
-    }
-    step = data['step'] as int? ?? -1;
     loadRequirements();
   }
 
@@ -92,7 +80,10 @@ class _DriverRegistrationState extends State<DriverRegistration> {
           .toList();
       for (final req in requirements) {
         if (req['expiry_required'] == true) {
-          fields['expiry_${req['code']}'] = TextEditingController();
+          fields.putIfAbsent(
+            'expiry_${req['code']}',
+            TextEditingController.new,
+          );
         }
       }
       for (final entry in values.entries) {
@@ -111,10 +102,7 @@ class _DriverRegistrationState extends State<DriverRegistration> {
     'fields': {for (final e in fields.entries) e.key: e.value.text.trim()},
     'documents': documents,
   };
-  Future<void> save({DriverStatus status = DriverStatus.draft}) async {
-    if (status != DriverStatus.submitted) {
-      return; // Editable screen draft, not an API success.
-    }
+  Future<void> submitApplication() async {
     final submitted = await widget.app.repository.applyDriver({
       ...data,
       for (final entry in fields.entries.where(
@@ -148,21 +136,11 @@ class _DriverRegistrationState extends State<DriverRegistration> {
     if (key == 'phone' && !RegExp(r'^\+?[0-9]{9,15}$').hasMatch(v)) {
       return 'Enter a valid phone number';
     }
-    if (key == 'licenceExpiry' || key == 'dateOfBirth') {
+    if (key == 'licenceExpiry') {
       final date = DateTime.tryParse(v);
       if (date == null) return 'Use YYYY-MM-DD';
-      if (key == 'licenceExpiry' && !date.isAfter(DateTime.now())) {
+      if (!date.isAfter(DateTime.now())) {
         return 'Licence must not be expired';
-      }
-      if (key == 'dateOfBirth' &&
-          date.isAfter(
-            DateTime(
-              DateTime.now().year - 18,
-              DateTime.now().month,
-              DateTime.now().day,
-            ),
-          )) {
-        return 'Driver must be at least 18';
       }
     }
     if (key == 'year' &&
@@ -194,7 +172,6 @@ class _DriverRegistrationState extends State<DriverRegistration> {
         throw StateError('Choose an image under 5 MiB.');
       }
       documents[key] = file.path;
-      await save();
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
@@ -290,10 +267,7 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                   '1. Enter personal information.\n2. Add driver and vehicle details.\n3. Submit required documents.\n4. Wait for verification.\n5. Start driving once approved.',
                 ),
                 FilledButton(
-                  onPressed: () async {
-                    setState(() => step = 0);
-                    await save();
-                  },
+                  onPressed: () => setState(() => step = 0),
                   child: const Text('Get Started'),
                 ),
               ] else ...[
@@ -318,15 +292,14 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                             child: TextFormField(
                               controller: fields[key],
                               readOnly: key == 'phone',
-                              onTap:
-                                  key == 'licenceExpiry' || key == 'dateOfBirth'
+                              onTap: key == 'licenceExpiry'
                                   ? () async {
                                       final now = DateTime.now();
                                       final date = await showDatePicker(
                                         context: context,
-                                        initialDate: key == 'dateOfBirth'
-                                            ? DateTime(now.year - 18)
-                                            : now.add(const Duration(days: 1)),
+                                        initialDate: now.add(
+                                          const Duration(days: 1),
+                                        ),
                                         firstDate: DateTime(1900),
                                         lastDate: DateTime(now.year + 30),
                                       );
@@ -334,28 +307,16 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                                         fields[key]!.text = date
                                             .toIso8601String()
                                             .substring(0, 10);
-                                        await save();
                                       }
                                     }
                                   : null,
                               decoration: InputDecoration(
                                 labelText: key,
-                                hintText:
-                                    key == 'licenceExpiry' ||
-                                        key == 'dateOfBirth'
+                                hintText: key == 'licenceExpiry'
                                     ? 'YYYY-MM-DD'
                                     : null,
                               ),
                               validator: (v) => validate(key, v),
-                              onChanged: (_) {
-                                save().catchError((Object e) {
-                                  if (mounted) {
-                                    setState(
-                                      () => error = 'Unable to save securely.',
-                                    );
-                                  }
-                                });
-                              },
                             ),
                           ),
                       if (step == 2)
@@ -414,10 +375,8 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                                       child: const Text('Gallery / replace'),
                                     ),
                                     TextButton(
-                                      onPressed: () async {
-                                        setState(() => documents.remove(key));
-                                        await save();
-                                      },
+                                      onPressed: () =>
+                                          setState(() => documents.remove(key)),
                                       child: const Text('Remove'),
                                     ),
                                   ],
@@ -513,10 +472,9 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                                   'Review all required details.',
                                 );
                               }
-                              await save(status: DriverStatus.submitted);
+                              await submitApplication();
                             } else {
                               step++;
-                              await save();
                             }
                           } catch (e) {
                             error = apiErrorMessage(e);
@@ -526,22 +484,13 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                   child: Text(step == 4 ? 'Submit Application' : 'Continue'),
                 ),
                 TextButton(
-                  onPressed: step == 0
-                      ? null
-                      : () async {
-                          setState(() => step--);
-                          await save();
-                        },
+                  onPressed: step == 0 ? null : () => setState(() => step--),
                   child: const Text('Back'),
                 ),
               ],
+              const LegalLinks(),
               TextButton(
                 onPressed: () async {
-                  if (!pending &&
-                      step >= 0 &&
-                      status != DriverStatus.approved) {
-                    await save();
-                  }
                   if (widget.app.driverMode) await widget.app.switchMode();
                 },
                 child: const Text('Back to Passenger Mode'),

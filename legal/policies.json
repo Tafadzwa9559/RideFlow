@@ -1,0 +1,422 @@
+{
+  "schemaVersion": 1,
+  "version": "2026-11-17-draft.1",
+  "status": "draft",
+  "effectiveDate": null,
+  "attribution": "Trivia is developed by MOrdec Solutions (Pvt) Ltd.",
+  "reviewNotice": "Draft for legal and business review. Not approved for publication; effective date and marked details require confirmation.",
+  "documents": {
+    "terms": {
+      "id": "terms",
+      "title": "Terms & Conditions",
+      "sections": [
+        {
+          "id": "terms-1",
+          "title": "Introduction and Acceptance of Terms",
+          "paragraphs": [
+            "Trivia is developed by MOrdec Solutions (Pvt) Ltd. These Terms explain the conditions for using Trivia's passenger and driver platform in Zimbabwe. “You” means the individual using an account; “we”, “us” and “our” refer to the confirmed platform operator identified below.",
+            "These documents are drafts for review, with no effective date yet. Draft acknowledgement during development testing is not evidence that final operational terms have been approved. Before publication, the operator must complete the marked details, approve the policies and provide an effective date. The final registration process should require an affirmative acceptance of the applicable Terms, with the Privacy Policy supplied separately as a notice."
+          ]
+        },
+        {
+          "id": "terms-2",
+          "title": "About Trivia and MOrdec Solutions (Pvt) Ltd",
+          "paragraphs": [
+            "Trivia is a technology platform connecting passengers with independent drivers. It does not represent that every driver is its employee or that it owns the vehicles used for rides. The legal relationship with each driver depends on the actual arrangements and applicable law, not merely the description in these Terms.",
+            "[TO BE CONFIRMED BEFORE PUBLICATION: the contracting platform operator, company registration details if required, registered or service address, and verified support contact.] Trivia is developed by MOrdec Solutions (Pvt) Ltd."
+          ]
+        },
+        {
+          "id": "terms-3",
+          "title": "Description of the Platform",
+          "paragraphs": [
+            "Subject to availability, passengers can select pickup and destination locations, obtain a route-based fare suggestion, propose a fare, request a ride and choose a driver offer. Drivers can apply for verification, review eligible requests, make offers and update trip progress. Account tools include ride history, saved places and support or safety reporting where enabled.",
+            "A request, suggested fare, verification label or map position is not a promise that a driver is available, a ride will be completed, or a journey is risk-free. Service coverage and features depend on the enabled deployment."
+          ]
+        },
+        {
+          "id": "terms-4",
+          "title": "User Eligibility and Age Requirements",
+          "paragraphs": [
+            "You must have legal capacity to enter the applicable agreement and meet any legal requirements relevant to your use of the service. Drivers must meet the applicable age and licensing requirements for the vehicle and activity concerned.",
+            "[POLICY REQUIRING CONFIRMATION: minimum passenger account-holder age, any proposed 18-and-over restriction, accompanied-minor arrangements, and how eligibility will be verified.] Until reviewed and implemented, the platform must not be represented as offering a verified child-travel service. No unaccompanied-minor or guardian-consent workflow is promised by these draft Terms."
+          ]
+        },
+        {
+          "id": "terms-5",
+          "title": "Passenger Registration and Account Security",
+          "paragraphs": [
+            "Provide accurate names and a phone number you are authorised to use. Registration and login use phone verification. Keep your device, verification codes and account access secure; do not share credentials or use another person's identity. Notify the operator through the confirmed support channel if you suspect compromise.",
+            "You are responsible for your own use of the account to the extent provided by law. You are not automatically liable for every action by a third party merely because an account or device was compromised. We may require reasonable identity checks to investigate a report."
+          ]
+        },
+        {
+          "id": "terms-6",
+          "title": "Driver Registration and Verification Requirements",
+          "paragraphs": [
+            "Driver applications may require legal and contact information, licence details and expiry dates, vehicle make, model, year, colour, registration, capacity and category, and the documents specified in the application. Supply authentic, legible and current information and keep it updated. Uploads remain subject to review.",
+            "A driver may operate only when approved by the backend and otherwise eligible, including required vehicle, licence, document, availability and location checks. Submission does not guarantee approval. [TO BE CONFIRMED: all required transport permits, operator licences, insurance evidence, renewal procedures and the documented scope of verification.] A platform approval does not replace statutory authorisation or guarantee safety."
+          ]
+        },
+        {
+          "id": "terms-7",
+          "title": "Driver Responsibilities and Professional Conduct",
+          "paragraphs": [
+            "Drive lawfully and attentively, maintain a roadworthy and appropriately authorised vehicle, observe lawful passenger-capacity limits and carry any documents required by law. Do not drive while impaired, distracted or otherwise unfit. Use only the approved identity and vehicle associated with the ride.",
+            "Treat passengers respectfully, avoid harassment or unlawful discrimination, follow reasonable agreed pickup arrangements and protect information received through the platform. Do not demand undisclosed charges or falsely state that Trivia has verified payment. Report material eligibility changes and incidents through the available channels."
+          ]
+        },
+        {
+          "id": "terms-8",
+          "title": "Passenger Responsibilities",
+          "paragraphs": [
+            "Provide accurate pickup and destination details, check the driver and vehicle before entering, be ready at the agreed pickup point and communicate necessary changes safely. Use seat belts and follow lawful safety directions. Do not distract, threaten, harass or endanger the driver or other people, damage the vehicle, or request unlawful conduct.",
+            "Review the agreed fare and payment preference before travelling and pay the driver directly as agreed. [TO BE CONFIRMED: luggage, accessibility assistance, accompanying passengers, child-restraint and service-animal arrangements.] These Terms do not limit rights to reasonable treatment under applicable law."
+          ]
+        },
+        {
+          "id": "terms-9",
+          "title": "Ride Requests and Booking Procedures",
+          "paragraphs": [
+            "A fare suggestion is based on available road-routing and pricing information. Review locations, category, proposed fare and payment preference before requesting a ride. Requests may expire or receive no offers. Drivers decide whether to offer, counteroffer or decline, subject to the implemented workflow.",
+            "An available offer is not an assigned ride until the passenger selects it and the backend confirms the assignment. Review the confirmed driver, vehicle and agreed fare. Follow the displayed trip state; duplicate submissions or connectivity failures may require retrieving current state rather than assuming a new ride exists. Contact support about unresolved booking errors."
+          ]
+        },
+        {
+          "id": "terms-10",
+          "title": "Fare Suggestions and Negotiation",
+          "paragraphs": [
+            "Suggested fares are distance-based guidance calculated using the configured route and pricing rules. They are not a fixed promise independent of the booking details. Passengers may modify their proposed fare within the limits shown in the app, and drivers may accept that proposal or make an offer. The agreed fare is confirmed through the passenger's selection of an offer.",
+            "Fares and supported preferences in this workflow are expressed in USD. Review a fresh suggestion when locations or category change or a quote expires. These Terms do not authorise a driver to alter the confirmed fare unilaterally. [TO BE CONFIRMED: a lawful, clearly disclosed process for requested route changes, waiting, tolls or other exceptional expenses; no such extra charges are created here.]"
+          ]
+        },
+        {
+          "id": "terms-11",
+          "title": "Accepted Offline Payment Preferences",
+          "paragraphs": [
+            "Cash, EcoCash and OneMoney are offline payment preferences. Passengers pay drivers directly outside Trivia. Trivia does not process, receive, hold or verify ride fare payments, operate a passenger wallet, or initiate mobile-money transfers. A trip record or a payment preference is not a receipt or proof of settlement.",
+            "For EcoCash or OneMoney, independently check the recipient and amount before using the provider's own service. Its terms, fees and transaction remedies apply to that transaction. Do not disclose wallet PINs, passwords or authentication codes to a driver or to Trivia support. Discuss a payment error with the driver and relevant provider; platform complaints remain available for misconduct. No refund, payout or reimbursement guarantee is made by these Terms."
+          ]
+        },
+        {
+          "id": "terms-12",
+          "title": "Ride Cancellation and No-Show Policies",
+          "paragraphs": [
+            "Use the available cancellation control promptly if you cannot proceed. A cancellation takes effect when confirmed by the backend; if connectivity fails, retrieve the current ride status or seek assistance. Do not assume that silently closing the app cancels a request. Cancellation availability depends on the ride's current state.",
+            "[POLICY REQUIRING CONFIRMATION: cancellation windows, handling of driver or passenger no-shows, reasonable evidence and dispute procedures.] No cancellation penalty, waiting fee, no-show charge or refund schedule is established by this draft. Any future policy must be clearly disclosed and legally reviewed before it is enforced."
+          ]
+        },
+        {
+          "id": "terms-13",
+          "title": "Driver and Passenger Safety",
+          "paragraphs": [
+            "Check the ride and vehicle details, choose a safe pickup point and exercise reasonable care. Location, verification and trip-sharing tools assist coordination; they do not guarantee personal safety, continuous monitoring, emergency intervention or an accident-free journey. The current share function sends a trip summary rather than a guaranteed live tracking link.",
+            "In an emergency, contact appropriate local emergency services directly and move to safety where possible. Trivia's reporting tools are not emergency dispatch. Report concerning conduct through the platform when safe. [TO BE CONFIRMED: incident response procedures, responsible contacts and actual support availability.] No insurance coverage or safety guarantee is created by these Terms."
+          ]
+        },
+        {
+          "id": "terms-14",
+          "title": "Prohibited Activities",
+          "paragraphs": [
+            "Do not impersonate others, submit forged documents, evade a suspension, misuse verification codes, create fraudulent rides or offers, manipulate ratings, harass others, engage in unlawful discrimination, or use the service for illegal or dangerous purposes.",
+            "Do not access another person's records without authority, scrape or resell personal information, interfere with the service, distribute malware, exploit security weaknesses, or bypass booking and account controls. Disclose a suspected vulnerability privately through the confirmed support channel, without accessing unrelated data or disrupting users."
+          ]
+        },
+        {
+          "id": "terms-15",
+          "title": "User Ratings, Reviews, and Complaints",
+          "paragraphs": [
+            "Ratings and reports should reflect a genuine experience and be relevant, fair and lawful. Do not include threats, knowingly false allegations or unnecessary personal information. The platform may review content or request supporting information, with restrictions proportionate to legitimate safety, privacy and service needs.",
+            "Use the available trip-report, review or support functions to explain a concern. A report does not itself establish fault or guarantee a particular outcome. [TO BE CONFIRMED: review moderation, response times, correction requests and appeal procedures.] Statutory complaints remain available independently of platform moderation."
+          ]
+        },
+        {
+          "id": "terms-16",
+          "title": "Location Information and Ride Tracking",
+          "paragraphs": [
+            "Locations support pickup selection, road routes, driver eligibility and participant trip updates. The mobile app requests foreground location access; the current implementation does not request background location permission. Driver updates may be sent while the app is active and the driver is online. Permissions and device settings can be changed, although refusal may prevent location-dependent features from working.",
+            "Map pins may be selected manually. Positions, routes and update times can be inaccurate, stale or unavailable and are not evidence of continuous observation. The Privacy Policy explains collection and sharing. Do not use another person's location for purposes unrelated to the ride."
+          ]
+        },
+        {
+          "id": "terms-17",
+          "title": "Account Suspension and Termination",
+          "paragraphs": [
+            "Access may be restricted where reasonably necessary to address suspected fraud, unlawful conduct, safety risks, inaccurate verification, account compromise or material breaches, subject to applicable law. Urgent restrictions may be needed before an investigation is complete. Driver eligibility can also lapse when required documents or fresh location information are missing.",
+            "[POLICY REQUIRING CONFIRMATION: decision-makers, notice, review, appeal and termination procedures.] Where lawful and practicable, the final policy should give reasons and an opportunity to respond. Closing or restricting an account does not automatically delete records or settle a fare dispute. The current app has no completed self-service account-deletion workflow."
+          ]
+        },
+        {
+          "id": "terms-18",
+          "title": "Platform Availability and Technical Limitations",
+          "paragraphs": [
+            "Access depends on connectivity, devices, third-party services, mapping, routing, messaging and backend availability. We do not promise uninterrupted access, immediate delivery, exact arrival estimates or availability in every location. Updates, maintenance and failures may interrupt features.",
+            "Review confirmation and current trip status when an action appears uncertain. Keep the app updated through approved distribution channels. Nothing in this section excludes mandatory obligations relating to service quality, representations or remedies."
+          ]
+        },
+        {
+          "id": "terms-19",
+          "title": "Responsibilities of Independent Drivers",
+          "paragraphs": [
+            "Independent drivers are responsible for actually providing the transport and for meeting applicable licensing, vehicle, tax, safety and insurance duties. Passengers and drivers must honour lawful arrangements made for their ride. Trivia's technology role does not remove any responsibility the platform operator has under applicable law.",
+            "[LEGAL AND BUSINESS REVIEW REQUIRED: the actual contractual relationship, any operator obligations, employment classification and transport authorisations.] These Terms do not introduce a commission, recruitment fee, employment promise, guaranteed earnings or exclusive driving commitment."
+          ]
+        },
+        {
+          "id": "terms-20",
+          "title": "Limitation of Liability, Subject to Applicable Law",
+          "paragraphs": [
+            "Responsibility for loss must be assessed under the applicable law and the facts, including each party's conduct and the connection between that conduct and the loss. Technical assistance and independent-driver status do not excuse the operator's own legally actionable conduct.",
+            "Nothing in these Terms excludes or limits a right, remedy or liability that cannot lawfully be excluded, including mandatory consumer protections. They do not require waiver of claims for fraud or other non-excludable wrongdoing, impose an invented monetary liability cap, or prevent lawful redress for personal injury. Any proposed additional limitation must be reviewed by a qualified Zimbabwean legal practitioner before publication."
+          ]
+        },
+        {
+          "id": "terms-21",
+          "title": "Intellectual Property and Ownership",
+          "paragraphs": [
+            "Trivia is developed by MOrdec Solutions (Pvt) Ltd. Branding, software and original platform materials are protected by applicable intellectual-property law, subject to the rights of their actual owners and licensed contributors. No claim is made to ownership of third-party maps, open-source software or users' personal information.",
+            "You may use the app for its intended lawful purpose. Do not misuse branding, copy protected material beyond what law or permission allows, or imply an endorsement without authority. Users retain rights in material they supply; its permitted operational use is limited to providing and administering the relevant service. [TO BE CONFIRMED: the final operator's ownership and licence arrangements.]"
+          ]
+        },
+        {
+          "id": "terms-22",
+          "title": "Modifications to the Platform",
+          "paragraphs": [
+            "Features, supported devices and service areas may change. Material changes affecting an ongoing booking should be communicated appropriately and handled consistently with applicable law and confirmed arrangements. We will not describe an unimplemented feature as available merely because it appears in a roadmap.",
+            "Changes to data collection or legally significant user obligations require appropriate notice and, where necessary, a separate choice or renewed agreement. These Terms do not create an unrestricted right to remove statutory remedies or rewrite a completed ride arrangement retrospectively."
+          ]
+        },
+        {
+          "id": "terms-23",
+          "title": "Changes to Terms",
+          "paragraphs": [
+            "The approved version should display a version identifier and effective date, with material changes explained through suitable in-app or website notice. Where renewed acceptance is required, it must be requested affirmatively; a preselected box or a notice alone is not a substitute.",
+            "The version relevant to a dispute and any mandatory law remain important. [TO BE CONFIRMED: notification timing, version archives and the process for users who decline a material change.] This draft has no published effective date."
+          ]
+        },
+        {
+          "id": "terms-24",
+          "title": "Governing Law — Zimbabwe",
+          "paragraphs": [
+            "These Terms are intended to be governed by the laws of Zimbabwe, including applicable consumer, data-protection and transport requirements. The Consumer Protection Act [Chapter 14:44] and mandatory protections are not displaced by these Terms.",
+            "A competent Zimbabwean court or authorised regulator may determine matters within its jurisdiction. This clause does not impose mandatory private arbitration, require a waiver of regulatory complaints, or remove a forum or remedy that applicable law makes available. A qualified Zimbabwean practitioner must review the final document and operational arrangements."
+          ]
+        },
+        {
+          "id": "terms-25",
+          "title": "Complaints and Dispute Resolution",
+          "paragraphs": [
+            "If safe and appropriate, first clarify a booking or fare issue with the other ride participant. For platform issues or misconduct, use the available support/report function and provide relevant trip details without unnecessary sensitive information. Emergency concerns should be directed to emergency services rather than awaiting a platform reply.",
+            "[TO BE CONFIRMED: verified complaint contacts, acknowledgement and response targets, escalation and appeal procedures.] An attempt at informal resolution does not prevent seeking a regulator's assistance or a legal remedy. Consumer complaints may be raised with the Consumer Protection Commission and privacy complaints with the competent Data Protection Authority using their verified official channels."
+          ]
+        },
+        {
+          "id": "terms-26",
+          "title": "Contact Information",
+          "paragraphs": [
+            "Trivia is developed by MOrdec Solutions (Pvt) Ltd.",
+            "[TO BE CONFIRMED BEFORE PUBLICATION: contracting/data-controller entity; registered or service address; support and complaints email or telephone; privacy contact; and DPO details where applicable.] No unverified contact is supplied here. In-app support reporting, where connected, can be used for service concerns but is not an emergency response channel."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "id": "privacy",
+      "title": "Privacy Policy",
+      "sections": [
+        {
+          "id": "privacy-1",
+          "title": "Introduction",
+          "paragraphs": [
+            "Trivia is developed by MOrdec Solutions (Pvt) Ltd. This notice explains the personal information handled for Trivia passenger and driver services and the related website. It describes the reviewed implementation and identifies matters that must be verified before publication.",
+            "This is a draft with no effective date. It is a notice about processing, not a blanket request for consent or a waiver of privacy rights. Any processing that legally requires consent must use a specific, informed and separate choice. Accepting platform Terms does not automatically authorise optional marketing or every use of personal information."
+          ]
+        },
+        {
+          "id": "privacy-2",
+          "title": "Data Controller and Contact Details",
+          "paragraphs": [
+            "The data controller is the entity that determines the purposes and means of the relevant processing. [TO BE CONFIRMED: whether MOrdec Solutions (Pvt) Ltd is also the operational data controller, and its legal/service address and verified privacy contact.] Development attribution alone does not establish the controller role.",
+            "[TO BE CONFIRMED: the appointed Data Protection Officer and published contact, if required, and the status and scope of any required data-controller licensing.] This notice does not assert regulatory registration, approval or compliance certification."
+          ]
+        },
+        {
+          "id": "privacy-3",
+          "title": "Information We Collect",
+          "paragraphs": [
+            "Depending on the feature used, information can include account identifiers, names and phone numbers, optional email and supplied profile images, driver and vehicle records, selected or device-derived locations, ride requests and offers, trip history, preferences, reviews and support or safety reports.",
+            "Technical records can include authenticated session information, request and error metadata, device/browser information supplied by network requests, and notification registration details where that integration is active. We distinguish information actually submitted or generated from optional features and from providers that are only configurable. Do not send unrelated identity, medical or financial documents through support messages."
+          ]
+        },
+        {
+          "id": "privacy-4",
+          "title": "Account and Contact Information",
+          "paragraphs": [
+            "Phone verification is used to register or sign in. Account profiles hold the supplied name, phone number and optional email. The backend supports a profile photograph if one is uploaded; the existence of that endpoint does not mean a photograph is automatically collected. Emergency-contact details and saved-place labels are collected only when supplied through the relevant feature.",
+            "Share another person's contact details only with appropriate authority and after informing them as required. Device-local storage holds session credentials and selected application state. When submitted with successful phone verification, the legal acknowledgement feature records the document version, content digest, acknowledgement type and server time against the authenticated account in the existing audit records. A device-local copy can also be stored securely; device time and a local copy alone are not authoritative server evidence. This record is not marketing consent or proof that every paragraph was read."
+          ]
+        },
+        {
+          "id": "privacy-5",
+          "title": "Driver Verification and Identity Documents",
+          "paragraphs": [
+            "Driver onboarding uses legal/contact information, driving-licence details and expiry dates, vehicle information and requirement-driven document uploads. Photographs or scans can contain identifying details and other sensitive information. Collect only the documents actually required for the application and do not use a driver's materials for unrelated purposes.",
+            "The reviewed design limits document access to authorised operations or verification workflows rather than exposing scans to passengers. A stored image is not, by itself, evidence that facial recognition or biometric matching is performed; no such matching is identified in the current application flow. [TO BE CONFIRMED: the required document list, access roles, verification service providers, lawful basis for sensitive information and deletion schedule.]"
+          ]
+        },
+        {
+          "id": "privacy-6",
+          "title": "Location Information",
+          "paragraphs": [
+            "Passengers can search for places, select map pins or request a current device position. Pickup and destination coordinates and names are submitted for routing, quotes and rides. Drivers publish foreground location updates while online to support eligibility, matching and trip updates. Updates can be throttled, interrupted or out of date.",
+            "The current Flutter app requests foreground location permissions and does not request background location permission. It attempts to stop online updates when paused; this is not a promise of continuous tracking or instantaneous server removal. The website's map tool requests a browser location only when the relevant control is used. You can change operating-system or browser permissions and use manual location selection where supported, but driver eligibility depends on fresh location information."
+          ]
+        },
+        {
+          "id": "privacy-7",
+          "title": "Ride and Booking Information",
+          "paragraphs": [
+            "The platform records pickup and destination details, route/quote information, proposed and agreed fares, selected category, driver offers, participant identifiers, booking and status times, payment preference, and related trip records. It can retain passenger notes, review scores/comments and complaints supplied through the implemented features.",
+            "Ride history and driver earnings summaries are operational records, not independently verified receipts. Trivia does not process, receive, hold or verify fare payments. Cash, EcoCash and OneMoney preferences do not require providing wallet PINs, bank-card details or external transaction credentials to Trivia."
+          ]
+        },
+        {
+          "id": "privacy-8",
+          "title": "Device and Technical Information",
+          "paragraphs": [
+            "Services necessarily receive network request information such as source IP address and headers, with device or browser details where supplied. Application infrastructure can record request identifiers, endpoints, status codes, timing, authentication/security events and errors to operate and protect the service. The exact deployed logging fields, recipients and retention require confirmation.",
+            "The mobile app stores access/refresh credentials using the platform secure-storage facility and uses local preferences for application state. Backend notification functionality supports a device push token and platform identifier when registered; native push registration/delivery is not confirmed in the reviewed mobile flow. No advertising identifier, cross-app tracking SDK or general address-book upload was identified in that flow."
+          ]
+        },
+        {
+          "id": "privacy-9",
+          "title": "How We Use Personal Information",
+          "paragraphs": [
+            "Information supports account verification and security, profile management, driver review, route and fare estimation, matching and ride coordination, trip updates and history, saved places, permitted notifications, support, complaints, safety investigations and maintaining reliable services.",
+            "Information may also be needed to prevent misuse, respond to lawful requests and establish or defend legal claims, subject to applicable safeguards. The operator must not repurpose information for unrelated marketing, profiling or disclosure merely because it is available. [TO BE CONFIRMED: a documented processing inventory and any additional actual uses before launch.]"
+          ]
+        },
+        {
+          "id": "privacy-10",
+          "title": "Legal Bases for Processing",
+          "paragraphs": [
+            "Each purpose needs an applicable lawful ground under Zimbabwean law. Depending on the circumstances, necessary processing may relate to a requested or existing service agreement, a legal obligation, protection of a vital interest, or another statutory ground whose conditions are met. Where consent is relied on, it must be informed, specific, freely given and capable of withdrawal as the law provides.",
+            "[LEGAL REVIEW REQUIRED: a purpose-by-purpose lawful-basis assessment, including sensitive driver-document information, optional communications, necessary disclosures and international transfers.] We do not assume that a contractual checkbox covers every purpose. Refusing optional consent should not prevent unrelated service use; declining essential information may make the requested feature unavailable. Withdrawal does not itself determine whether records must be retained under another applicable ground."
+          ]
+        },
+        {
+          "id": "privacy-11",
+          "title": "Information Shared Between Drivers and Passengers",
+          "paragraphs": [
+            "Participants receive information needed for the relevant ride, such as pickup and destination details, agreed fare, selected category, relevant notes, ride state and the assigned driver's displayed name, vehicle/registration and rating where supplied. Authorised trip tracking may show the assigned driver's recent position. Displayed information can be unavailable where the backend response does not supply it.",
+            "The current serializers do not establish a general passenger/driver phone-directory or unrestricted document sharing feature. [TO BE CONFIRMED before any additional contact or communication feature is enabled: the precise fields, when they become visible, and the lawful purpose.] Recipients should use shared information only for legitimate ride or complaint needs and protect it against unrelated disclosure."
+          ]
+        },
+        {
+          "id": "privacy-12",
+          "title": "Sharing Information With Service Providers",
+          "paragraphs": [
+            "Necessary recipients may include the actual hosting/database operators, configured SMS delivery service, map/routing/geocoding operators, authorised private-document storage provider and configured push provider. Staff or contractors require an appropriate operational role. Disclosure to authorities or professional advisers must have a lawful justification and be limited appropriately.",
+            "A library installed in the codebase is not automatically a recipient. Django, Flutter, React, Dio, Riverpod and similar local software dependencies are not described as receiving personal information merely because they are used. [TO BE CONFIRMED: the processor register, legal entities, services, processing instructions, safeguards and written arrangements for every deployed provider.] No sale of information or advertising-network disclosure is identified in the reviewed application flow; additional use would need its own assessment and notice."
+          ]
+        },
+        {
+          "id": "privacy-13",
+          "title": "Maps and Third-Party Services",
+          "paragraphs": [
+            "The Flutter map defaults to OpenStreetMap tiles. Tile requests can disclose IP/network information and the area being viewed to the tile service. Place search and route estimation send necessary place queries or coordinates to the configured backend mapping providers. The backend supports compatible routing/geocoding interfaces; their actual operators must be identified before publication rather than inferred from software names.",
+            "Opening an external policy, store or other website subjects that visit to the external site's own information practices. A user-triggered trip share hands a text summary to the recipient application chosen through the device share interface. Cash, EcoCash and OneMoney payments happen outside Trivia; their providers receive transaction information through the separate payment activity, not through a Trivia payment gateway."
+          ]
+        },
+        {
+          "id": "privacy-14",
+          "title": "Cloud Infrastructure and Database Storage",
+          "paragraphs": [
+            "Repository deployment configuration supports Render application hosting and MongoDB Atlas database hosting. Production private-document storage is configurable through an S3-compatible service; the actual storage vendor is not identified by compatibility alone. Local development and test arrangements are separate from production deployment claims.",
+            "[TO BE CONFIRMED BEFORE PUBLICATION: which providers are actually deployed, their contracting entities and hosting/back-up regions, access arrangements and sub-processors.] This notice deliberately does not disclose connection strings, credentials, private network addresses, database names or internal security configuration. The identified deployment options do not prove that every option currently handles user information."
+          ]
+        },
+        {
+          "id": "privacy-15",
+          "title": "International Data Transfers",
+          "paragraphs": [
+            "A provider or support arrangement may involve access to or storage of information outside Zimbabwe. The controller must establish where each relevant service operates and assess the applicable transfer conditions, safeguards and regulatory requirements before the transfer occurs.",
+            "[LEGAL AND OPERATIONAL REVIEW REQUIRED: actual destination countries, provider/sub-processor access, applicable transfer grounds and any notification or authorisation required by Zimbabwean law.] Accepting Terms or reading this notice is not blanket consent to unknown international transfers. Ask the confirmed privacy contact for the applicable information and safeguards once supplied."
+          ]
+        },
+        {
+          "id": "privacy-16",
+          "title": "Data Security",
+          "paragraphs": [
+            "The reviewed implementation uses authenticated API access, role/participant checks, hashed expiring verification challenges, token revocation controls, secure device credential storage and restricted document-access paths. These measures describe code features, not a certification that every deployed system is secure. Live configuration, staff practices and provider safeguards require verification.",
+            "No system or transmission can be guaranteed risk-free. Protect your device and credentials and report suspected misuse through the confirmed channel. The operator must assess incidents, contain them and make any notifications required by applicable law. [TO BE CONFIRMED: responsible incident contacts, operational response procedures, access reviews and assurance testing.]"
+          ]
+        },
+        {
+          "id": "privacy-17",
+          "title": "Data Retention",
+          "paragraphs": [
+            "Records should be kept only as long as justified by the relevant purpose, applicable obligations and legitimate complaint or legal needs, with appropriate deletion or anonymisation thereafter. Different categories, such as driver documents, ride history, support reports and security logs and legal acknowledgements, need different reviewed schedules.",
+            "The code has configurable cleanup for location-update records and location-event payloads and separate cleanup for expired verification challenges. This is not evidence that deletion jobs run in production or that associated coordinates in quotes, ride records, logs, notifications or backups are all removed at the same time. No general account/document/history retention period has been confirmed. [TO BE CONFIRMED: category-specific periods, triggers, scheduled-job operation, backups, legal holds and how deletion is verified.]"
+          ]
+        },
+        {
+          "id": "privacy-18",
+          "title": "Account Deletion",
+          "paragraphs": [
+            "The current mobile app does not provide a completed self-service account-deletion endpoint. Do not treat logging out, uninstalling the app or disabling an account as deletion of backend information. A confirmed privacy-request channel and a workable manual procedure must be supplied before publication.",
+            "[TO BE CONFIRMED: the verified request contact, identity-check process, applicable response period and deletion/retention exceptions.] We do not promise immediate erasure or invent a response deadline. The controller should explain what can be removed, what must remain and why, subject to applicable rights and obligations. In-app support may be used where connected, but no deletion completion is represented by submitting a general support ticket."
+          ]
+        },
+        {
+          "id": "privacy-19",
+          "title": "User Privacy Rights",
+          "paragraphs": [
+            "Under applicable Zimbabwean law, you may have rights to information about use, access, objection, correction and deletion in the circumstances the law permits. A request may require proportionate identity verification; one user should not obtain another person's information by making a request.",
+            "Use the confirmed privacy contact to explain the information or processing concerned. If a request cannot be fulfilled in full, the controller should give a lawful explanation and identify available complaint routes. [TO BE CONFIRMED: the operational request procedure and statutory time limits applicable to each request.] This notice does not promise an unlimited erasure right or a portability right that has not been established under the applicable law."
+          ]
+        },
+        {
+          "id": "privacy-20",
+          "title": "Children's Privacy",
+          "paragraphs": [
+            "The reviewed workflow does not implement a verified guardian-consent or child-account process. [POLICY REQUIRING CONFIRMATION: minimum account-holder age, accompanied child travel and any collection concerning children.] Do not represent the service as approved for independent use by children while these matters remain unresolved.",
+            "If children's information is involved, the controller must assess the applicable consent, safeguarding and other legal requirements rather than relying on an adult's Terms checkbox. Report a suspected child account or inappropriate disclosure to the confirmed privacy contact. Any removal or restriction should consider lawful safety and evidence-retention needs."
+          ]
+        },
+        {
+          "id": "privacy-21",
+          "title": "Cookies and Similar Technologies, Where Applicable",
+          "paragraphs": [
+            "The website and app can use local storage or local preferences for application state. The web code supports persisted preview/workspace state and administrator session handling; the deployed website must be assessed for the actual storage keys and cookie behaviour. Hosting and third-party services may generate their own necessary technical requests.",
+            "No general analytics or advertising-cookie integration was identified in the reviewed public website flow. This is not a guarantee about infrastructure injected outside the repository. [TO BE CONFIRMED: a live cookie/storage inventory, purposes, recipients and durations.] Do not deploy non-essential tracking without the assessment, notice and choice required by applicable law. Browser settings may remove local state but do not delete server records."
+          ]
+        },
+        {
+          "id": "privacy-22",
+          "title": "Push Notifications and Communication Preferences",
+          "paragraphs": [
+            "Essential account verification, trip information and security messages support the requested service. The backend stores notification preferences and supports push-token registration; handset push permission, registration and provider delivery still require operational verification. An in-app preference is not proof that push is enabled or that every message will arrive.",
+            "Optional marketing must be assessed separately and, where consent is required, use an unselected, specific choice with an effective withdrawal route. Accepting Terms is not marketing consent. You can change available in-app settings and operating-system notification permissions, but turning off notifications may reduce timely trip updates and does not erase existing records."
+          ]
+        },
+        {
+          "id": "privacy-23",
+          "title": "Changes to This Privacy Policy",
+          "paragraphs": [
+            "An approved notice should show a version and effective date. Material changes in collection, purposes, recipients or transfers should be communicated appropriately before the changed processing where required. New consent must be obtained separately when the law requires it; publication alone is not a substitute.",
+            "[TO BE CONFIRMED: the final effective date, approval owner, version archive and notification procedure.] This draft is a review document and does not retrospectively authorise processing."
+          ]
+        },
+        {
+          "id": "privacy-24",
+          "title": "Complaints and Contact Details",
+          "paragraphs": [
+            "Trivia is developed by MOrdec Solutions (Pvt) Ltd. [TO BE CONFIRMED BEFORE PUBLICATION: the operational data controller, service address, privacy/support contact and DPO contact where applicable.] We have not invented a telephone number, email address or named officer.",
+            "Raise a privacy concern through the confirmed channel when available. You may also approach Zimbabwe's competent Data Protection Authority, POTRAZ, using its verified official channels; an internal complaint is not a waiver of that right. The Cyber and Data Protection Act [Chapter 12:07] and SI 155 of 2024 are relevant to the controller's review. No regulatory licensing, registration, approval or complete legal compliance is asserted by this notice."
+          ]
+        }
+      ]
+    }
+  }
+}

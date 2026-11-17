@@ -1,5 +1,7 @@
 # Trivia Flutter integration report
 
+Historical integration record. Signing behavior has changed since this report: current Gradle configuration allows debug signing when production credentials are unavailable. See README.md and VALIDATION.md for current guidance.
+
 ## Implementation scope
 
 Modified MobileApp only. Existing screen structure, branding, navigation, onboarding assets and platform signing policy retained. No Django endpoints or React modules were changed. No production writes, OTP dispatch, driver approval or ride creation were performed during verification.

@@ -136,6 +136,11 @@ export default function AuthPage() {
             </button>
           </>
         )}
+        <nav aria-label="Legal information">
+          <Link to="/terms">Terms &amp; Conditions</Link>
+          {" · "}
+          <Link to="/privacy">Privacy Policy</Link>
+        </nav>
         <Link className="text-link" to="/">
           ← Back to Trivia
         </Link>

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Logo } from "../ui/primitives";
 import { env } from "../../config/env";
 import { projectConfig } from "../../config/project";
+import legalManifest from "../../legal/content-digest.json";
 import { currentYear } from "../../utils/localisation";
 export default function Footer() {
   return (
@@ -11,7 +12,7 @@ export default function Footer() {
           <Logo />
           <p>{projectConfig.tagline}</p>
           <p className="developer-attribution">
-            Developed by {projectConfig.developer}.
+            {legalManifest.attribution}
           </p>
           <small>
             Thoughtfully building the next way to move.
@@ -63,6 +64,8 @@ export default function Footer() {
             © {currentYear()} · {projectConfig.productName} —{" "}
             {projectConfig.tagline}
           </span>
+          <Link to="/terms">Terms &amp; Conditions</Link>
+          <Link to="/privacy">Privacy Policy</Link>
           <Link to="/admin/login">Admin Portal</Link>
         </div>
       </div>

@@ -199,14 +199,16 @@ void main() {
       FlutterSecureStorage.setMockInitialValues({'access': 'access'});
       final dio = Dio();
       dio.httpClientAdapter = ContractAdapter((options) async {
-        if (options.path == 'users/me/')
+        if (options.path == 'users/me/') {
           return jsonBody({
             'phone': '+263771234567',
             'driver_status': 'approved',
           });
+        }
         if (options.path == 'rides/active/') return jsonBody({'ride': null});
-        if (options.path.contains('availability'))
+        if (options.path.contains('availability')) {
           return jsonBody({'status': 'offline'});
+        }
         return jsonBody({'results': [], 'next': null});
       });
       final repo = ApiRepository(client: dio);

@@ -1,5 +1,7 @@
 # Missing APIs and deployment blockers
 
+Contract gaps recorded during the previous integration. Live HTTP statuses below are historical observations and have not been rechecked during cleanup.
+
 No new Django APIs were created. Existing supported actions use Backend/docs/openapi.yaml and actual handlers; the deployed schema could not be fetched anonymously (302 to staff login).
 
 | Requirement | Gap / safe behavior | Expected backend contract |
