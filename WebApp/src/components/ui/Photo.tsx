@@ -7,25 +7,33 @@ import {
 } from "motion/react";
 import ScrollReveal, { type RevealDirection } from "../common/ScrollReveal";
 const dimensions = {
-  "city-car": [1200, 799],
-  passenger: [1200, 800],
-  driver: [1200, 800],
-  navigation: [1200, 800],
-  safety: [1200, 1801],
-  harare: [1200, 1800],
-  suv: [1200, 1734],
-  interior: [1200, 1200],
+  "city-car": [1200, 675],
+  passenger: [1024, 768],
+  "passenger-car": [1024, 768],
+  driver: [1152, 768],
+  "driver-portrait": [1152, 768],
+  "city-driver": [1200, 675],
+  navigation: [1200, 675],
+  safety: [1152, 768],
+  harare: [1200, 675],
+  suv: [1200, 675],
+  interior: [1152, 768],
+  "car-journey": [1200, 675],
 } as const;
 const descriptions = {
-  "city-car":
-    "A modern white car parked on a city street beside urban buildings",
-  passenger: "A woman opening the passenger door of a taxi on a city street",
-  driver: "A woman seated at the steering wheel of a car",
-  navigation: "Hands checking a navigation map on a smartphone inside a car",
-  safety: "A man seated inside a vehicle wearing a seat belt",
-  harare: "Cars and buildings on a city-centre street in Harare, Zimbabwe",
-  suv: "An SUV travelling along a coastal road in South Africa",
-  interior: "A driver seated in a clean, modern vehicle interior",
+  "city-car": "A Trivia-branded car on Jacaranda Avenue in Harare",
+  passenger: "A woman requesting a ride on her phone on a city street",
+  "passenger-car":
+    "A passenger booking a Trivia ride beside a branded car in Harare",
+  driver: "A smiling driver at the wheel on First Street in Harare",
+  "driver-portrait": "A smiling driver beside a car at a city fountain",
+  "city-driver": "A Trivia driver smiling from a car on a busy city street",
+  navigation: "A driver checking navigation on a phone in downtown Harare",
+  safety: "A smiling man standing beside a car on a busy Harare street",
+  harare: "A Trivia-branded car in downtown Harare",
+  suv: "A Trivia-branded car beneath blooming jacaranda trees",
+  interior: "A woman driving through Bulawayo",
+  "car-journey": "A Trivia-branded car driving through Harare at golden hour",
 } as const;
 export type PhotoName = keyof typeof descriptions;
 export default function Photo({

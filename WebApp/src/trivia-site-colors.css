@@ -1,0 +1,84 @@
+/* Trivia public-site colours (green theme).
+   Import LAST in main.tsx (after `import App`) so it loads after marketing.css. */
+.marketing {
+  --tv-green: #10b981;
+  --tv-green-deep: #064e3b;
+  --tv-yellow: #ffc72c;
+  --tv-red: #e03a3e;
+  --tv-mint: #ecfdf5;
+  --tv-flag: linear-gradient(90deg, var(--tv-green) 0 33.3%, var(--tv-yellow) 33.3% 66.6%, var(--tv-red) 66.6% 100%);
+  /* soft green wash behind the top of every page */
+  background: linear-gradient(180deg, #d9f7e8 0, #ecfdf5 380px, #ffffff 760px);
+}
+
+/* Flag stripe across the very top and above the footer, and under the hero */
+.marketing::before {
+  content: "";
+  display: block;
+  height: 6px;
+  background: var(--tv-flag);
+}
+.marketing .introduction-editorial {
+  border-top: 4px solid transparent;
+  border-image: var(--tv-flag) 1;
+}
+.marketing .site-footer {
+  background: #ecfdf5;
+  border-top: 6px solid transparent;
+  border-image: var(--tv-flag) 1;
+}
+
+/* Logo text (top-left) in brand green */
+.marketing .nav-wordmark,
+.marketing .site-nav .nav-wordmark {
+  color: var(--tv-green) !important;
+}
+.marketing .nav-wordmark span {
+  color: var(--tv-green-deep) !important; /* the full stop: deep green so it still stands out */
+}
+
+/* Headlines in deep green, labels in brand green */
+.marketing.marketing :is(h1, h2) { color: var(--tv-green-deep); }
+.marketing.marketing.marketing :is(.site-eyebrow, .editorial-label) {
+  color: #047857;
+  font-weight: 600;
+}
+
+/* Every soft band is mint green */
+.marketing .site-soft { background: var(--tv-mint); }
+
+/* Step numbers: green circles in three shades */
+.marketing .concise-steps > li > span {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--tv-green-deep);
+}
+.marketing .concise-steps > li:nth-child(3n + 1) > span { background: #d1fae5; }
+.marketing .concise-steps > li:nth-child(3n + 2) > span { background: #a7f3d0; }
+.marketing .concise-steps > li:nth-child(3n) > span { background: #6ee7b7; }
+
+/* Value dots under "A little more freedom" */
+.marketing .intro-values > span::before { width: 9px; height: 9px; background: var(--tv-green); }
+.marketing .intro-values > span:nth-child(2)::before { background: #34d399; }
+.marketing .intro-values > span:nth-child(3)::before { background: #059669; }
+
+/* Ride categories: green accent lines */
+.marketing .category-editorial article strong { color: #047857; }
+.marketing .category-editorial article > div { border-top: 4px solid var(--tv-green); margin-top: 18px; padding-top: 18px; }
+.marketing .category-editorial article:nth-child(2) > div { border-top-color: #34d399; }
+.marketing .category-editorial article:nth-child(3) > div { border-top-color: #059669; }
+
+/* Phone backdrop and download band */
+.marketing .phone-scene::before { background: #d1fae5; }
+.marketing .site-download-section {
+  background: linear-gradient(135deg, #ecfdf5, #c9f4de);
+  border-block: 0;
+}
+
+/* Green glow on button hover */
+.marketing :is(.site-button, .download-button):hover { box-shadow: 0 8px 22px #10b98145; }

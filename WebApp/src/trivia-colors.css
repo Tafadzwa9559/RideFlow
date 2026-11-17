@@ -1,0 +1,95 @@
+/* Trivia colour layer. Import AFTER index.css so these rules win. */
+:root {
+  --tv-green: #10b981;
+  --tv-yellow: #ffc72c;
+  --tv-red: #e03a3e;
+  --tv-deep: #064e3b;
+  --tv-mint: #ecfdf5;
+  --tv-cream: #fff8e1;
+  --tv-blush: #fdecec;
+  --tv-flag: linear-gradient(
+    90deg,
+    var(--tv-green) 0 33.3%,
+    var(--tv-yellow) 33.3% 66.6%,
+    var(--tv-red) 66.6% 100%
+  );
+}
+
+/* Flag stripe under the public navbar */
+.public-header { border-bottom: 0; }
+.public-header::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -6px; height: 6px;
+  background: var(--tv-flag);
+}
+
+/* Hero: warm glows and a yellow highlight word */
+.hero {
+  background:
+    radial-gradient(circle at 85% 15%, #10b98140, transparent 45%),
+    radial-gradient(circle at 10% 95%, #ffc72c26, transparent 40%),
+    #171717;
+}
+.hero h1 em { color: var(--tv-yellow); }
+
+/* Yellow call-to-action button, usable anywhere: <a className="btn yellow"> */
+.btn.yellow { background: var(--tv-yellow); color: #3b2a00; }
+.btn.yellow:hover { background: #ffd65a; }
+.drive-section .btn,
+.public-cta .btn { background: var(--tv-yellow); color: #3b2a00; }
+.drive-section .btn:hover,
+.public-cta .btn:hover { background: #ffd65a; }
+
+/* Brand strip: one colour per item */
+.brand-strip { background: var(--tv-mint); border-bottom-color: #bfe8d6; }
+.brand-strip p:nth-of-type(1) svg { color: var(--tv-green); }
+.brand-strip p:nth-of-type(2) svg { color: #d99a00; }
+.brand-strip p:nth-of-type(3) svg { color: var(--tv-red); }
+.brand-strip p:nth-of-type(4) svg { color: var(--tv-deep); }
+
+/* How it works: three steps, three colours */
+.step { border-top-width: 3px; }
+.three-grid .step:nth-child(1) { border-top-color: var(--tv-green); }
+.three-grid .step:nth-child(1) > span { background: var(--tv-mint); color: #047857; }
+.three-grid .step:nth-child(2) { border-top-color: var(--tv-yellow); }
+.three-grid .step:nth-child(2) > span { background: #fff1bd; color: #8a6100; }
+.three-grid .step:nth-child(3) { border-top-color: var(--tv-red); }
+.three-grid .step:nth-child(3) > span { background: var(--tv-blush); color: #b42a2e; }
+
+/* Section backgrounds */
+.pale { background: var(--tv-mint); }
+.app-preview { background: var(--tv-cream); }
+.app-preview > svg { color: var(--tv-deep); }
+
+/* Ride cards */
+.ride-showcase .car-art { background: var(--tv-blush); color: #b42a2e; }
+.ride-showcase .car-1 { background: var(--tv-mint); color: #047857; }
+.ride-showcase .car-2 { background: #fff1bd; color: #8a6100; }
+
+/* Safety */
+.safety-art { background: var(--tv-cream); color: var(--tv-deep); }
+.safety-art:before { border-color: #f3dd8f; }
+.safety-art:after { border-color: #f7e7a8; }
+.safety-section .checkline svg { color: var(--tv-green); }
+
+/* Drive with us */
+.drive-section { background: var(--tv-deep); }
+.driver-preview { background: #0a6149; border-color: #1c8a68; }
+.driver-preview .badge { background: var(--tv-yellow); border-color: var(--tv-yellow); color: #3b2a00; }
+.driver-preview h3 { color: #fff4cf; }
+
+/* Closing CTA and footer */
+.public-cta { background: linear-gradient(135deg, var(--tv-mint), var(--tv-cream)); }
+.public-cta h2 { color: var(--tv-deep); }
+.public-footer {
+  background: var(--tv-deep);
+  border-top: 6px solid transparent;
+  border-image: var(--tv-flag) 1;
+}
+.public-footer strong { color: #fff4cf; }
+
+/* Small touches inside the app too */
+.eyebrow { color: #047857; }
+.icon-tile { background: var(--tv-mint); color: #059669; }
+.btn:hover { box-shadow: 0 6px 16px #10b98133; }
+

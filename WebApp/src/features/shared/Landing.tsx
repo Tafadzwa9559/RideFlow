@@ -43,7 +43,7 @@ export function RideCategories() {
           "A straightforward option for daily plans.",
         ],
         [
-          "interior",
+          "car-journey",
           "Comfort",
           "A little room to unwind.",
           "A comfortable choice for the journey ahead.",
@@ -57,7 +57,7 @@ export function RideCategories() {
       ].map(([photo, title, line, copy], index) => (
         <ScrollReveal as="article" delay={index * 0.1} key={title}>
           <Photo
-            name={photo as "city-car" | "interior" | "suv"}
+            name={photo as "city-car" | "car-journey" | "suv"}
             reveal={false}
           />
           <div>
