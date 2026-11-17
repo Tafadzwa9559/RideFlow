@@ -1,5 +1,7 @@
 import 'support/fixture_repository.dart';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +11,8 @@ import 'package:rideflow_mobile/app/theme.dart';
 import 'package:rideflow_mobile/features/entry/entry.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
   testWidgets('Onboarding swipes and persists completion', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final app = AppController(TestRepository());

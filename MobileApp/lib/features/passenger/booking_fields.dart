@@ -127,10 +127,12 @@ class BookingFields extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Expanded(child: Text(
-                'Suggested fare — you can change this amount',
-                style: TextStyle(fontSize: 12),
-              )),
+              const Expanded(
+                child: Text(
+                  'Suggested fare — you can change this amount',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
               TextButton(
                 onPressed: booking.quote?.suggestedCents == null
                     ? null

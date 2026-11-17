@@ -111,11 +111,16 @@ class Ride {
       status != RideStatus.completed &&
       status != RideStatus.cancelled &&
       status != RideStatus.expired;
-  Ride copy({RideStatus? status, DriverOffer? driver}) => Ride(
+  Ride copy({
+    RideStatus? status,
+    DriverOffer? driver,
+    int? fareCents,
+    int? agreedFareCents,
+  }) => Ride(
     id: id,
     pickup: pickup,
     destination: destination,
-    cents: driver?.cents ?? cents,
+    cents: fareCents ?? cents,
     category: category,
     status: status ?? this.status,
     createdAt: createdAt,
@@ -123,7 +128,7 @@ class Ride {
     paymentStatus: paymentStatus,
     currency: currency,
     offeredCents: offeredCents ?? cents,
-    agreedCents: driver?.cents ?? agreedCents,
+    agreedCents: agreedFareCents ?? agreedCents,
     paymentMethod: paymentMethod,
     paymentMethodName: paymentMethodName,
     driverLocation: driverLocation,

@@ -210,15 +210,31 @@ void main() {
       ),
     );
     expect(
-      tester.widget<TextField>(find.byWidgetPredicate((w) => w is TextField && w.controller == draft.fare)).controller!.text,
+      tester
+          .widget<TextField>(
+            find.byWidgetPredicate(
+              (w) => w is TextField && w.controller == draft.fare,
+            ),
+          )
+          .controller!
+          .text,
       '4.25',
     );
     expect(find.textContaining('ZiG'), findsNothing);
     await tester.ensureVisible(find.text('EcoCash'));
     await tester.tap(find.text('EcoCash'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byWidgetPredicate((w) => w is TextField && w.controller == draft.fare));
-    await tester.enterText(find.byWidgetPredicate((w) => w is TextField && w.controller == draft.fare), '99.00');
+    await tester.ensureVisible(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.controller == draft.fare,
+      ),
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.controller == draft.fare,
+      ),
+      '99.00',
+    );
     await tester.pumpAndSettle();
     tester.testTextInput.hide();
     await tester.ensureVisible(find.text('Request ride'));

@@ -4,6 +4,17 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val hasReleaseSigning = run {
+    val required = listOf("TRIVIA_KEYSTORE", "TRIVIA_STORE_PASSWORD", "TRIVIA_KEY_ALIAS", "TRIVIA_KEY_PASSWORD")
+    val present = required.all { !System.getenv(it).isNullOrBlank() }
+    if (!present) {
+        false
+    } else {
+        val keystorePath = System.getenv("TRIVIA_KEYSTORE")
+        !keystorePath.isNullOrBlank() && file(keystorePath).isFile
+    }
+}
+
 android {
     namespace = "com.mordecsolutions.rideflow_mobile"
     compileSdk = flutter.compileSdkVersion
@@ -44,22 +55,32 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("production")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("production")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+                logger.lifecycle("WARNING: Release signing credentials missing; using debug keystore for local APK build.")
+            }
         }
     }
 }
 
-// Debug/analyze workflows need no production secrets. Every release workflow does.
+// Require a real production keystore only when the release-signing env vars are explicitly configured.
+// Otherwise allow a local debug keystore so developers can still assemble a build for testing.
 gradle.taskGraph.whenReady {
     if (allTasks.any { it.project == project && it.name.contains("Release") }) {
         val required = listOf("TRIVIA_KEYSTORE", "TRIVIA_STORE_PASSWORD", "TRIVIA_KEY_ALIAS", "TRIVIA_KEY_PASSWORD")
-        val missing = required.filter { System.getenv(it).isNullOrBlank() }
-        check(missing.isEmpty()) {
-            "Release signing credentials missing: ${missing.joinToString()}. " +
-                "Supply the existing Trivia release key securely; unsigned release APKs are not installable. See README.md."
+        val configured = required.filter { !System.getenv(it).isNullOrBlank() }
+        if (configured.isNotEmpty() && configured.size != required.size) {
+            val missing = required.filter { System.getenv(it).isNullOrBlank() }
+            check(missing.isEmpty()) {
+                "Release signing credentials missing: ${missing.joinToString()}. Supply the existing Trivia release key securely; unsigned release APKs are not installable. See README.md."
+            }
         }
-        check(file(System.getenv("TRIVIA_KEYSTORE")).isFile) {
-            "TRIVIA_KEYSTORE must reference an existing release keystore file."
+        if (hasReleaseSigning) {
+            check(file(System.getenv("TRIVIA_KEYSTORE")).isFile) {
+                "TRIVIA_KEYSTORE must reference an existing release keystore file."
+            }
         }
     }
 }

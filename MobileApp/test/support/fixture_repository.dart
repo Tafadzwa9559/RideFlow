@@ -207,7 +207,14 @@ class TestRepository implements TriviaRepository {
     if (_get(rideId).status != RideStatus.searching) {
       throw StateError('An offer was already selected.');
     }
-    return _save(ride.copy(status: RideStatus.assigned, driver: offer));
+    return _save(
+      ride.copy(
+        status: RideStatus.assigned,
+        driver: offer,
+        fareCents: offer.cents,
+        agreedFareCents: offer.cents,
+      ),
+    );
   }
 
   @override
@@ -304,6 +311,8 @@ class TestRepository implements TriviaRepository {
     }
     return _save(
       current.copy(
+        fareCents: cents,
+        agreedFareCents: cents,
         status: RideStatus.assigned,
         driver: DriverOffer(
           id: 'demo-self',

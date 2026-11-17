@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rideflow_mobile/core/config.dart';
+import 'package:rideflow_mobile/app/controller.dart';
 import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/shared/models.dart';
 
@@ -40,7 +41,7 @@ void main() {
   test('Production origin and OTP use exact documented paths with real response tokens', () async {
     final dio = Dio();
     final adapter = ContractAdapter((o) async {
-      if (o.path.contains('verify'))
+      if (o.path.contains('verify')) {
         return jsonBody({
           'access': 'server-access',
           'refresh': 'server-refresh',
@@ -51,6 +52,7 @@ void main() {
             'driver_status': 'notRegistered',
           },
         });
+      }
       return jsonBody({'detail': 'Verification code requested.'}, 202);
     });
     dio.httpClientAdapter = adapter;
@@ -76,8 +78,9 @@ void main() {
         refreshes++;
         return jsonBody({'access': 'new', 'refresh': 'rotated'});
       }
-      if (o.headers['Authorization'] == 'Bearer old')
+      if (o.headers['Authorization'] == 'Bearer old') {
         return jsonBody({'detail': 'Expired'}, 401);
+      }
       return jsonBody({'results': [], 'next': null});
     });
     final repo = ApiRepository(client: dio);
@@ -119,6 +122,43 @@ void main() {
     );
     expect(adapter.calls.length, 1);
   });
+  test('Network failure preserves stored credentials', () async {
+    FlutterSecureStorage.setMockInitialValues({
+      'access': 'saved-access',
+      'refresh': 'saved-refresh',
+    });
+    final dio = Dio();
+    dio.httpClientAdapter = ContractAdapter((options) async {
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.connectionError,
+      );
+    });
+    final repo = ApiRepository(client: dio);
+    addTearDown(repo.dispose);
+    await expectLater(repo.restore(), throwsA(isA<DioException>()));
+    expect(await repo.storage.read(key: 'refresh'), 'saved-refresh');
+  });
+  test(
+    'Logout accepts HTTP 204 and revokes through the documented endpoint',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({
+        'access': 'access',
+        'refresh': 'refresh',
+      });
+      final dio = Dio();
+      final adapter = ContractAdapter(
+        (options) async => ResponseBody.fromString('', 204),
+      );
+      dio.httpClientAdapter = adapter;
+      final repo = ApiRepository(client: dio);
+      addTearDown(repo.dispose);
+      await repo.logout();
+      expect(adapter.calls.single.uri.path, '/api/v1/auth/logout/');
+      expect(await repo.storage.read(key: 'access'), isNull);
+      expect(await repo.storage.read(key: 'refresh'), isNull);
+    },
+  );
   test('Road fares are parsed from backend; expired rides are terminal and decimal GPS is accepted', () {
     expect(
       Place.fromJson({
@@ -153,4 +193,36 @@ void main() {
     });
     expect(ride.active, isFalse);
   });
+  test(
+    'Driver availability and empty history reconcile from the backend',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({'access': 'access'});
+      final dio = Dio();
+      dio.httpClientAdapter = ContractAdapter((options) async {
+        if (options.path == 'users/me/')
+          return jsonBody({
+            'phone': '+263771234567',
+            'driver_status': 'approved',
+          });
+        if (options.path == 'rides/active/') return jsonBody({'ride': null});
+        if (options.path.contains('availability'))
+          return jsonBody({'status': 'offline'});
+        return jsonBody({'results': [], 'next': null});
+      });
+      final repo = ApiRepository(client: dio);
+      final app = AppController(repo);
+      addTearDown(app.dispose);
+      app.session = const Session(
+        firstName: '',
+        lastName: '',
+        phone: '+263771234567',
+        driverStatus: DriverStatus.approved,
+      );
+      app.online = true;
+      await app.sync();
+      expect(app.online, isFalse);
+      expect(app.ride, isNull);
+      expect(app.history, isEmpty);
+    },
+  );
 }

@@ -31,6 +31,7 @@ class AppController extends ChangeNotifier {
   String currency = 'USD';
   Session? session;
   Ride? ride;
+  int dataRevision = 0;
   String? historyNext;
   List<DriverOffer> offers = [];
   List<Ride> history = [];
@@ -87,7 +88,7 @@ class AppController extends ChangeNotifier {
           driverMode = false;
           _stopSync();
           _gpsHeartbeat?.cancel();
-    _positions?.cancel();
+          _positions?.cancel();
           saved = [];
           recent = [];
           offers = [];
@@ -142,10 +143,24 @@ class AppController extends ChangeNotifier {
       if (online && session?.driverStatus != DriverStatus.approved) {
         online = false;
         _gpsHeartbeat?.cancel();
-      await _positions?.cancel();
+        await _positions?.cancel();
         try {
           await repository.availability(false);
         } catch (_) {}
+      }
+      if (repository is ApiRepository &&
+          session?.driverStatus == DriverStatus.approved) {
+        final availability = await repository.read('drivers/me/availability');
+        online = {
+          'online',
+          'assigned',
+          'arriving',
+          'onTrip',
+        }.contains(availability['status']);
+        if (!online) {
+          _gpsHeartbeat?.cancel();
+          await _positions?.cancel();
+        }
       }
       ride = current == null
           ? (ride?.active == false ? ride : null)
@@ -163,6 +178,7 @@ class AppController extends ChangeNotifier {
           )
           .toList();
       offers = bids;
+      dataRevision++;
       notifyListeners();
     } finally {
       _syncing = false;
@@ -271,7 +287,7 @@ class AppController extends ChangeNotifier {
         confirmed['status'] == 'online' ||
         confirmed['availability'] == 'online';
     _gpsHeartbeat?.cancel();
-      await _positions?.cancel();
+    await _positions?.cancel();
     if (value) {
       _positions =
           Geolocator.getPositionStream(
@@ -296,7 +312,12 @@ class AppController extends ChangeNotifier {
       _gpsHeartbeat = Timer.periodic(const Duration(seconds: 30), (_) async {
         if (!online || _disposed) return;
         try {
-          final p = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 10)));
+          final p = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              timeLimit: Duration(seconds: 10),
+            ),
+          );
           await publishPosition(p);
         } catch (_) {
           error = 'Fresh GPS unavailable. Driver eligibility expires without fresh locations.';
@@ -308,13 +329,23 @@ class AppController extends ChangeNotifier {
   Future<void> publishPosition(Position p) async {
     if (!online || _disposed || _locationUploading || session == null) return;
     final now = DateTime.now().toUtc();
-    if (now.difference(p.timestamp.toUtc()).inSeconds > 30 || (_lastLocationUpload != null && now.difference(_lastLocationUpload!).inSeconds < 3)) return;
+    if (now.difference(p.timestamp.toUtc()).inSeconds > 30 ||
+        (_lastLocationUpload != null &&
+            now.difference(_lastLocationUpload!).inSeconds < 3)) {
+      return;
+    }
     _locationUploading = true;
     try {
-      await repository.write('drivers/me/location', {'latitude': p.latitude, 'longitude': p.longitude});
+      await repository.write('drivers/me/location', {
+        'latitude': p.latitude,
+        'longitude': p.longitude,
+      });
       _lastLocationUpload = now;
-    } finally { _locationUploading = false; }
+    } finally {
+      _locationUploading = false;
+    }
   }
+
   Future<bool> switchMode() => perform(() async {
     if (ride?.active == true) {
       throw StateError(
@@ -331,7 +362,7 @@ class AppController extends ChangeNotifier {
   });
   Future<bool> logout() => perform(() async {
     _gpsHeartbeat?.cancel();
-      await _positions?.cancel();
+    await _positions?.cancel();
     try {
       if (online) {
         try {
@@ -397,7 +428,7 @@ class AppController extends ChangeNotifier {
   Future<void> pause() async {
     _stopSync();
     _gpsHeartbeat?.cancel();
-      await _positions?.cancel();
+    await _positions?.cancel();
     if (online) {
       try {
         await repository.availability(false);

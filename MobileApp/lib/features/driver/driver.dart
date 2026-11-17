@@ -28,7 +28,10 @@ class DriverHome extends StatelessWidget {
               ),
               Switch(
                 value: app.online,
-                onChanged: app.busy || status != DriverStatus.approved
+                onChanged:
+                    app.busy ||
+                        app.ride?.active == true ||
+                        status != DriverStatus.approved
                     ? null
                     : (v) => app.goOnline(v),
               ),
@@ -135,6 +138,7 @@ class _DriverRequestsState extends State<DriverRequests> {
   String? error;
   bool loading = false;
   bool lastOnline = false;
+  int lastRevision = -1;
   @override
   void initState() {
     super.initState();
@@ -145,7 +149,9 @@ class _DriverRequestsState extends State<DriverRequests> {
   @override
   void didUpdateWidget(DriverRequests oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (lastOnline != widget.app.online) {
+    if (lastOnline != widget.app.online ||
+        lastRevision != widget.app.dataRevision) {
+      lastRevision = widget.app.dataRevision;
       lastOnline = widget.app.online;
       load();
     }

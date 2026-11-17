@@ -87,10 +87,14 @@ class ApiRepository implements TriviaRepository {
         },
         onError: (error, handler) async {
           final request = error.requestOptions;
-          if (error.response?.statusCode == 401 && request.extra['retry'] == true) await clearSession();
+          if (error.response?.statusCode == 401 &&
+              request.extra['retry'] == true) {
+            await clearSession();
+          }
           if (error.response?.statusCode != 401 ||
               request.extra['retry'] == true ||
-              (request.path.contains('auth/otp/') || request.path.contains('auth/token/refresh/'))) {
+              (request.path.contains('auth/otp/') ||
+                  request.path.contains('auth/token/refresh/'))) {
             handler.next(error);
             return;
           }
@@ -101,6 +105,9 @@ class ApiRepository implements TriviaRepository {
               await refreshAccess();
             }
             request.extra['retry'] = true;
+            if (request.data is FormData) {
+              request.data = (request.data as FormData).clone();
+            }
             handler.resolve(await dio.fetch<dynamic>(request));
           } catch (failure) {
             if (failure is DioException &&
@@ -178,7 +185,9 @@ class ApiRepository implements TriviaRepository {
   Future<Map<String, dynamic>> _post(
     String path,
     Map<String, dynamic> body,
-  ) async => (await dio.post<Map<String, dynamic>>(path, data: body)).data ?? <String, dynamic>{};
+  ) async =>
+      (await dio.post<Map<String, dynamic>>(path, data: body)).data ??
+      <String, dynamic>{};
   @override
   Future<Session?> restore() async {
     if (await storage.read(key: 'access') == null) return null;
@@ -450,6 +459,26 @@ class ApiRepository implements TriviaRepository {
     await _post(
       '${resourcePath(resource).replaceFirst(RegExp(r'/+$'), '')}/',
       data,
+    );
+  }
+
+  Future<Map<String, dynamic>> updateResource(
+    String resource,
+    Map<String, dynamic> data, {
+    bool replace = false,
+  }) async {
+    final path = '${resourcePath(resource).replaceFirst(RegExp(r'/+$'), '')}/';
+    final response = await dio.request<Map<String, dynamic>>(
+      path,
+      data: data,
+      options: Options(method: replace ? 'PUT' : 'PATCH'),
+    );
+    return response.data ?? {};
+  }
+
+  Future<void> deleteResource(String resource) async {
+    await dio.delete<dynamic>(
+      '${resourcePath(resource).replaceFirst(RegExp(r'/+$'), '')}/',
     );
   }
 

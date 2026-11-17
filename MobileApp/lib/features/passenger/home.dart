@@ -490,7 +490,7 @@ class TripPanel extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(r.driver == null ? 'Your proposed fare' : 'Agreed fare'),
+            Text(r.agreedCents == null ? 'Your proposed fare' : 'Agreed fare'),
             Text(
               money(r.cents, currency: r.currency),
               style: Theme.of(context).textTheme.titleLarge,

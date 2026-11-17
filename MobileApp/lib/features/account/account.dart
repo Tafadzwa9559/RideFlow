@@ -217,7 +217,10 @@ class _HistoryPageState extends State<HistoryPage> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => widget.app.perform(widget.app.sync),
+        onRefresh: () async {
+          await widget.app.perform(widget.app.sync);
+          if (mounted) setState(() {});
+        },
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -372,7 +375,7 @@ class _ResourcePageState extends State<ResourcePage> {
   Future<void> more(Map<String, dynamic> current) async {
     try {
       final page = await widget.app.repository.read(current['next'] as String);
-      if (mounted)
+      if (mounted) {
         setState(
           () => data = Future.value({
             ...page,
@@ -382,11 +385,13 @@ class _ResourcePageState extends State<ResourcePage> {
             ],
           }),
         );
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Unable to load the next page. Retry.')),
         );
+      }
     }
   }
 
