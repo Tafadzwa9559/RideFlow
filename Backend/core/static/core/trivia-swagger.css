@@ -1,0 +1,211 @@
+:root {
+  --trivia-ink: #171717;
+  --trivia-muted: #525a55;
+  --trivia-green: #047857;
+  --trivia-border: #e5e7eb;
+  --trivia-surface: #fff;
+  --trivia-subtle: #f7f9f8;
+  --trivia-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  background: var(--trivia-surface);
+  color: var(--trivia-ink);
+  font-family: var(--trivia-font);
+}
+
+.trivia-header {
+  background: var(--trivia-subtle);
+  border-bottom: 1px solid var(--trivia-border);
+  border-top: 4px solid var(--trivia-green);
+}
+
+.trivia-header__inner {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  justify-content: space-between;
+  margin-inline: auto;
+  max-width: 1280px;
+  padding: clamp(16px, 4vw, 36px);
+}
+
+.trivia-header__brand {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 750;
+  letter-spacing: -.04em;
+  margin: 0;
+}
+
+.trivia-header__subtitle {
+  color: var(--trivia-muted);
+  font-size: .92rem;
+  margin: 6px 0 0;
+}
+
+.trivia-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+
+.trivia-header a {
+  padding-block: 10px;
+}
+
+.trivia-header a,
+.trivia-reference .swagger-ui .info a {
+  color: var(--trivia-green);
+  font-weight: 650;
+  text-underline-offset: 3px;
+}
+
+.trivia-skip {
+  background: white;
+  color: var(--trivia-green);
+  left: 12px;
+  padding: 12px;
+  position: absolute;
+  top: 12px;
+  transform: translateY(-150%);
+  z-index: 5;
+}
+
+.trivia-skip:focus { transform: none; }
+
+.trivia-reference :focus-visible,
+.trivia-header :focus-visible {
+  outline: 2px solid var(--trivia-green);
+  outline-offset: 3px;
+}
+
+.trivia-reference .swagger-ui,
+.trivia-reference .swagger-ui :is(.info, .opblock-tag, .opblock-summary-description, .parameter__name, .btn, .responses-inner h4) {
+  color: var(--trivia-ink);
+  font-family: var(--trivia-font);
+}
+
+.trivia-reference .swagger-ui .topbar {
+  background: #12382d;
+}
+
+.trivia-reference .swagger-ui .wrapper {
+  max-width: 1280px;
+  padding-inline: clamp(14px, 4vw, 36px);
+}
+
+.trivia-reference .swagger-ui .info {
+  margin-block: clamp(24px, 4vw, 42px);
+}
+
+.trivia-reference .swagger-ui .info .title {
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.trivia-reference .swagger-ui .info .description {
+  max-width: 80ch;
+}
+
+.trivia-reference .swagger-ui .info .description :is(p, li) {
+  color: var(--trivia-muted);
+  font-family: var(--trivia-font);
+  font-size: .98rem;
+  line-height: 1.65;
+}
+
+.trivia-reference .swagger-ui .info hr {
+  border: 0;
+  border-top: 1px solid var(--trivia-border);
+  margin-block: 24px;
+}
+
+.trivia-reference .swagger-ui .scheme-container {
+  border-block: 1px solid var(--trivia-border);
+  box-shadow: none;
+}
+
+.trivia-reference .swagger-ui .btn.authorize {
+  border-color: var(--trivia-green);
+  color: var(--trivia-green);
+}
+
+.trivia-reference .swagger-ui .btn.authorize svg {
+  fill: var(--trivia-green);
+}
+
+.trivia-reference .swagger-ui .opblock-tag {
+  border-color: var(--trivia-border);
+  font-size: 1.2rem;
+  padding-block: 16px;
+}
+
+.trivia-reference .swagger-ui .opblock {
+  background: white;
+  border-color: var(--trivia-border);
+  border-radius: 9px;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.trivia-reference .swagger-ui .opblock .opblock-summary {
+  border-color: var(--trivia-border);
+  padding: 9px;
+}
+
+.trivia-reference .swagger-ui .opblock .opblock-summary-method {
+  border-radius: 5px;
+  font-size: .75rem;
+  min-width: 60px;
+  text-shadow: none;
+  background: #364152;
+}
+
+.trivia-reference .swagger-ui .opblock-get .opblock-summary-method { background: #255a88; }
+.trivia-reference .swagger-ui .opblock-post .opblock-summary-method { background: #047857; }
+.trivia-reference .swagger-ui .opblock-patch .opblock-summary-method { background: #526238; }
+.trivia-reference .swagger-ui .opblock-put .opblock-summary-method { background: #945115; }
+.trivia-reference .swagger-ui .opblock-delete .opblock-summary-method { background: #a62d35; }
+
+.trivia-reference .swagger-ui .opblock .opblock-section-header {
+  background: var(--trivia-subtle);
+  box-shadow: none;
+}
+
+.trivia-reference .swagger-ui .opblock-body {
+  overflow-x: auto;
+}
+
+.trivia-reference .swagger-ui :is(.opblock-summary-path, .opblock-summary-path__deprecated, .response-col_description, .model-example) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.trivia-reference .swagger-ui :is(pre, .highlight-code, .model-box) {
+  max-width: 100%;
+  overflow: auto;
+}
+
+@media (max-width: 600px) {
+  .trivia-reference .swagger-ui .opblock-summary-control {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+
+  .trivia-reference .swagger-ui .opblock-summary-description {
+    flex-basis: 100%;
+    padding: 4px 0 0;
+  }
+
+  .trivia-reference .swagger-ui .opblock .opblock-summary-path {
+    font-size: .8rem;
+  }
+
+  .trivia-reference .swagger-ui .dialog-ux .modal-ux {
+    max-width: calc(100vw - 24px);
+  }
+
+  .trivia-reference .swagger-ui .topbar .download-url-wrapper {
+    min-width: 0;
+  }
+}

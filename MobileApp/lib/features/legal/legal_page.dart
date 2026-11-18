@@ -21,7 +21,7 @@ class _LegalPageState extends State<LegalPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.white,
+    backgroundColor: Theme.of(context).colorScheme.surface,
     appBar: AppBar(
       title: Text(
         widget.documentId == 'terms' ? 'Terms & Conditions' : 'Privacy Policy',

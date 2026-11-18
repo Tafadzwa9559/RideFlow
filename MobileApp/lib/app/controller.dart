@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,6 +46,23 @@ class AppController extends ChangeNotifier {
   bool initializationFailed = false;
   SharedPreferences? _prefs;
   bool _disposed = false;
+  ThemeMode themeMode = ThemeMode.system;
+  String distanceUnit = 'km';
+  String language = 'English';
+  bool locationSharing = true;
+
+  static ThemeMode _themeModeFromString(String? raw) {
+    switch (raw) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
+    }
+  }
+
   @override
   void notifyListeners() {
     if (!_disposed) {
@@ -79,6 +96,10 @@ class AppController extends ChangeNotifier {
       _prefs = await SharedPreferences.getInstance();
       onboarded = _prefs!.getBool('trivia_onboarded') ?? false;
       currency = 'USD';
+      themeMode = _themeModeFromString(_prefs!.getString('trivia_theme_mode'));
+      distanceUnit = _prefs!.getString('trivia_distance_unit') ?? 'km';
+      language = _prefs!.getString('trivia_language') ?? 'English';
+      locationSharing = _prefs!.getBool('trivia_location_sharing') ?? true;
       session = await repository.restore();
       if (repository is ApiRepository) {
         _expiration = (repository as ApiRepository).expired.stream.listen((_) {
@@ -97,6 +118,7 @@ class AppController extends ChangeNotifier {
         });
       }
       if (session != null) {
+        driverMode = session?.driverStatus == DriverStatus.approved;
         await sync();
         startSync();
       }
@@ -111,6 +133,20 @@ class AppController extends ChangeNotifier {
     onboarded = true;
     notifyListeners();
   }
+
+  Future<bool> login(LoginContact contact, String password) =>
+      perform(() async {
+        session = await repository.login(contact, password);
+        driverMode = session?.driverStatus == DriverStatus.approved;
+        startSync();
+        unawaited(
+          sync().catchError((Object _) {
+            if (session == null) return;
+            error = 'Connection interrupted. Pull to refresh or retry.';
+            notifyListeners();
+          }),
+        );
+      });
 
   Future<bool> sendOtp(String phone) =>
       perform(() => repository.requestOtp(phone));
@@ -455,6 +491,30 @@ class AppController extends ChangeNotifier {
       } catch (_) {}
       startSync();
     }
+  }
+
+  Future<void> updateThemeMode(ThemeMode mode) async {
+    themeMode = mode;
+    await _prefs?.setString('trivia_theme_mode', mode.name);
+    notifyListeners();
+  }
+
+  Future<void> updateDistanceUnit(String unit) async {
+    distanceUnit = unit;
+    await _prefs?.setString('trivia_distance_unit', unit);
+    notifyListeners();
+  }
+
+  Future<void> updateLanguage(String value) async {
+    language = value;
+    await _prefs?.setString('trivia_language', value);
+    notifyListeners();
+  }
+
+  Future<void> updateLocationSharing(bool enabled) async {
+    locationSharing = enabled;
+    await _prefs?.setBool('trivia_location_sharing', enabled);
+    notifyListeners();
   }
 
   @override

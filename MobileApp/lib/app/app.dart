@@ -65,6 +65,8 @@ class _TriviaAppState extends ConsumerState<TriviaApp>
       title: 'Trivia',
       debugShowCheckedModeBanner: false,
       theme: triviaTheme(),
+      darkTheme: triviaDarkTheme(),
+      themeMode: app.themeMode,
       home: ListenableBuilder(
         listenable: app,
         builder: (_, _) {

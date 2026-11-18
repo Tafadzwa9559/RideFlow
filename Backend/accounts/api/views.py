@@ -1,4 +1,7 @@
+from bson import ObjectId
 from core import transactions as transaction
+from django.contrib.auth import get_user_model
+from django.contrib.sessions.backends.db import SessionStore
 from django.db.models import F
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
@@ -7,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+from accounts.authentication import SessionJWTAuthentication
 from accounts.models import PhoneIdentity
 from accounts.services.authentication import normalize_phone, request_code, verify_code
 
@@ -63,14 +67,25 @@ class MeView(APIView):
     def get(self, request):
         return Response(profile(request.user))
 
+    @transaction.atomic
     def patch(self, request):
         data = ProfileSerializer(data=request.data)
         data.is_valid(raise_exception=True)
+        user = request.user
+        if 'email' in data.validated_data:
+            transaction.guard(get_user_model(), user.pk)
+            user = get_user_model().objects.get(pk=user.pk)
+            email = data.validated_data['email'].lower()
+            if email and email != user.email.lower():
+                transaction.guard('profile-email', email)
+                if get_user_model().objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+                    raise serializers.ValidationError({'email': 'This email address is unavailable.'})
+                data.validated_data['email'] = email
         for key, value in data.validated_data.items():
-            setattr(request.user, key, value)
+            setattr(user, key, value)
         if data.validated_data:
-            request.user.save(update_fields=list(data.validated_data))
-        return self.get(request)
+            user.save(update_fields=list(data.validated_data))
+        return Response(profile(user))
 
     post = patch
 
@@ -78,8 +93,14 @@ class MeView(APIView):
 class LogoutView(APIView):
     @transaction.atomic
     def post(self, request):
+        staff_session = request.auth and request.auth.get('staff_api_session')
+        if staff_session:
+            transaction.guard(get_user_model(), request.user.pk)
+            SessionStore(session_key=staff_session).delete()
+            return Response(status=204)
+
         # Revoke all access/refresh sessions for this phone account immediately.
-        transaction.guard(__import__('django.contrib.auth', fromlist=['get_user_model']).get_user_model(), request.user.pk)
+        transaction.guard(get_user_model(), request.user.pk)
         identity = PhoneIdentity.objects.filter(user=request.user).first()
         if identity:
             identity.session_version = F('session_version') + 1
@@ -105,20 +126,13 @@ class RefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         try:
             token = RefreshToken(request.data.get('refresh', ''))
-            from bson import ObjectId
             if not ObjectId.is_valid(str(token.get('user_id', ''))):
                 raise InvalidToken('Sign in again after the database migration.')
-            from django.contrib.auth import get_user_model
             transaction.guard(get_user_model(), token['user_id'])
             transaction.guard('refresh', token['jti'])
             # Revalidate after acquiring guards: another rotation may have committed.
             token = RefreshToken(request.data.get('refresh', ''))
-            identity = PhoneIdentity.objects.select_related('user').filter(user_id=token['user_id']).first()
-            if token.get('development_otp'):
-                from accounts.services.authentication import validate_development_session
-                validate_development_session(identity)
-            if identity and (not identity.user.is_active or token.get('session_version') != identity.session_version):
-                raise InvalidToken('Session revoked.')
+            SessionJWTAuthentication().get_user(token)
         except TokenError as exc:
             raise InvalidToken(str(exc))
         return super().post(request, *args, **kwargs)

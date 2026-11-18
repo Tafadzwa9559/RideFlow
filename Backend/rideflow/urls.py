@@ -17,6 +17,9 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.routers import DefaultRouter
 
+from accounts.api.passwords import (
+    PasswordLoginView, RecoveryRequestView, RecoveryResetView, RecoveryVerifyView, StaffLoginView,
+)
 from accounts.api.views import LogoutView, MeView, OTPRequestView, OTPVerifyView, RefreshView
 from core.admin_api import (
     AccountStatusView,
@@ -74,6 +77,10 @@ api_patterns = [
     path("", include("rides.api.urls")),
     path("", include("payments.api.urls")),
     path("", include("drivers.api.urls")),
+    path("auth/login/", PasswordLoginView.as_view(), name="auth-password-login"),
+    path("auth/password/request/", RecoveryRequestView.as_view(), name="auth-password-request"),
+    path("auth/password/verify/", RecoveryVerifyView.as_view(), name="auth-password-verify"),
+    path("auth/password/reset/", RecoveryResetView.as_view(), name="auth-password-reset"),
     path("auth/otp/request/", OTPRequestView.as_view(), name="auth-otp-request"),
     path("auth/otp/verify/", OTPVerifyView.as_view(), name="auth-otp-verify"),
     path("auth/token/refresh/", RefreshView.as_view(), name="auth-token-refresh"),
@@ -136,7 +143,11 @@ urlpatterns = [
     path("api/schema/", staff_documentation(SpectacularAPIView), name="schema"),
     path(
         "api/docs/",
-        staff_documentation(SpectacularSwaggerView, url_name="schema"),
+        staff_documentation(
+            SpectacularSwaggerView,
+            url_name="schema",
+            template_name="core/trivia_swagger.html",
+        ),
         name="swagger-ui",
     ),
     path(
@@ -149,6 +160,8 @@ urlpatterns = [
         WebSocketDocumentationView.as_view(),
         name="websocket-documentation",
     ),
+
+    path("api/v1/admin/auth/login/", StaffLoginView.as_view(), name="admin-auth-login"),
 
     # Specific admin endpoints must precede the router registrations.
     path("api/v1/admin/overview/", OverviewView.as_view(), name="admin-overview"),

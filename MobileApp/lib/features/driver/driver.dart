@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/controller.dart';
+import '../../app/theme.dart' show sheetRadius;
 import '../../core/map_view.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
@@ -51,11 +52,9 @@ class DriverHome extends StatelessWidget {
                   width: double.infinity,
                   constraints: const BoxConstraints(maxHeight: 380),
                   padding: const EdgeInsets.all(24),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(28),
-                    ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: sheetRadius,
                   ),
                   child: SingleChildScrollView(
                     child: Column(

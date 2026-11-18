@@ -4,6 +4,7 @@ Production configuration is supplied via environment variables (Render).
 MongoDB Atlas is the primary application database.
 """
 
+import json
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -257,18 +258,89 @@ SIMPLE_JWT = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Trivia API",
-    "DESCRIPTION": (
-        "Official REST API for Trivia — MOrdec Solutions (Private) Limited. "
-        "USD only; Cash, EcoCash and OneMoney are direct-payment preferences. "
-        "Trivia does not collect or verify fares. "
-        "[WebSocket protocol](/api/websockets/)."
-    ),
+    "DESCRIPTION": """# Welcome to the Trivia API
+
+### Powering Connected Mobility in Zimbabwe
+
+The official REST API documentation for **Trivia**, a modern ride-hailing platform
+developed by **MOrdec Solutions (Private) Limited**.
+
+Trivia connects passengers and drivers through ride requests, fare negotiation,
+trip management, and real-time communication.
+
+---
+
+### Platform Capabilities
+
+- **Authentication & Account Management** — Account access, JWT sessions, and user profiles.
+- **Passenger & Driver Services** — Saved places, driver applications, and role-based operations.
+- **Ride Management** — Ride requests, fare offers, trip updates, and journey history.
+- **Route & Fare Estimation** — Distance-based routing and suggested fares where route coverage is available.
+- **Real-Time Communication** — WebSocket notifications and supported ride updates.
+
+---
+
+### Payments & Currency
+
+**Supported currency:** USD
+
+**Supported payment preferences:** Cash, EcoCash, and OneMoney.
+
+Passengers and drivers arrange payment directly. Trivia does not collect,
+process, hold, or verify ride fare payments.
+
+---
+
+### API Standards
+
+- REST endpoints with JSON requests and responses. File endpoints document their media types.
+- OpenAPI 3.0 documentation.
+- Bearer JWT authentication for protected REST operations.
+- WebSocket integration for supported real-time features.
+
+---
+
+### Developer Resources
+
+- [OpenAPI schema](/api/schema/)
+- [WebSocket documentation](/api/websockets/)
+
+In production, sign in to Django admin with an active staff account to open
+Swagger or download the schema. For API calls in Swagger, select **Authorize**
+and enter the access token under **jwtAuth**. Swagger adds the Bearer prefix.
+Each operation applies its own account, role, and resource permissions.
+
+---
+
+### Developed By
+
+**MOrdec Solutions (Private) Limited**
+
+Zimbabwe
+
+Technology • Innovation • Mobility
+""",
     "VERSION": "1.0.0",
     "COMPONENT_SPLIT_REQUEST": True,
     "SERVE_INCLUDE_SCHEMA": False,
+    "TAGS": [
+        {"name": "Authentication", "description": "Registration, sign-in, recovery, and JWT sessions."},
+        {"name": "Accounts", "description": "Profiles, account preferences, and related resources."},
+        {"name": "Drivers", "description": "Driver status, availability, and driver operations."},
+        {"name": "Driver Applications", "description": "Driver applications and onboarding documents."},
+        {"name": "Rides", "description": "Passenger ride requests and ride operations."},
+        {"name": "Offers", "description": "Fare negotiation and offer decisions."},
+        {"name": "Routes", "description": "Travel routes and route-based quotes."},
+        {"name": "Tracking", "description": "Trip tracking for authorized participants."},
+        {"name": "Notifications", "description": "Account notifications and device registrations."},
+        {"name": "Administration", "description": "Operations restricted to authorized staff."},
+    ],
     "SWAGGER_UI_SETTINGS": {
         "persistAuthorization": False,
         "displayRequestDuration": True,
+        "docExpansion": "none",
+        "filter": True,
+        "deepLinking": True,
     },
     "PREPROCESSING_HOOKS": ["core.schema.canonical_paths"],
     "POSTPROCESSING_HOOKS": [
@@ -276,6 +348,8 @@ SPECTACULAR_SETTINGS = {
         "core.schema.examples_hook",
     ],
     "ENUM_NAME_OVERRIDES": {
+        "PasswordContactChannelEnum": ["phone", "email"],
+        "StaffLoginChannelEnum": ["username", "email", "phone"],
         "RideCategoryEnum": [
             ("Standard", "Trivia Standard"),
             ("Comfort", "Trivia Comfort"),
@@ -327,10 +401,12 @@ CHANNEL_LAYERS = {
         "CONFIG": {"hosts": [REDIS_URL]},
     }
 }
+PASSWORD_AUTH_RENDER_INGRESS = env_bool("RENDER", False)
+PASSWORD_AUTH_REDIS_URL = os.environ.get("CACHE_REDIS_URL", "redis://127.0.0.1:6379/2")
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ.get("CACHE_REDIS_URL", "redis://127.0.0.1:6379/2"),
+        "LOCATION": PASSWORD_AUTH_REDIS_URL,
     }
 }
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/1")
@@ -354,6 +430,22 @@ CELERY_BEAT_SCHEDULE = {
 # Notifications, OTP, logging
 # ------------------------------------------------------------
 SMS_PROVIDER = os.environ.get("SMS_PROVIDER", "")
+TRIVIA_LOCAL_PASSWORD_RECOVERY = False
+TRIVIA_RECOVERY_EMAIL_ENABLED = env_bool("TRIVIA_RECOVERY_EMAIL_ENABLED", False)
+TRIVIA_VERIFIED_RECOVERY_EMAILS = json.loads(os.environ.get("TRIVIA_VERIFIED_RECOVERY_EMAILS", "{}"))
+if not isinstance(TRIVIA_VERIFIED_RECOVERY_EMAILS, dict) or any(
+    not isinstance(address, str) for address in TRIVIA_VERIFIED_RECOVERY_EMAILS.values()
+):
+    raise ImproperlyConfigured("TRIVIA_VERIFIED_RECOVERY_EMAILS must map user IDs to verified email addresses.")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_TIMEOUT = 15
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
+if TRIVIA_RECOVERY_EMAIL_ENABLED and not (EMAIL_HOST and DEFAULT_FROM_EMAIL):
+    raise ImproperlyConfigured("Email recovery requires EMAIL_HOST and DEFAULT_FROM_EMAIL.")
 PUSH_PROVIDER = os.environ.get("PUSH_PROVIDER", "")
 TRIVIA_LOCAL_OTP = env_bool("TRIVIA_LOCAL_OTP", False)
 TRIVIA_TEST_OTP_ENABLED = env_bool("TRIVIA_TEST_OTP_ENABLED", False)

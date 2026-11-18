@@ -112,12 +112,10 @@ class _PassengerHomeState extends State<PassengerHome> {
                   minChildSize: .25,
                   maxChildSize: .92,
                   builder: (context, scroll) => Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(28),
-                      ),
-                      boxShadow: [
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: sheetRadius,
+                      boxShadow: const [
                         BoxShadow(color: Color(0x10000000), blurRadius: 16),
                       ],
                     ),
@@ -130,7 +128,9 @@ class _PassengerHomeState extends State<PassengerHome> {
                             width: 38,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE5E7EB),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -144,7 +144,6 @@ class _PassengerHomeState extends State<PassengerHome> {
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 4),
-                          const Text('A little freedom in every journey.'),
                           const SizedBox(height: 20),
                           _LocationTile(
                             icon: Icons.radio_button_checked,
@@ -226,7 +225,7 @@ class _LocationTile extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Material(
-    color: const Color(0xFFF8F9F7),
+    color: Theme.of(context).colorScheme.surfaceContainerLow,
     borderRadius: BorderRadius.circular(14),
     child: ListTile(
       shape: RoundedRectangleBorder(
@@ -510,8 +509,10 @@ class TripPanel extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                  borderRadius: cardRadius,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

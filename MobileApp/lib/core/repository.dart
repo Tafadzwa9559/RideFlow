@@ -7,7 +7,24 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../shared/models.dart';
 import 'config.dart';
 
+enum LoginChannel { phone, email }
+
+class LoginContact {
+  const LoginContact(this.channel, this.identifier);
+  final LoginChannel channel;
+  final String identifier;
+
+  Map<String, dynamic> toJson() => {
+    'channel': channel.name,
+    'identifier': identifier,
+  };
+}
+
 abstract class TriviaRepository {
+  Future<Session> login(LoginContact contact, String password);
+  Future<void> requestPasswordRecovery(LoginContact contact);
+  Future<String> verifyPasswordRecovery(LoginContact contact, String code);
+  Future<void> resetPassword(String token, String password);
   Future<Session?> restore();
   Future<void> requestOtp(String phone);
   Future<Session> verifyOtp(
@@ -81,7 +98,7 @@ class ApiRepository implements TriviaRepository {
           }
           try {
             final token = await storage.read(key: 'access');
-            if (token != null && !options.path.contains('auth/otp/')) {
+            if (token != null && !_isPublicAuth(options.path)) {
               options.headers['Authorization'] = 'Bearer $token';
             }
             handler.next(options);
@@ -97,8 +114,7 @@ class ApiRepository implements TriviaRepository {
           }
           if (error.response?.statusCode != 401 ||
               request.extra['retry'] == true ||
-              (request.path.contains('auth/otp/') ||
-                  request.path.contains('auth/token/refresh/'))) {
+              _isPublicAuth(request.path)) {
             handler.next(error);
             return;
           }
@@ -124,6 +140,12 @@ class ApiRepository implements TriviaRepository {
       ),
     );
   }
+  static bool _isPublicAuth(String path) =>
+      path.startsWith('auth/otp/') ||
+      path.startsWith('auth/password/') ||
+      path == 'auth/login/' ||
+      path == 'auth/token/refresh/';
+
   late final Dio dio;
   final FlutterSecureStorage storage;
   final expired = StreamController<void>.broadcast();
@@ -156,10 +178,10 @@ class ApiRepository implements TriviaRepository {
     }
     final data = await _post('auth/token/refresh/', {'refresh': refresh});
     await storage.write(key: 'access', value: data['access'] as String);
-    await storage.write(
-      key: 'refresh',
-      value: data['refresh'] as String? ?? refresh,
-    );
+    final rotatedRefresh = data['refresh'] as String?;
+    if (rotatedRefresh != null) {
+      await storage.write(key: 'refresh', value: rotatedRefresh);
+    }
   }
 
   Future<String> accessToken() async {
@@ -207,6 +229,45 @@ class ApiRepository implements TriviaRepository {
   }
 
   @override
+  Future<Session> login(LoginContact contact, String password) async {
+    final data = await _post('auth/login/', {
+      ...contact.toJson(),
+      'password': password,
+    });
+    final session = Session.fromJson(data['user'] as Map<String, dynamic>);
+    await storage.write(key: 'refresh', value: data['refresh'] as String);
+    try {
+      await storage.write(key: 'access', value: data['access'] as String);
+    } catch (_) {
+      await storage.delete(key: 'refresh');
+      rethrow;
+    }
+    return session;
+  }
+
+  @override
+  Future<void> requestPasswordRecovery(LoginContact contact) async {
+    await _post('auth/password/request/', contact.toJson());
+  }
+
+  @override
+  Future<String> verifyPasswordRecovery(
+    LoginContact contact,
+    String code,
+  ) async {
+    final data = await _post('auth/password/verify/', {
+      ...contact.toJson(),
+      'code': code,
+    });
+    return data['token'] as String;
+  }
+
+  @override
+  Future<void> resetPassword(String token, String password) async {
+    await _post('auth/password/reset/', {'token': token, 'password': password});
+  }
+
+  @override
   Future<void> requestOtp(String phone) async {
     await _post('auth/otp/request/', {'phone': phone});
   }
@@ -217,15 +278,21 @@ class ApiRepository implements TriviaRepository {
     String code, {
     Map<String, dynamic>? legalAcknowledgement,
   }) async {
-    final j = await _post('auth/otp/verify/', {
+    final payload = <String, dynamic>{
       'phone': phone,
       'code': code,
-      if (legalAcknowledgement != null)
-        'legal_acknowledgement': legalAcknowledgement,
-    });
+      ...?legalAcknowledgement == null
+          ? null
+          : {'legal_acknowledgement': legalAcknowledgement},
+    };
+    final j = await _post('auth/otp/verify/', payload);
     await storage.write(key: 'access', value: j['access'] as String);
-    if (j['refresh'] != null) {
-      await storage.write(key: 'refresh', value: j['refresh'] as String);
+    final refresh = j['refresh'] as String?;
+    switch (refresh) {
+      case String value:
+        await storage.write(key: 'refresh', value: value);
+      case null:
+        break;
     }
     return Session.fromJson(j['user'] as Map<String, dynamic>);
   }

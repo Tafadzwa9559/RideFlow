@@ -73,7 +73,7 @@ class BookingFields extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
                 booking.error!,
-                style: const TextStyle(color: Color(0xFFDC2626)),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
           if (booking.pickup != null &&
@@ -186,17 +186,19 @@ class BookingFields extends StatelessWidget {
                       ? Duration.zero
                       : const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
-                    color: booking.method?.id == m.id ? pale : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    color: booking.method?.id == m.id
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context).colorScheme.surface,
+                    borderRadius: controlRadius,
                     border: Border.all(
                       color: booking.method?.id == m.id
                           ? darkGreen
-                          : const Color(0xFFE5E7EB),
+                          : Theme.of(context).colorScheme.outlineVariant,
                     ),
                   ),
                   child: Material(
                     type: MaterialType.transparency,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: controlRadius,
                     clipBehavior: Clip.antiAlias,
                     child: ListTile(
                       dense: true,
@@ -226,7 +228,7 @@ class BookingFields extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 booking.paymentError!,
-                style: const TextStyle(color: Color(0xFFDC2626)),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
           const SizedBox(height: 16),

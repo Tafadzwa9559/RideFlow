@@ -66,6 +66,75 @@ void main() {
     expect(await repo.storage.read(key: 'access'), 'server-access');
     expect(adapter.calls.last.data['code'], '654321');
   });
+  test('Password login stores backend tokens and recovery stays public', () async {
+    const contact = LoginContact(LoginChannel.email, 'user@example.net');
+    final dio = Dio();
+    final adapter = ContractAdapter((options) async {
+      switch (options.path) {
+        case 'auth/login/':
+          expect(options.data, {...contact.toJson(), 'password': 'test-password'});
+          return jsonBody({
+            'access': 'access',
+            'refresh': 'refresh',
+            'user': {
+              'phone': '+263771234567',
+              'first_name': 'Rudo',
+              'driver_status': 'approved',
+            },
+          });
+        case 'auth/password/request/':
+          expect(options.data, contact.toJson());
+          return jsonBody({}, 202);
+        case 'auth/password/verify/':
+          expect(options.data, {...contact.toJson(), 'code': 'test-code'});
+          return jsonBody({'token': 'reset-token'});
+        case 'auth/password/reset/':
+          expect(options.data, {'token': 'reset-token', 'password': 'new-password'});
+          return ResponseBody.fromString('', 204);
+      }
+      fail('Unexpected path: ${options.path}');
+    });
+    dio.httpClientAdapter = adapter;
+    final repository = ApiRepository(client: dio);
+    addTearDown(repository.dispose);
+
+    final session = await repository.login(contact, 'test-password');
+    expect(session.driverStatus, DriverStatus.approved);
+    expect(await repository.storage.read(key: 'access'), 'access');
+    expect(await repository.storage.read(key: 'refresh'), 'refresh');
+    await repository.requestPasswordRecovery(contact);
+    final proof = await repository.verifyPasswordRecovery(contact, 'test-code');
+    await repository.resetPassword(proof, 'new-password');
+    for (final call in adapter.calls) {
+      expect(call.headers['Authorization'], isNull);
+    }
+  });
+
+  test('Invalid credentials and timeouts never trigger auth retries', () async {
+    const contact = LoginContact(LoginChannel.phone, '+263771234567');
+    final dio = Dio();
+    var offline = false;
+    final adapter = ContractAdapter((options) async {
+      if (offline) {
+        throw DioException(
+          requestOptions: options,
+          type: DioExceptionType.connectionTimeout,
+        );
+      }
+      return jsonBody({'detail': 'Invalid credentials'}, 401);
+    });
+    dio.httpClientAdapter = adapter;
+    final repository = ApiRepository(client: dio);
+    addTearDown(repository.dispose);
+
+    await expectLater(repository.login(contact, 'bad-password'), throwsA(isA<DioException>()));
+    expect(adapter.calls.single.path, 'auth/login/');
+    offline = true;
+    await expectLater(repository.requestPasswordRecovery(contact), throwsA(isA<DioException>()));
+    expect(adapter.calls.length, 2);
+    expect(await repository.storage.read(key: 'access'), isNull);
+  });
+
   test('Concurrent 401s share one refresh and replay with the rotated access token', () async {
     FlutterSecureStorage.setMockInitialValues({
       'access': 'old',

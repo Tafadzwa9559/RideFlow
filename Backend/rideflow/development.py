@@ -5,6 +5,8 @@ if len(SECRET_KEY) < 32 or SECRET_KEY == os.environ.get('DJANGO_SECRET_KEY'):
     raise ImproperlyConfigured('Set a distinct TRIVIA_DEV_SECRET_KEY of at least 32 characters.')
 
 DEBUG = True
+TRIVIA_LOCAL_PASSWORD_RECOVERY = env_bool("TRIVIA_LOCAL_PASSWORD_RECOVERY", False)
+PASSWORD_AUTH_REDIS_URL = os.environ.get("TRIVIA_DEV_PASSWORD_REDIS_URL", "redis://127.0.0.1:6379/14")
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '10.0.2.2']
 DATABASES['default']['HOST'] = os.environ.get(
     'TRIVIA_DEV_MONGODB_URI', 'mongodb://127.0.0.1:27018/?replicaSet=trivia-rs')

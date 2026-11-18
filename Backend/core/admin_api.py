@@ -5,7 +5,7 @@ from django.db.models import Count, Sum, Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from accounts.models import AuditEvent, PhoneIdentity
@@ -133,6 +133,8 @@ class TicketViewSet(AuditedViewSet):
 
 
 class OverviewView(APIView):
+    permission_classes = [IsAdminUser]
+
     def get(self, request):
         if not request.user.has_perm('drivers.operate_platform'):
             raise PermissionDenied()
@@ -143,6 +145,8 @@ class OverviewView(APIView):
 
 
 class AdminCancelView(APIView):
+    permission_classes = [IsAdminUser]
+
     def post(self, request, pk):
         get_object_or_404(Ride, pk=pk)
         reason = serializers.CharField(max_length=500).run_validation(request.data.get('reason'))
@@ -150,6 +154,8 @@ class AdminCancelView(APIView):
 
 
 class AccountStatusView(APIView):
+    permission_classes = [IsAdminUser]
+
     @transaction.atomic
     def post(self, request, pk):
         from core.services.administration import account_status
@@ -171,6 +177,8 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class VehicleReviewView(APIView):
+    permission_classes = [IsAdminUser]
+
     @transaction.atomic
     def post(self, request, pk):
         from core.services.administration import vehicle_review

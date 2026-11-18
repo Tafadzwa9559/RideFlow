@@ -71,9 +71,16 @@ class ProfileSerializer(s.Serializer):
     driver_status = s.CharField()
 
 
-class TokensSerializer(s.Serializer):
+class RefreshRequestSerializer(s.Serializer):
+    refresh = s.CharField(write_only=True)
+
+
+class TokenPairSerializer(s.Serializer):
     access = s.CharField()
     refresh = s.CharField()
+
+
+class TokensSerializer(TokenPairSerializer):
     user = ProfileSerializer()
 
 

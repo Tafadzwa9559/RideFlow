@@ -32,7 +32,7 @@ def canonical_paths(endpoints):
 
 
 def contract(view, method, path):
-    from accounts.api import views as a
+    from accounts.api import passwords as password_api, views as a
     from drivers.api import views as d, resources as dr
     from rides.api import views as r, resources as rr
     from notifications.api import views as n
@@ -47,9 +47,15 @@ def contract(view, method, path):
         return request, responses
     cls = type(view)
     maps = {
+        password_api.StaffLoginView: {'POST': result(c.TokensSerializer, password_api.StaffLoginSerializer)},
+        password_api.PasswordLoginView: {'POST': result(c.TokensSerializer, password_api.LoginSerializer)},
+        password_api.RecoveryRequestView: {'POST': result(c.DetailSerializer, password_api.PasswordContactSerializer, 202)},
+        password_api.RecoveryVerifyView: {'POST': result(password_api.RecoveryTokenSerializer, password_api.RecoveryVerificationSerializer)},
+        password_api.RecoveryResetView: {'POST': result(None, password_api.ResetSerializer, 204)},
         a.OTPRequestView: {'POST': result(c.DetailSerializer, a.PhoneSerializer, 202)},
         a.OTPVerifyView: {'POST': result(c.TokensSerializer, a.CodeSerializer)},
         a.MeView: {'GET': result(c.ProfileSerializer), 'POST': result(c.ProfileSerializer, a.ProfileSerializer), 'PATCH': result(c.ProfileSerializer, a.ProfileSerializer)},
+        a.RefreshView: {'POST': result(c.TokenPairSerializer, c.RefreshRequestSerializer)},
         a.LogoutView: {'POST': result(None, c.LogoutSerializer, 204)},
         d.ApplicationView: {'GET': result(PolymorphicProxySerializer(component_name='ApplicationState', serializers=[ApplicationSerializer, c.StatusSerializer], resource_type_field_name=None)), 'POST': result(ApplicationSerializer, ApplicationSerializer), 'PATCH': result(ApplicationSerializer, ApplicationSerializer)},
         d.SubmitView: {'POST': result(ApplicationSerializer)},
@@ -131,6 +137,8 @@ class TriviaAutoSchema(AutoSchema):
 
     def get_tags(self):
         p = self.path
+        if '/auth/' in p:
+            return ['Authentication']
         if '/admin/' in p:
             if '/reports/' in p:
                 return ['Admin Reports']
@@ -138,25 +146,66 @@ class TriviaAutoSchema(AutoSchema):
                 if needle in p:
                     return [tag]
             return ['Administration']
-        for needle, tag in [('auth/','Authentication'),('vehicles','Vehicles'),('applications','Driver Applications'),('verification','Verification'),('locations','Locations'),('places','Locations'),('routes','Routes'),('fares','Pricing'),('ride-categories','Pricing'),('service-areas','Locations'),('earnings','Earnings'),('ratings','Ratings'),('offers','Offers'),('tracking','Tracking'),('timeline','Trips'),('receipt','Trips'),('trips','Trips'),('notifications','Notifications'),('devices','Notifications'),('safety','Safety'),('emergency-contacts','Safety'),('share','Safety'),('support','Support'),('report','Safety'),('drivers','Drivers'),('rides','Rides')]:
+        for needle, tag in [('vehicles','Vehicles'),('applications','Driver Applications'),('verification','Verification'),('locations','Locations'),('places','Locations'),('routes','Routes'),('fares','Pricing'),('ride-categories','Pricing'),('service-areas','Locations'),('earnings','Earnings'),('ratings','Ratings'),('offers','Offers'),('tracking','Tracking'),('timeline','Trips'),('receipt','Trips'),('trips','Trips'),('notifications','Notifications'),('devices','Notifications'),('safety','Safety'),('emergency-contacts','Safety'),('share','Safety'),('support','Support'),('report','Safety'),('drivers','Drivers'),('rides','Rides')]:
             if needle in p:
                 return [tag]
-        return ['Users']
+        return ['Accounts']
 
     def get_operation_id(self):
         import re
         return re.sub(r'[^a-zA-Z0-9]+', '_', self.path.strip('/') + '_' + self.method.lower()).strip('_')
 
     def get_summary(self):
+        auth_summaries = {
+            '/api/v1/admin/auth/login/': 'Staff API password login',
+            '/api/v1/auth/login/': 'Passenger or driver password login',
+            '/api/v1/auth/otp/request/': 'Request OTP for registration or sign-in',
+            '/api/v1/auth/otp/verify/': 'Verify OTP and register or sign in',
+            '/api/v1/auth/token/refresh/': 'Refresh and rotate JWT tokens',
+            '/api/v1/auth/logout/': 'Log out and revoke sessions',
+            '/api/v1/auth/me/': 'Get current user',
+            '/api/v1/auth/password/request/': 'Request password recovery',
+            '/api/v1/auth/password/verify/': 'Verify recovery code',
+            '/api/v1/auth/password/reset/': 'Reset password',
+        }
+        if self.path in auth_summaries:
+            return auth_summaries[self.path]
+        summaries = {
+            ('GET', '/api/v1/rides/'): 'List rides visible to the account',
+            ('POST', '/api/v1/rides/'): 'Request a ride',
+            ('POST', '/api/v1/fares/estimate/'): 'Estimate a route and fare',
+            ('GET', '/api/v1/locations/search/'): 'Search for pickup or destination places',
+            ('GET', '/api/v1/notifications/'): 'List account notifications',
+            ('GET', '/api/v1/users/me/'): 'Get account profile',
+            ('PATCH', '/api/v1/users/me/'): 'Update account profile',
+            ('GET', '/api/v1/admin/dashboard/overview/'): 'View platform activity totals',
+        }
+        if (self.method, self.path) in summaries:
+            return summaries[self.method, self.path]
         tail = self.path.removeprefix('/api/v1/').replace('{','').replace('}','').strip('/').replace('/', ' · ').replace('-', ' ')
         return f'{self.method.title()} {tail}'
 
     def get_description(self):
-        from rest_framework.permissions import AllowAny
-        public = any(isinstance(p, AllowAny) for p in self.view.get_permissions())
-        permission = 'Anonymous OTP request/verification; IP throttling and database cooldown/attempt controls apply.' if public else 'Requires Bearer JWT authentication and ownership of the requested private resource.'
-        if '/admin/' in self.path:
-            permission = 'Requires an authenticated staff administrator with the model permission for this action. Verification actions require drivers.review_driver; reports/dashboard require drivers.operate_platform. Personal accounts cannot self-approve.'
+        descriptions = {
+            '/api/v1/auth/login/': 'Passenger and driver password login. Supply a verified phone number or unique account email and the account password. The server returns the current driver approval status.',
+            '/api/v1/admin/auth/login/': 'Staff API login using a Django username, unique email, or verified phone and password. Only active staff receive tokens. Each admin action still checks its Django permission.',
+            '/api/v1/auth/otp/request/': 'Request a phone verification code for passenger or driver sign-in and registration. Delivery requires a configured SMS provider.',
+            '/api/v1/auth/otp/verify/': 'Verify the phone code. First-time verification creates the passenger account. Driver application and approval use the separate Driver Applications operations.',
+            '/api/v1/auth/otp/resend/': 'Request another code after the server cooldown.',
+            '/api/v1/auth/token/refresh/': 'Submit the refresh token from sign-in. Store the new access and refresh tokens returned by rotation.',
+            '/api/v1/auth/logout/': 'Requires an access token. Revokes all phone-account sessions or the current staff API session.',
+            '/api/v1/auth/logout-all/': 'Alias of logout. For staff API tokens it revokes the current staff API session.',
+            '/api/v1/auth/me/': 'Return the authenticated account profile and current driver approval status.',
+            '/api/v1/auth/password/request/': 'Request recovery on an enabled channel. A generic 202 does not confirm account existence. Phone delivery needs SMS configuration; email requires a verified ownership binding.',
+            '/api/v1/auth/password/verify/': 'Exchange the delivered one-time code for a short-lived password reset token.',
+            '/api/v1/auth/password/reset/': 'Set a validated new password using the reset token. Existing phone-account sessions are revoked.',
+        }
+        permission = descriptions.get(self.path)
+        if permission is None:
+            if '/admin/' in self.path:
+                permission = 'Requires an active staff administrator with the Django permission for the action.'
+            else:
+                permission = 'Requires Bearer JWT authentication and applicable ownership or role permissions.'
         text = super().get_description() or self.get_summary() + '.'
         if '/rides/' in self.path:
             text += ' Ride commands validate participant ownership, driver eligibility and authoritative state inside transactions. Direct-payment preferences are Cash, EcoCash and OneMoney in USD; Trivia does not collect or verify funds.'
@@ -190,6 +239,38 @@ def annotate():
 
 def examples_hook(result, generator, request, public):
     """Illustrative examples follow the resolved schema; never credentials/live data."""
+    field_descriptions = {
+        'LoginRequest': {
+            'identifier': 'Verified international phone number or unique account email, matching channel.',
+            'password': 'Existing account password. Leading and trailing spaces are significant.',
+        },
+        'StaffLoginRequest': {
+            'identifier': 'Django username, unique email, or verified international phone number, matching channel.',
+            'password': 'Existing Django staff account password.',
+        },
+        'PhoneRequest': {'phone': 'Phone number in international format, including country code.'},
+        'CodeRequest': {'code': 'Six-digit code from the verification message.'},
+        'RefreshRequestRequest': {'refresh': 'Refresh token returned by login or the latest successful rotation.'},
+        'ResetRequest': {
+            'token': 'Short-lived reset proof returned after successful recovery verification.',
+            'password': 'New account password. Django password validation applies.',
+        },
+    }
+    for component, fields in field_descriptions.items():
+        properties = result['components']['schemas'].get(component, {}).get('properties', {})
+        for name, description in fields.items():
+            if name in properties:
+                properties[name].setdefault('description', description)
+
+    auth_examples = {
+        '/api/v1/auth/login/': {'channel': 'email', 'identifier': 'passenger@example.test', 'password': '<account password>'},
+        '/api/v1/admin/auth/login/': {'channel': 'email', 'identifier': 'staff@example.test', 'password': '<staff password>'},
+        '/api/v1/auth/password/request/': {'channel': 'email', 'identifier': 'passenger@example.test'},
+        '/api/v1/auth/password/verify/': {'channel': 'phone', 'identifier': '+263771234567', 'code': '000000'},
+        '/api/v1/auth/password/reset/': {'token': '<reset proof from verification>', 'password': '<new password>'},
+        '/api/v1/auth/otp/verify/': {'phone': '+263771234567', 'code': '000000'},
+    }
+
     def sample(schema, depth=0, name=""):
         if schema.get('pattern') == '^[0-9a-fA-F]{24}$':
             return '000000000000000000000001'
@@ -220,12 +301,12 @@ def examples_hook(result, generator, request, public):
             return False
         if kind in ['integer', 'number']:
             return schema.get('minimum', 1)
-        values = {'phone': '+263771234567', 'code': '123456', 'first_name': 'Test', 'last_name': 'Passenger', 'name': 'Harare CBD',
+        values = {'phone': '+263771234567', 'code': '000000', 'first_name': 'Test', 'last_name': 'Passenger', 'name': 'Harare CBD',
                   'fare_cents': 800, 'payment_method_id': 'ecocash', 'payment_preference': 'ecocash', 'note': 'Please call at the entrance.',
                   'passenger_note': 'Please call at the entrance.', 'registration': 'TEST123', 'category': 'Standard',
                   'status': 'searching', 'reason': 'Illustrative review reason', 'decision': 'counteroffer',
                   'licence_expires': '2027-11-16', 'expires_on': '2027-11-16', 'requirement': 'configured-licence',
-                  'access': '<access-token-from-authorized-OTP-verification>', 'refresh': '<refresh-token-from-authorized-OTP-verification>',
+                  'access': '<access-token-from-sign-in>', 'refresh': '<refresh-token-from-sign-in>',
                   'latitude': '-17.829200', 'longitude': '31.052200', 'agreed_fare': '8.00', 'amount': '8.00', 'suggested_fare': '8.00'}
         if name in values:
             return values[name]
@@ -252,16 +333,24 @@ def examples_hook(result, generator, request, public):
                 operation['x-alias-of'] = aliases[(path, method)]
                 operation['description'] += '\n\nAlias of ' + aliases[(path, method)] + '; excluded from distinct-operation totals.'
             for media in operation.get('requestBody', {}).get('content', {}).values():
-                value = sample(media.get('schema', {}))
+                value = auth_examples[path] if path in auth_examples else sample(media.get('schema', {}))
                 if path == '/api/v1/rides/' and method == 'post' and isinstance(value, dict):
                     value['payment_method_id'] = 'cash-usd'
-                media['examples'] = {'illustrative': {'summary': 'Illustrative development input; replace IDs and values', 'value': value}}
+                media.setdefault('examples', {'illustrative': {'summary': 'Illustrative input. Replace placeholders before sending.', 'value': value}})
             for status, response in operation.get('responses', {}).items():
-                for media in response.get('content', {}).values():
+                for media_type, media in response.get('content', {}).items():
+                    if media_type != 'application/json':
+                        continue
                     value = sample(media.get('schema', {}))
                     if status.startswith(('4','5')):
                         value = {'errors': {'detail': 'Request could not be completed.'}, 'code': {'400': 'INVALID', '401': 'NOT_AUTHENTICATED', '403': 'PERMISSION_DENIED', '404': 'NOT_FOUND', '409': 'QUOTE_EXPIRED', '429': 'THROTTLED', '503': 'ROUTE_UNAVAILABLE'}.get(status, 'ERROR'), 'field_codes': {'detail': 'invalid'}, 'request_id': 'example-correlation-id'}
-                    media['examples'] = {'illustrative': {'summary': 'Illustrative response; values are not live operational data', 'value': value}}
+                    if status == '401' and path in ('/api/v1/auth/login/', '/api/v1/admin/auth/login/'):
+                        value.update(
+                            errors={'detail': 'The account details or password are incorrect.'},
+                            code='INVALID_CREDENTIALS',
+                            field_codes={'detail': 'invalid_credentials'},
+                        )
+                    media.setdefault('examples', {'illustrative': {'summary': 'Illustrative response', 'value': value}})
             for parameter in operation.get('parameters', []):
                 if parameter.get('in') == 'path':
                     parameter.setdefault('description', 'Identifier of the resource; ownership and role restrictions apply.')

@@ -1,0 +1,27 @@
+{% extends "drf_spectacular/swagger_ui.html" %}
+{% load static %}
+
+{% block head %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/trivia-swagger.css' %}">
+{% endblock %}
+
+{% block body %}
+  <a class="trivia-skip" href="#swagger-ui">Skip to API reference</a>
+  <header class="trivia-header">
+    <div class="trivia-header__inner">
+      <div>
+        <p class="trivia-header__brand">{{ title }}</p>
+        <p class="trivia-header__subtitle">Official Developer Documentation | Version 1.0.0</p>
+      </div>
+      <nav aria-label="Developer resources">
+        <a href="#swagger-ui">API reference</a>
+        <a href="{% url 'schema' %}">OpenAPI schema</a>
+        <a href="{% url 'websocket-documentation' %}">WebSocket documentation</a>
+      </nav>
+    </div>
+  </header>
+  <main class="trivia-reference" aria-label="API reference">
+    {{ block.super }}
+  </main>
+{% endblock %}

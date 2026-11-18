@@ -122,11 +122,13 @@ def verify_code(phone, code, legal_acknowledgement=None):
                 if created:
                     user.set_unusable_password()
                     user.save(update_fields=['password'])
+                if user.is_staff or user.is_superuser:
+                    raise AuthenticationFailed('Phone code sign-in is unavailable for this account.')
                 identity = PhoneIdentity.objects.create(user=user, phone=phone, verified_at=timezone.now())
             transaction.guard(get_user_model(), identity.user_id)
             identity = PhoneIdentity.objects.select_related('user').get(pk=identity.pk)
-            if development and (identity.user.is_staff or identity.user.is_superuser):
-                raise AuthenticationFailed('Development authentication is unavailable for this account.')
+            if identity.user.is_staff or identity.user.is_superuser:
+                raise AuthenticationFailed('Phone code sign-in is unavailable for this account.')
             if not identity.user.is_active:
                 raise AuthenticationFailed('Account disabled.')
             if legal_acknowledgement is not None:

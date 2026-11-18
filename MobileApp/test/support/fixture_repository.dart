@@ -24,6 +24,22 @@ const demoPlaces = [
 ];
 
 class TestRepository implements TriviaRepository {
+  @override
+  Future<Session> login(LoginContact contact, String password) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> requestPasswordRecovery(LoginContact contact) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<String> verifyPasswordRecovery(LoginContact contact, String code) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> resetPassword(String token, String password) async =>
+      throw UnimplementedError();
+
   Session? _session;
   final registrationStorage = const FlutterSecureStorage();
   Map<String, dynamic> registration = {};

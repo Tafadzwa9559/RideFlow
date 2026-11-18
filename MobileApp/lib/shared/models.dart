@@ -172,13 +172,15 @@ class Session {
     required this.lastName,
     required this.phone,
     this.driverStatus = DriverStatus.notRegistered,
+    this.email = '',
   });
-  final String firstName, lastName, phone;
+  final String firstName, lastName, phone, email;
   final DriverStatus driverStatus;
   factory Session.fromJson(Map<String, dynamic> j) => Session(
     firstName: j['first_name'] as String? ?? '',
     lastName: j['last_name'] as String? ?? '',
     phone: j['phone'] as String,
+    email: j['email'] as String? ?? '',
     driverStatus: DriverStatus.values.byName(
       j['driver_status'] as String? ?? 'notRegistered',
     ),

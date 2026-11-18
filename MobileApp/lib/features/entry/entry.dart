@@ -5,9 +5,14 @@ import 'package:flutter/services.dart';
 
 import '../../app/controller.dart';
 import '../../app/theme.dart';
+import '../../core/api_error.dart';
+import '../../core/repository.dart';
 import '../legal/legal_content.dart';
 import '../legal/legal_page.dart';
 import '../../shared/widgets.dart';
+
+part 'registration_art.dart';
+part 'password_access.dart';
 
 class Onboarding extends StatefulWidget {
   const Onboarding({super.key, required this.app});
@@ -59,7 +64,7 @@ class _OnboardingState extends State<Onboarding> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -76,51 +81,59 @@ class _OnboardingState extends State<Onboarding> {
               controller: pages,
               itemCount: 3,
               onPageChanged: (i) => setState(() => index = i),
-              itemBuilder: (context, i) => SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 40, 24, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: AspectRatio(
-                        aspectRatio: 1.65,
-                        child: Image.asset(
-                          images[i].asset,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          alignment: images[i].alignment,
-                          semanticLabel: images[i].label,
+              itemBuilder: (context, i) => LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: AspectRatio(
+                            aspectRatio: 1.65,
+                            child: Image.asset(
+                              images[i].asset,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              alignment: images[i].alignment,
+                              semanticLabel: images[i].label,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 22),
+                        Text(
+                          '0${i + 1} / YOUR NEXT CHAPTER',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            letterSpacing: 2,
+                            color: darkGreen,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          titles[i],
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          descriptions[i],
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      '0${i + 1} / YOUR NEXT CHAPTER',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        letterSpacing: 2,
-                        color: darkGreen,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      titles[i],
-                      style: Theme.of(context).textTheme.headlineLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      descriptions[i],
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
             child: Column(
               children: [
                 Row(
@@ -141,7 +154,7 @@ class _OnboardingState extends State<Onboarding> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 ActionButton(index == 2 ? 'Get started' : 'Next', () {
                   if (index == 2) {
                     widget.app.finishOnboarding();
@@ -179,6 +192,7 @@ class _AuthScreenState extends State<AuthScreen> {
   String prefix = '+263', submittedPhone = '';
   Timer? timer;
   int remaining = 0;
+
   @override
   void dispose() {
     phone.dispose();
@@ -203,6 +217,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> send() async {
+    if (widget.app.busy) return;
     if (!form.currentState!.validate()) {
       return;
     }
@@ -228,6 +243,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> verify() async {
+    if (widget.app.busy) return;
     if (!form.currentState!.validate() || !checkTerms()) return;
     final app = widget.app;
     final verifiedPhone = submittedPhone;
@@ -237,8 +253,9 @@ class _AuthScreenState extends State<AuthScreen> {
         verifiedPhone,
         code.text,
         legalAcknowledgement: content.acknowledgement(),
-      ))
+      )) {
         return;
+      }
       if (app.session?.phone == verifiedPhone) {
         await LegalAcknowledgementStore().record(verifiedPhone, content);
       }
@@ -249,164 +266,260 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: ListenableBuilder(
-        listenable: widget.app,
-        builder: (context, _) => SingleChildScrollView(
-          padding: const EdgeInsets.all(28),
-          child: Form(
-            key: form,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 44),
-                const Brand(large: true),
-                const SizedBox(height: 10),
-                const Text('Your Journey. Your Choice.'),
-                const SizedBox(height: 56),
-                Text(
-                  otp ? 'Check your phone' : 'Let’s get you\nmoving.',
-                  style: Theme.of(context).textTheme.headlineLarge,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  otp
-                      ? 'Enter the 6-digit code sent to $submittedPhone.'
-                      : 'A better journey starts with your phone number.',
-                ),
-                const SizedBox(height: 28),
-                if (!otp) ...[
-                  DropdownButtonFormField<String>(
-                    initialValue: prefix,
-                    decoration: const InputDecoration(
-                      labelText: 'Country code',
-                    ),
-                    items: const ['+263', '+27', '+260', '+44', '+1']
-                        .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                        .toList(),
-                    onChanged: (v) => setState(() => prefix = v!),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: phone,
-                    keyboardType: TextInputType.phone,
-                    autofillHints: const [
-                      AutofillHints.telephoneNumberNational,
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Phone number',
-                      hintText: '77 123 4567',
-                    ),
-                    validator: (v) {
-                      final n = (v ?? '')
-                          .replaceAll(RegExp(r'\D'), '')
-                          .replaceFirst(RegExp(r'^0+'), '');
-                      return prefix == '+263'
-                          ? (n.length == 9
-                                ? null
-                                : 'Enter a 9-digit Zimbabwean number.')
-                          : (n.length >= 7 && n.length + prefix.length - 1 <= 15
-                                ? null
-                                : 'Enter a valid phone number.');
-                    },
-                  ),
-                ] else ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: code,
-                    autofocus: true,
-                    keyboardType: TextInputType.number,
-                    autofillHints: const [AutofillHints.oneTimeCode],
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(6),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Verification code',
-                    ),
-                    validator: (v) => RegExp(r'^\d{6}$').hasMatch(v ?? '')
-                        ? null
-                        : 'Enter all six digits.',
-                  ),
-                  TextButton(
-                    onPressed: remaining > 0 || widget.app.busy
-                        ? null
-                        : () async {
-                            if (await widget.app.sendOtp(submittedPhone) &&
-                                mounted) {
-                              countdown();
-                            }
-                          },
-                    child: Text(
-                      remaining > 0 ? 'Resend in ${remaining}s' : 'Resend code',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => setState(() {
-                      otp = false;
-                      code.clear();
-                      acceptedTerms = false;
-                      consentError = null;
-                    }),
-                    child: const Text('Change phone number'),
-                  ),
-                ],
-                ErrorNotice(widget.app),
-                const SizedBox(height: 16),
-                FutureBuilder<LegalContent>(
-                  future: legalContent,
-                  builder: (context, snapshot) => CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    value: acceptedTerms,
-                    onChanged: widget.app.busy || !snapshot.hasData
-                        ? null
-                        : (value) => setState(() {
-                            acceptedTerms = value ?? false;
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: widget.app,
+          builder: (context, _) => SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Form(
+                  key: form,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _RegistrationBrand(),
+                      if (!otp && !keyboardVisible)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 14),
+                          child: _RegistrationHero(),
+                        ),
+                      const SizedBox(height: 16),
+                      Text(
+                        otp ? 'Check your phone' : "Let's get you moving.",
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        otp
+                            ? 'Enter the 6-digit code sent to $submittedPhone.'
+                            : 'A faster, safer and more convenient way to get around Zimbabwe.',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: 14),
+                      if (!otp) ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 102,
+                              child: DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                initialValue: prefix,
+                                decoration: const InputDecoration(
+                                  labelText: 'Code',
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 17,
+                                  ),
+                                ),
+                                items:
+                                    const ['+263', '+27', '+260', '+44', '+1']
+                                        .map(
+                                          (v) => DropdownMenuItem(
+                                            value: v,
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Text(v),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                onChanged: widget.app.busy
+                                    ? null
+                                    : (v) => setState(() => prefix = v!),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextFormField(
+                                controller: phone,
+                                readOnly: widget.app.busy,
+                                keyboardType: TextInputType.number,
+                                autofillHints: const [
+                                  AutofillHints.telephoneNumberNational,
+                                ],
+                                decoration: const InputDecoration(
+                                  labelText: 'Phone number',
+                                  hintText: '77 123 4567',
+                                  errorMaxLines: 3,
+                                ),
+                                validator: (value) {
+                                  final digits = (value ?? '')
+                                      .replaceAll(RegExp(r'\D'), '')
+                                      .replaceFirst(RegExp(r'^0+'), '');
+                                  return prefix == '+263'
+                                      ? (RegExp(r'^7\d{8}$').hasMatch(digits)
+                                            ? null
+                                            : 'Enter a 9-digit Zimbabwean number.')
+                                      : (digits.length >= 7 &&
+                                                digits.length +
+                                                        prefix.length -
+                                                        1 <=
+                                                    15
+                                            ? null
+                                            : 'Enter a valid phone number.');
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: code,
+                          autofocus: true,
+                          keyboardType: TextInputType.number,
+                          autofillHints: const [AutofillHints.oneTimeCode],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(6),
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Verification code',
+                          ),
+                          validator: (v) => RegExp(r'^\d{6}$').hasMatch(v ?? '')
+                              ? null
+                              : 'Enter all six digits.',
+                        ),
+                        TextButton(
+                          onPressed: remaining > 0 || widget.app.busy
+                              ? null
+                              : () async {
+                                  if (await widget.app.sendOtp(
+                                        submittedPhone,
+                                      ) &&
+                                      mounted) {
+                                    countdown();
+                                  }
+                                },
+                          child: Text(
+                            remaining > 0
+                                ? 'Resend in ${remaining}s'
+                                : 'Resend code',
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => setState(() {
+                            otp = false;
+                            code.clear();
+                            acceptedTerms = false;
                             consentError = null;
                           }),
-                    title: Text(
-                      snapshot.data?.status == 'published'
-                          ? 'I agree to the Terms & Conditions.'
-                          : 'I acknowledge the draft Terms & Conditions.',
-                    ),
-                    subtitle: snapshot.hasData
-                        ? (snapshot.data!.status == 'published'
-                              ? null
-                              : Text(snapshot.data!.reviewNotice))
-                        : Text(
-                            snapshot.hasError
-                                ? 'Legal documents could not be loaded.'
-                                : 'Loading legal documents…',
+                          child: const Text('Change phone number'),
+                        ),
+                      ],
+                      ErrorNotice(widget.app),
+                      FutureBuilder<LegalContent>(
+                        future: legalContent,
+                        builder: (context, snapshot) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Semantics(
+                                  label: 'Accept Terms and Conditions',
+                                  child: Checkbox(
+                                    value: acceptedTerms,
+                                    onChanged:
+                                        widget.app.busy || !snapshot.hasData
+                                        ? null
+                                        : (value) => setState(() {
+                                            acceptedTerms = value ?? false;
+                                            consentError = null;
+                                          }),
+                                  ),
+                                ),
+                                Text(
+                                  snapshot.data?.status == 'published'
+                                      ? 'I agree to the'
+                                      : 'I acknowledge the draft',
+                                ),
+                                TextButton(
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                    ),
+                                  ),
+                                  onPressed: () => openPage(
+                                    context,
+                                    const LegalPage(documentId: 'terms'),
+                                  ),
+                                  child: const Text('Terms & Conditions'),
+                                ),
+                              ],
+                            ),
+                            if (snapshot.data case final content?)
+                              if (content.status != 'published')
+                                Text(content.reviewNotice),
+                            if (!snapshot.hasData)
+                              Text(
+                                snapshot.hasError
+                                    ? 'Legal documents could not be loaded.'
+                                    : 'Loading legal documents…',
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (consentError != null)
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            consentError!,
+                            style: TextStyle(color: theme.colorScheme.error),
                           ),
+                        ),
+                      TextButton(
+                        onPressed: () => openPage(
+                          context,
+                          const LegalPage(documentId: 'privacy'),
+                        ),
+                        child: const Text('Privacy Policy'),
+                      ),
+                      ActionButton(
+                        otp ? 'Verify & continue' : 'Continue',
+                        otp ? verify : send,
+                        busy: widget.app.busy,
+                      ),
+                      if (!otp) ...[
+                        Center(
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              const Text('Already have an account?'),
+                              TextButton(
+                                onPressed: widget.app.busy
+                                    ? null
+                                    : () => openPage(
+                                        context,
+                                        LoginScreen(app: widget.app),
+                                      ),
+                                child: const Text('Log in'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const _RegistrationFooter(),
+                      ],
+                    ],
                   ),
                 ),
-                if (consentError != null)
-                  Text(
-                    consentError!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                const Text(
-                  'The Privacy Policy explains how information is used. This is not consent to optional marketing or other optional processing.',
-                ),
-                const LegalLinks(),
-                const SizedBox(height: 16),
-                ActionButton(otp ? 'Verify & continue' : 'Continue', () {
-                  if (otp) {
-                    verify();
-                  } else {
-                    send();
-                  }
-                }, busy: widget.app.busy),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class ProfileSetup extends StatefulWidget {
@@ -426,6 +539,7 @@ class _ProfileSetupState extends State<ProfileSetup> {
     super.initState();
     first.text = widget.app.session!.firstName;
     last.text = widget.app.session!.lastName;
+    email.text = widget.app.session!.email;
   }
 
   @override

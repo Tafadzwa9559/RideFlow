@@ -1,4 +1,5 @@
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAdminUser
 from django.conf import settings
 from core import transactions as transaction
 from django.http import FileResponse
@@ -122,6 +123,8 @@ class LocationView(APIView):
 
 
 class ReviewView(APIView):
+    permission_classes = [IsAdminUser]
+
     def post(self, request, pk):
         get_object_or_404(DriverApplication, pk=pk)
         class ReviewSerializer(serializers.Serializer):
