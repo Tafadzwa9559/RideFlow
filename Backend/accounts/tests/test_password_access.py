@@ -91,6 +91,33 @@ class PasswordAccessTests(TransactionTestCase):
         self.assertEqual(self.client.get('/api/v1/users/me/').status_code, 401)
         self.assertEqual(self.post('token/refresh', refresh=refresh.data['refresh']).status_code, 401)
 
+    @override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.PBKDF2PasswordHasher'])
+    def test_superuser_login_with_real_redis_and_secure_password_hash(self):
+        from django.contrib.auth.hashers import identify_hasher
+
+        staff = get_user_model().objects.create_superuser(
+            username='staff-dispatch', email='staff@example.test', password=PASSWORD,
+        )
+        self.assertEqual(identify_hasher(staff.password).algorithm, 'pbkdf2_sha256')
+        url = '/api/v1/admin/auth/login/'
+        credentials = {'channel': 'username', 'identifier': staff.username}
+        wrong = self.client.post(url, {**credentials, 'password': 'incorrect'}, format='json')
+        self.assertEqual(wrong.status_code, 401, wrong.data)
+        passenger = self.client.post(url, {
+            'channel': 'username', 'identifier': self.user.username, 'password': PASSWORD,
+        }, format='json')
+        self.assertEqual(passenger.status_code, 401, passenger.data)
+        login = self.client.post(url, {**credentials, 'password': PASSWORD}, format='json')
+        self.assertEqual(login.status_code, 200, login.data)
+        self.assertEqual(login.data['user']['id'], str(staff.pk))
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+        self.assertEqual(self.client.get('/api/v1/admin/dashboard/overview/').status_code, 200)
+        rotated = self.post('token/refresh', refresh=login.data['refresh'])
+        self.assertEqual(rotated.status_code, 200, rotated.data)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {rotated.data['access']}")
+        self.assertEqual(self.post('logout').status_code, 204)
+        self.assertEqual(self.client.get('/api/v1/auth/me/').status_code, 401)
+
     def test_generic_credentials_validation_and_limits(self):
         wrong = self.login(password='incorrect')
         unknown = self.login(identifier='+263772345678')

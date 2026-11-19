@@ -1,4 +1,5 @@
 from bson import ObjectId
+from django.utils.crypto import constant_time_compare
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from accounts.models import PhoneIdentity
@@ -10,6 +11,13 @@ class SessionJWTAuthentication(JWTAuthentication):
         if not ObjectId.is_valid(str(token.get('user_id', ''))):
             raise AuthenticationFailed('Sign in again after the database migration.')
         user = super().get_user(token)
+        if 'passenger_test_actor' in token:
+            from accounts.services.passenger_testing import passenger_profile
+            actor, identity = passenger_profile(token['passenger_test_actor'])
+            if (identity.user_id != user.pk or token.get('session_version') != identity.session_version
+                    or not constant_time_compare(token.get('passenger_test_password', ''), actor.get_session_auth_hash())):
+                raise AuthenticationFailed('Passenger testing session unavailable.')
+            return user
         validate_staff_session(user, token)
         if token.get('staff_api_session'):
             return user

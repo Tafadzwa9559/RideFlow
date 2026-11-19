@@ -15,6 +15,9 @@ from django.core.mail import send_mail
 from django.db.models import F
 from django.utils.crypto import salted_hmac
 from redis import Redis, RedisError
+from redis.backoff import NoBackoff
+from redis.retry import Retry
+from core.middleware import request_id_context
 from rest_framework.exceptions import APIException, Throttled, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -42,14 +45,26 @@ class InvalidCredentials(APIException):
 
 @lru_cache(maxsize=4)
 def redis_client(url):
-    return Redis.from_url(url, socket_timeout=3, socket_connect_timeout=3)
+    try:
+        tls = {'ssl_cert_reqs': 'required', 'ssl_check_hostname': True} if url.startswith('rediss://') else {}
+        return Redis.from_url(url, socket_timeout=3, socket_connect_timeout=3,
+                              retry=Retry(NoBackoff(), 0), **tls)
+    except (AttributeError, ValueError) as exc:
+        log_redis_failure(exc)
+        raise Unavailable('Authentication is temporarily unavailable. Try again later.') from None
+
+
+def log_redis_failure(exc):
+    logger.error('Password authentication Redis command failed | error_type=%s', type(exc).__name__,
+                 extra={'request_id': request_id_context.get()})
 
 
 def run_script(script, key, *args):
     try:
         return redis_client(settings.PASSWORD_AUTH_REDIS_URL).eval(
             script, 1, key, *args)
-    except RedisError:
+    except RedisError as exc:
+        log_redis_failure(exc)
         raise Unavailable('Authentication is temporarily unavailable. Try again later.') from None
 
 

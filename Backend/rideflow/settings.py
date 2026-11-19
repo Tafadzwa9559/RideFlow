@@ -8,6 +8,7 @@ import json
 import os
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import environ
 from django.core.exceptions import ImproperlyConfigured
@@ -15,7 +16,9 @@ from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Load .env locally; on Render, configured environment variables take precedence.
-environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
+if not (os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+        or os.environ.get("DJANGO_SETTINGS_MODULE") in {"rideflow.production", "rideflow.staging"}):
+    environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -394,26 +397,69 @@ LOCATION_RETENTION_DAYS = int(os.environ.get("LOCATION_RETENTION_DAYS", "7"))
 # ------------------------------------------------------------
 # Redis / Channels / Celery
 # ------------------------------------------------------------
-REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
+DEPLOYED_REDIS = bool(os.environ.get("RENDER_EXTERNAL_HOSTNAME")) or env_bool("RENDER") or (
+    os.environ.get("DJANGO_SETTINGS_MODULE") in {"rideflow.production", "rideflow.staging"}
+)
+
+
+def redis_url(name, fallback=None):
+    value = os.environ.get(name, "").strip() or fallback
+    if DEPLOYED_REDIS:
+        try:
+            parsed = urlsplit(value or "")
+            host = (parsed.hostname or "").lower().rstrip(".")
+            valid = (parsed.scheme in {"redis", "rediss"} and host
+                     and host != "localhost" and not host.endswith(".localhost")
+                     and not host.startswith("127.") and host not in {"::1", "0.0.0.0", "::"}
+                     and not parsed.query and not parsed.fragment
+                     and (parsed.port is None or parsed.port > 0)
+                     and (parsed.path in {"", "/"} or parsed.path[1:].isascii() and parsed.path[1:].isdigit()))
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ImproperlyConfigured(
+                f"{name} requires a deployment Redis URL with a remote host and no query or fragment.")
+    return value
+
+
+def redis_options(url, *, socket_timeout=3):
+    options = {"socket_timeout": socket_timeout, "socket_connect_timeout": 3}
+    if url.startswith("rediss://"):
+        options.update(ssl_cert_reqs="required", ssl_check_hostname=True)
+    return options
+
+
+REDIS_URL = redis_url("REDIS_URL", None if DEPLOYED_REDIS else "redis://127.0.0.1:6379/0")
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [REDIS_URL]},
+        "CONFIG": {"hosts": [{"address": REDIS_URL, **redis_options(REDIS_URL, socket_timeout=10)}],
+                   "prefix": "trivia:channels"},
     }
 }
 PASSWORD_AUTH_RENDER_INGRESS = env_bool("RENDER", False)
-PASSWORD_AUTH_REDIS_URL = os.environ.get("CACHE_REDIS_URL", "redis://127.0.0.1:6379/2")
+# A deployment with one Redis service can omit the dedicated cache URL.
+CACHE_REDIS_URL = redis_url("CACHE_REDIS_URL", os.environ.get("REDIS_URL", "").strip()
+                            or (REDIS_URL if DEPLOYED_REDIS else "redis://127.0.0.1:6379/2"))
+PASSWORD_AUTH_REDIS_URL = CACHE_REDIS_URL
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": PASSWORD_AUTH_REDIS_URL,
+        "KEY_PREFIX": "trivia:cache",
+        "OPTIONS": redis_options(CACHE_REDIS_URL),
     }
 }
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/1")
+CELERY_BROKER_URL = redis_url("CELERY_BROKER_URL", REDIS_URL if DEPLOYED_REDIS else "redis://127.0.0.1:6379/1")
+if CELERY_BROKER_URL.startswith("rediss://"):
+    CELERY_BROKER_USE_SSL = {"ssl_cert_reqs": "required", "ssl_check_hostname": True}
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_SOFT_TIME_LIMIT = 240
 CELERY_TASK_TIME_LIMIT = 300
-CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 600}
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "visibility_timeout": 600, "global_keyprefix": "trivia:celery:",
+    "socket_connect_timeout": 3,
+}
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = "UTC"

@@ -1,6 +1,13 @@
 import 'package:flutter/foundation.dart';
 
 const bool developmentBuild = bool.fromEnvironment('TRIVIA_DEVELOPMENT_BUILD');
+const bool passengerTestingBuild = bool.fromEnvironment('TRIVIA_PASSENGER_TESTING');
+const String passengerTestingOrigin = String.fromEnvironment('TRIVIA_PASSENGER_TESTING_ORIGIN');
+
+bool get passengerTestingEnabled =>
+    passengerTestingBuild && passengerTestingOrigin.isNotEmpty &&
+    baseUrl == passengerTestingOrigin && Uri.parse(baseUrl).scheme == 'https' &&
+    Uri.parse(baseUrl).host != 'trivia-backend-bze2.onrender.com';
 
 const String baseUrl = String.fromEnvironment(
   'TRIVIA_API_BASE_URL',

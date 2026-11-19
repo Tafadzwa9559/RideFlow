@@ -2,6 +2,8 @@ from ipaddress import ip_address
 import re
 
 from django.conf import settings
+from rest_framework.exceptions import NotFound
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer
@@ -10,6 +12,7 @@ from rest_framework.views import APIView
 
 from accounts.api.views import profile
 from accounts.services import passwords, staff_sessions
+from accounts.services.passenger_testing import configuration, passenger_profile
 from accounts.services.authentication import normalize_phone
 
 
@@ -106,6 +109,25 @@ class StaffLoginView(PublicPasswordView):
     def process(self, **data):
         user = passwords.staff_login(**data)
         return Response({**staff_sessions.tokens_for_staff(user), 'user': profile(user)})
+
+
+class PassengerTestingView(StaffLoginView):
+    throttle_scope = 'passenger-test-ip'
+
+    def post(self, request):
+        if not all(configuration()):
+            raise NotFound()
+        return super().post(request)
+
+    def process(self, **data):
+        actor = passwords.staff_login(**data)
+        actor, identity = passenger_profile(str(actor.pk))
+        refresh = RefreshToken.for_user(identity.user)
+        refresh['session_version'] = identity.session_version
+        refresh['passenger_test_actor'] = str(actor.pk)
+        refresh['passenger_test_password'] = actor.get_session_auth_hash()
+        return Response({'access': str(refresh.access_token), 'refresh': str(refresh),
+                         'user': profile(identity.user)})
 
 
 class RecoveryRequestView(PublicPasswordView):

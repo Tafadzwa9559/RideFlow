@@ -79,11 +79,13 @@ def check_redis():
     if not redis_url:
         raise RuntimeError("REDIS_URL is not configured")
 
+    tls = {"ssl_cert_reqs": "required", "ssl_check_hostname": True} if redis_url.startswith("rediss://") else {}
     client = Redis.from_url(
         redis_url,
         socket_connect_timeout=2,
         socket_timeout=2,
         health_check_interval=30,
+        **tls,
     )
 
     try:
@@ -93,6 +95,15 @@ def check_redis():
     finally:
         client.close()
 
+    return True
+
+
+def check_password_redis():
+    """Verify the password/rate-limit client can execute a read-only script."""
+    from accounts.services.passwords import run_script
+
+    if run_script('return 1', 'trivia:limit:readiness') != 1:
+        raise RuntimeError('Password authentication Redis probe unsuccessful')
     return True
 
 
@@ -126,7 +137,7 @@ def ready(request):
 
     Checks:
         MongoDB Atlas
-        Redis
+        Redis and password-authentication scripting
         Celery
 
     HTTP 200:
@@ -142,6 +153,7 @@ def ready(request):
     checks = {
         "mongodb": check_mongodb,
         "redis": check_redis,
+        "password_redis": check_password_redis,
         "celery": check_celery,
     }
 

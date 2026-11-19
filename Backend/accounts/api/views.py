@@ -1,4 +1,7 @@
+import logging
+
 from bson import ObjectId
+from redis import RedisError
 from core import transactions as transaction
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.db import SessionStore
@@ -12,7 +15,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.authentication import SessionJWTAuthentication
 from accounts.models import PhoneIdentity
-from accounts.services.authentication import normalize_phone, request_code, verify_code
+from accounts.services.authentication import SMSUnavailable, normalize_phone, request_code, verify_code
+
+
+logger = logging.getLogger(__name__)
 
 
 class PhoneSerializer(serializers.Serializer):
@@ -31,6 +37,14 @@ class OTPRequestView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
     throttle_scope = 'otp_request'
+
+    def check_throttles(self, request):
+        try:
+            super().check_throttles(request)
+        except RedisError as exc:
+            logger.error('OTP throttle cache unavailable | error_type=%s', type(exc).__name__,
+                         extra={'request_id': getattr(request, 'request_id', None)})
+            raise SMSUnavailable('OTP is temporarily unavailable. Try again later.') from None
 
     def post(self, request):
         data = PhoneSerializer(data=request.data)

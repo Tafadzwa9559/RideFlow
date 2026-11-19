@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../app/controller.dart';
 import '../../app/theme.dart';
 import '../../core/api_error.dart';
+import '../../core/config.dart';
 import '../../core/repository.dart';
 import '../legal/legal_content.dart';
 import '../legal/legal_page.dart';

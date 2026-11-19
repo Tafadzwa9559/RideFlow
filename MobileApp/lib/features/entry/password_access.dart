@@ -14,6 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final password = TextEditingController();
   LoginChannel channel = LoginChannel.phone;
   bool busy = false;
+  bool passengerTesting = false;
   String? message;
 
   @override
@@ -30,7 +31,11 @@ class _LoginScreenState extends State<LoginScreen> {
       message = null;
     });
     final success = await widget.app.login(
-      LoginContact(channel, _identifier(channel, identifier.text)),
+      LoginContact(
+        channel,
+        passengerTesting ? identifier.text.trim() : _identifier(channel, identifier.text),
+        passengerTesting: passengerTesting,
+      ),
       password.text,
     );
     if (!mounted) return;
@@ -75,7 +80,18 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _ChannelSelector(
+            if (passengerTestingEnabled)
+              SwitchListTile(
+                title: const Text('Passenger Testing Mode'),
+                value: passengerTesting,
+                onChanged: busy ? null : (value) => setState(() {
+                  passengerTesting = value;
+                  identifier.clear();
+                  password.clear();
+                  message = null;
+                }),
+              ),
+            if (!passengerTesting) _ChannelSelector(
               channel: channel,
               onChanged: busy
                   ? null
@@ -86,7 +102,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     }),
             ),
             const SizedBox(height: 18),
-            _ContactField(
+            if (passengerTesting)
+              TextFormField(
+                controller: identifier,
+                enabled: !busy,
+                decoration: const InputDecoration(labelText: 'Staging administrator username'),
+                validator: (value) => (value ?? '').trim().isEmpty ? 'Enter your username.' : null,
+              )
+            else _ContactField(
               channel: channel,
               controller: identifier,
               enabled: !busy,
@@ -100,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   (value ?? '').isEmpty ? 'Enter your password.' : null,
               onSubmitted: submit,
             ),
-            Align(
+            if (!passengerTesting) Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: busy ? null : recover,

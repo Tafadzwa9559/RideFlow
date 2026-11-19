@@ -10,12 +10,13 @@ import 'config.dart';
 enum LoginChannel { phone, email }
 
 class LoginContact {
-  const LoginContact(this.channel, this.identifier);
+  const LoginContact(this.channel, this.identifier, {this.passengerTesting = false});
   final LoginChannel channel;
   final String identifier;
+  final bool passengerTesting;
 
   Map<String, dynamic> toJson() => {
-    'channel': channel.name,
+    'channel': passengerTesting ? 'username' : channel.name,
     'identifier': identifier,
   };
 }
@@ -144,6 +145,7 @@ class ApiRepository implements TriviaRepository {
       path.startsWith('auth/otp/') ||
       path.startsWith('auth/password/') ||
       path == 'auth/login/' ||
+      path == 'auth/passenger-testing/' ||
       path == 'auth/token/refresh/';
 
   late final Dio dio;
@@ -230,7 +232,10 @@ class ApiRepository implements TriviaRepository {
 
   @override
   Future<Session> login(LoginContact contact, String password) async {
-    final data = await _post('auth/login/', {
+    if (contact.passengerTesting && !passengerTestingEnabled) {
+      throw StateError('Passenger testing requires the configured staging origin.');
+    }
+    final data = await _post(contact.passengerTesting ? 'auth/passenger-testing/' : 'auth/login/', {
       ...contact.toJson(),
       'password': password,
     });

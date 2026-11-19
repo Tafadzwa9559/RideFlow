@@ -78,6 +78,9 @@ class DevelopmentOTPConfigurationTests(SimpleTestCase):
                  'TRIVIA_TEST_OTP_ENABLED': 'true',
                  'DJANGO_SECRET_KEY': 'production-guard-test-key-not-a-real-secret',
                  'MONGODB_URI': 'mongodb://127.0.0.1:27028/',
+                 'REDIS_URL': 'redis://redis.example.test:6379',
+                 'CACHE_REDIS_URL': '',
+                 'CELERY_BROKER_URL': '',
                  'DJANGO_DEBUG': 'true'},
             capture_output=True, text=True, timeout=30,
         )

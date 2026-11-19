@@ -4,7 +4,7 @@
 services:
   - type: keyvalue
     name: trivia-redis
-    plan: starter
+    plan: 256mb
     region: frankfurt
     ipAllowList: []
     maxmemoryPolicy: noeviction

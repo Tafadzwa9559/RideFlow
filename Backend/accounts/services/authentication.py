@@ -1,3 +1,4 @@
+import logging
 import secrets
 from datetime import timedelta
 import phonenumbers
@@ -7,12 +8,26 @@ from django.contrib.auth.hashers import make_password, check_password
 from core import transactions as transaction
 from django.utils import timezone
 from django.utils.module_loading import import_string
-from rest_framework.exceptions import ValidationError, Throttled, AuthenticationFailed
+from rest_framework.exceptions import APIException, ValidationError, Throttled, AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import PhoneChallenge, PhoneIdentity
 from accounts.test_otp import (
     DEVELOPMENT_CODE, DEVELOPMENT_DIGEST_PREFIX, validate_test_otp_settings,
 )
+from core.middleware import request_id_context
+
+
+logger = logging.getLogger(__name__)
+
+
+class SMSUnavailable(APIException):
+    status_code = 503
+    default_detail = 'SMS delivery is temporarily unavailable. Try again later.'
+
+
+def log_sms_failure(exc):
+    logger.error('OTP SMS unavailable | error_type=%s', type(exc).__name__,
+                 extra={'request_id': request_id_context.get()})
 
 
 def development_otp_enabled(phone):
@@ -60,18 +75,24 @@ class LocalSMS:
 
 def sms_provider():
     if not settings.SMS_PROVIDER:
-        from rest_framework.exceptions import APIException
-        error = APIException('SMS delivery is not configured.')
-        error.status_code = 503
-        raise error
-    return import_string(settings.SMS_PROVIDER)()
+        raise SMSUnavailable()
+    try:
+        return import_string(settings.SMS_PROVIDER)()
+    except Exception as exc:
+        log_sms_failure(exc)
+        raise SMSUnavailable() from None
+
+
+def request_code(phone):
+    validate_test_otp_settings(settings)
+    provider = None if settings.TRIVIA_TEST_OTP_ENABLED else sms_provider()
+    return store_challenge(phone, provider)
 
 
 @transaction.atomic
-def request_code(phone):
+def store_challenge(phone, provider):
     development = development_otp_enabled(phone)
     transaction.guard('otp', phone)
-    provider = None if development else sms_provider()
     now = timezone.now()
     # Unique phone row also serializes simultaneous first requests.
     challenge, _ = PhoneChallenge.objects.get_or_create(phone=phone, defaults={
@@ -89,7 +110,11 @@ def request_code(phone):
     # Normal SMS delivery must be accepted before committing the challenge.
     # Development challenges never invoke an SMS provider.
     if provider is not None:
-        provider.send(phone, code)
+        try:
+            provider.send(phone, code)
+        except Exception as exc:
+            log_sms_failure(exc)
+            raise SMSUnavailable() from None
     challenge.save()
 
 
