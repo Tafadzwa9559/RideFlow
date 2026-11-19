@@ -32,6 +32,16 @@ class SchemaTests(SimpleTestCase):
                         self.assertIn('examples', content, (path, status))
         self.assertEqual(len(operation_ids), len(set(operation_ids)))
 
+    def test_email_registration_contract(self):
+        operation = self.schema['paths']['/api/v1/auth/register/']['post']
+        self.assertEqual(operation['security'], [{}])
+        self.assertEqual(set(operation['responses']), {'201', '400', '409', '429', '503'})
+        schemas = self.schema['components']['schemas']
+        self.assertEqual(set(schemas['RegistrationRequest']['required']), {
+            'first_name', 'last_name', 'email', 'password',
+        })
+        self.assertIn('email_verified', schemas['RegistrationResult']['required'])
+
     def test_required_resources_and_typed_business_responses(self):
         paths = self.schema['paths']
         for path, method in [('/users/me/preferences/','patch'),('/drivers/me/vehicles/{id}/activate/','post'),('/drivers/applications/me/documents/','get'),

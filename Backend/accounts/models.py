@@ -12,6 +12,12 @@ class PhoneIdentity(models.Model):
     session_version = models.PositiveIntegerField(default=0)
 
 
+class EmailIdentity(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='email_identity')
+    verified_at = models.DateTimeField(null=True)
+    session_version = models.PositiveIntegerField(default=0)
+
+
 class PhoneChallenge(models.Model):
     phone = models.CharField(max_length=16, unique=True)
     digest = models.CharField(max_length=128)

@@ -3,7 +3,7 @@ from core import transactions as transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from accounts.models import AuditEvent, PhoneIdentity
+from accounts.models import AuditEvent, EmailIdentity, PhoneIdentity
 from drivers.models import DriverApplication, Vehicle, DocumentRequirement
 from django.utils import timezone
 
@@ -21,6 +21,7 @@ def account_status(actor, pk, active, request_id=''):
     user.is_active = active
     user.save(update_fields=['is_active'])
     PhoneIdentity.objects.filter(user=user).update(session_version=F('session_version')+1)
+    EmailIdentity.objects.filter(user=user).update(session_version=F('session_version') + 1)
     DriverApplication.objects.filter(user=user).update(availability='offline')
     audit(actor, 'account.status', user, {'active': active}, request_id)
     return user

@@ -1,6 +1,7 @@
-"""Password authentication and recovery for existing Trivia accounts."""
+"""Passenger registration, password authentication and recovery."""
 import logging
 import secrets
+import uuid
 from functools import lru_cache
 from types import SimpleNamespace
 
@@ -21,7 +22,7 @@ from core.middleware import request_id_context
 from rest_framework.exceptions import APIException, Throttled, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import PhoneIdentity
+from accounts.models import EmailIdentity, PhoneIdentity
 from accounts.services.authentication import sms_provider
 from accounts.test_otp import validate_test_otp_settings
 from core import transactions as transaction
@@ -83,6 +84,45 @@ def limit(action, subject, maximum, seconds):
         raise Throttled(wait=max(1, wait))
 
 
+class DuplicateEmail(APIException):
+    status_code = 409
+    default_detail = 'This email address is unavailable.'
+    default_code = 'duplicate_email'
+
+
+def register(first_name, last_name, email, password):
+    limit('register-contact', email, 5, 3600)
+    user = get_user_model()(
+        username=f'passenger-{uuid.uuid4().hex}', email=email,
+        first_name=first_name, last_name=last_name,
+        is_active=True, is_staff=False, is_superuser=False,
+    )
+    try:
+        validate_password(password, user)
+    except DjangoValidationError as exc:
+        raise ValidationError({'password': exc.messages}, code='invalid_password') from None
+    user.set_password(password)
+    return create_email_account(user)
+
+
+@transaction.atomic
+def create_email_account(user):
+    transaction.guard('profile-email', user.email)
+    if get_user_model().objects.filter(email__iexact=user.email).exists():
+        raise DuplicateEmail()
+    user.save(force_insert=True)
+    return EmailIdentity.objects.create(user=user)
+
+
+def unique_email_user(identifier):
+    matches = list(get_user_model().objects.filter(email__iexact=identifier)[:2])
+    return matches[0] if len(matches) == 1 else None
+
+
+def passenger(user):
+    return user is not None and user.is_active and not (user.is_staff or user.is_superuser)
+
+
 def account(channel, identifier):
     identities = PhoneIdentity.objects.filter(
         verified_at__isnull=False).select_related('user')
@@ -90,11 +130,9 @@ def account(channel, identifier):
         identity = identities.filter(phone=identifier).first()
     else:
         # Reject ambiguous legacy addresses, including duplicates outside Trivia.
-        users = list(get_user_model().objects.filter(email__iexact=identifier)[:2])
-        identity = identities.filter(user=users[0]).first() if len(users) == 1 else None
-    if identity and identity.user.is_active and not (
-        identity.user.is_staff or identity.user.is_superuser
-    ):
+        user = unique_email_user(identifier)
+        identity = identities.filter(user=user).first() if user is not None else None
+    if identity and passenger(identity.user):
         return identity
     return None
 
@@ -120,8 +158,7 @@ def staff_login(channel, identifier, password):
         ).first()
         user = identity.user if identity else None
     elif channel == 'email':
-        matches = list(users.filter(email__iexact=identifier)[:2])
-        user = matches[0] if len(matches) == 1 else None
+        user = unique_email_user(identifier)
     else:
         user = users.filter(username=identifier).first()
     if user is not None and not (user.is_active and user.is_staff):
@@ -132,11 +169,21 @@ def staff_login(channel, identifier, password):
 
 def login(channel, identifier, password):
     limit('login-contact', f'{channel}:{identifier}', 8, 900)
-    identity = account(channel, identifier)
-    verify_password(identity.user if identity else None, password)
-    refresh = RefreshToken.for_user(identity.user)
-    refresh['session_version'] = identity.session_version
-    return identity.user, {'access': str(refresh.access_token), 'refresh': str(refresh)}
+    if channel == 'email':
+        user = unique_email_user(identifier)
+        identity = None
+        if passenger(user):
+            identity = PhoneIdentity.objects.filter(user=user, verified_at__isnull=False).first()
+            if identity is None:
+                identity = EmailIdentity.objects.filter(user=user).first()
+    else:
+        identity = account(channel, identifier)
+        user = identity.user if identity else None
+    verify_password(user if identity else None, password)
+    refresh = RefreshToken.for_user(user)
+    claim = 'email_session_version' if isinstance(identity, EmailIdentity) else 'session_version'
+    refresh[claim] = identity.session_version
+    return user, {'access': str(refresh.access_token), 'refresh': str(refresh)}
 
 
 class LocalRecoverySMS:
@@ -176,6 +223,8 @@ def check_delivery(channel):
 def recovery_account(channel, identifier):
     identity = account(channel, identifier)
     if identity and channel == 'email':
+        if EmailIdentity.objects.filter(user_id=identity.user_id, verified_at__isnull=True).exists():
+            return None
         # The editable legacy email field alone does not establish ownership.
         if settings.TRIVIA_VERIFIED_RECOVERY_EMAILS.get(str(identity.user_id), '').lower() != identifier:
             return None
@@ -292,3 +341,4 @@ def reset_password(proof, password):
     user.set_password(password)
     user.save(update_fields=['password'])
     PhoneIdentity.objects.filter(pk=identity.pk).update(session_version=F('session_version') + 1)
+    EmailIdentity.objects.filter(user=user).update(session_version=F('session_version') + 1)

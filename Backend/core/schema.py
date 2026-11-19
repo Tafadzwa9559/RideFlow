@@ -48,6 +48,9 @@ def contract(view, method, path):
     cls = type(view)
     maps = {
         password_api.StaffLoginView: {'POST': result(c.TokensSerializer, password_api.StaffLoginSerializer)},
+        password_api.RegistrationView: {'POST': result(
+            password_api.RegistrationResultSerializer, password_api.RegistrationSerializer, 201,
+        )},
         password_api.PasswordLoginView: {'POST': result(c.TokensSerializer, password_api.LoginSerializer)},
         password_api.RecoveryRequestView: {'POST': result(c.DetailSerializer, password_api.PasswordContactSerializer, 202)},
         password_api.RecoveryVerifyView: {'POST': result(password_api.RecoveryTokenSerializer, password_api.RecoveryVerificationSerializer)},
@@ -131,6 +134,15 @@ class TriviaAutoSchema(AutoSchema):
             # Preserve generic viewset automatic list/create status handling.
             status = 201 if self.method == 'POST' and getattr(self.view, 'action', None) == 'create' else 204 if self.method == 'DELETE' else 200
             responses = {status: None if status == 204 else responses}
+        if self.path == '/api/v1/auth/register/':
+            for status, description in {
+                400: 'Registration data is invalid',
+                409: 'Email address unavailable or concurrent update conflict',
+                429: 'Registration rate limit exceeded',
+                503: 'Registration is temporarily unavailable',
+            }.items():
+                responses[status] = OpenApiResponse(c.ErrorSerializer, description=description)
+            return responses
         for status in [400, 401, 403, 404, 409, 429, 503]:
             responses[status] = OpenApiResponse(c.ErrorSerializer, description={400:'Validation failed',401:'JWT missing, invalid, expired or revoked',403:'Role or ownership permission denied',404:'Resource not visible or not found',409:'State/quote conflict',429:'Rate limit or cooldown',503:'Configured provider or infrastructure unavailable'}[status])
         return responses
@@ -158,6 +170,7 @@ class TriviaAutoSchema(AutoSchema):
     def get_summary(self):
         auth_summaries = {
             '/api/v1/admin/auth/login/': 'Staff API password login',
+            '/api/v1/auth/register/': 'Register a passenger with email',
             '/api/v1/auth/login/': 'Passenger or driver password login',
             '/api/v1/auth/otp/request/': 'Request OTP for registration or sign-in',
             '/api/v1/auth/otp/verify/': 'Verify OTP and register or sign in',
@@ -187,7 +200,8 @@ class TriviaAutoSchema(AutoSchema):
 
     def get_description(self):
         descriptions = {
-            '/api/v1/auth/login/': 'Passenger and driver password login. Supply a verified phone number or unique account email and the account password. The server returns the current driver approval status.',
+            '/api/v1/auth/register/': 'Create an active passenger account with a name, email, and password. Email ownership remains unverified. No OTP is required. Use the password login endpoint to obtain tokens. Duplicate addresses return DUPLICATE_EMAIL.',
+            '/api/v1/auth/login/': 'Passenger and driver password login. Supply a verified phone number or unique eligible account email and the account password. Email-registered passengers can log in without a phone identity. The server returns the current driver approval status.',
             '/api/v1/admin/auth/login/': 'Staff API login using a Django username, unique email, or verified phone and password. Only active staff receive tokens. Each admin action still checks its Django permission.',
             '/api/v1/auth/otp/request/': 'Request a phone verification code for passenger or driver sign-in and registration. Delivery requires a configured SMS provider.',
             '/api/v1/auth/otp/verify/': 'Verify the phone code. First-time verification creates the passenger account. Driver application and approval use the separate Driver Applications operations.',
@@ -263,6 +277,7 @@ def examples_hook(result, generator, request, public):
                 properties[name].setdefault('description', description)
 
     auth_examples = {
+        '/api/v1/auth/register/': {'first_name': 'Rudo', 'last_name': 'Moyo', 'email': 'passenger@example.test', 'password': '<at least 15 characters>'},
         '/api/v1/auth/login/': {'channel': 'email', 'identifier': 'passenger@example.test', 'password': '<account password>'},
         '/api/v1/admin/auth/login/': {'channel': 'email', 'identifier': 'staff@example.test', 'password': '<staff password>'},
         '/api/v1/auth/password/request/': {'channel': 'email', 'identifier': 'passenger@example.test'},
@@ -344,6 +359,18 @@ def examples_hook(result, generator, request, public):
                     value = sample(media.get('schema', {}))
                     if status.startswith(('4','5')):
                         value = {'errors': {'detail': 'Request could not be completed.'}, 'code': {'400': 'INVALID', '401': 'NOT_AUTHENTICATED', '403': 'PERMISSION_DENIED', '404': 'NOT_FOUND', '409': 'QUOTE_EXPIRED', '429': 'THROTTLED', '503': 'ROUTE_UNAVAILABLE'}.get(status, 'ERROR'), 'field_codes': {'detail': 'invalid'}, 'request_id': 'example-correlation-id'}
+                    if status == '503' and path == '/api/v1/auth/register/':
+                        value.update(
+                            errors={'detail': 'Authentication is temporarily unavailable. Try again later.'},
+                            code='ERROR',
+                            field_codes={'detail': 'error'},
+                        )
+                    if status == '409' and path == '/api/v1/auth/register/':
+                        value.update(
+                            errors={'detail': 'This email address is unavailable.'},
+                            code='DUPLICATE_EMAIL',
+                            field_codes={'detail': 'duplicate_email'},
+                        )
                     if status == '401' and path in ('/api/v1/auth/login/', '/api/v1/admin/auth/login/'):
                         value.update(
                             errors={'detail': 'The account details or password are incorrect.'},

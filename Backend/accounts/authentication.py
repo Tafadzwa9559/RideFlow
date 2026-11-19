@@ -2,7 +2,7 @@ from bson import ObjectId
 from django.utils.crypto import constant_time_compare
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from accounts.models import PhoneIdentity
+from accounts.models import EmailIdentity, PhoneIdentity
 from accounts.services.staff_sessions import validate_staff_session
 
 
@@ -20,6 +20,11 @@ class SessionJWTAuthentication(JWTAuthentication):
             return user
         validate_staff_session(user, token)
         if token.get('staff_api_session'):
+            return user
+        if 'email_session_version' in token:
+            version = EmailIdentity.objects.filter(user=user).values_list('session_version', flat=True).first()
+            if version is None or token['email_session_version'] != version:
+                raise AuthenticationFailed('Session revoked.')
             return user
         if token.get('development_otp'):
             from accounts.services.authentication import validate_development_session

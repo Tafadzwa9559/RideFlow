@@ -14,7 +14,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.authentication import SessionJWTAuthentication
-from accounts.models import PhoneIdentity
+from accounts.models import EmailIdentity, PhoneIdentity
 from accounts.services.authentication import SMSUnavailable, normalize_phone, request_code, verify_code
 
 
@@ -66,8 +66,10 @@ class OTPVerifyView(OTPRequestView):
 def profile(user):
     from drivers.models import DriverApplication
     status = DriverApplication.objects.filter(user=user).values_list('status', flat=True).first()
+    phone = getattr(user, 'phone_identity', None)
+    phone_number = phone.phone if phone else ('' if hasattr(user, 'email_identity') else user.username)
     return {'id': str(user.pk), 'first_name': user.first_name, 'last_name': user.last_name,
-            'email': user.email, 'phone': getattr(getattr(user, 'phone_identity', None), 'phone', user.username),
+            'email': user.email, 'phone': phone_number,
             'driver_status': status or 'notRegistered'}
 
 
@@ -95,6 +97,8 @@ class MeView(APIView):
                 if get_user_model().objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
                     raise serializers.ValidationError({'email': 'This email address is unavailable.'})
                 data.validated_data['email'] = email
+            if email != user.email.lower():
+                EmailIdentity.objects.filter(user=user).update(verified_at=None)
         for key, value in data.validated_data.items():
             setattr(user, key, value)
         if data.validated_data:
@@ -113,12 +117,13 @@ class LogoutView(APIView):
             SessionStore(session_key=staff_session).delete()
             return Response(status=204)
 
-        # Revoke all access/refresh sessions for this phone account immediately.
+        # Revoke all passenger access and refresh sessions immediately.
         transaction.guard(get_user_model(), request.user.pk)
         identity = PhoneIdentity.objects.filter(user=request.user).first()
         if identity:
             identity.session_version = F('session_version') + 1
             identity.save(update_fields=['session_version'])
+        EmailIdentity.objects.filter(user=request.user).update(session_version=F('session_version') + 1)
         from notifications.models import DeviceToken
         DeviceToken.objects.filter(user=request.user).delete()
         raw = request.data.get('refresh')

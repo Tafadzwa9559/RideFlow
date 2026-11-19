@@ -10477,6 +10477,133 @@ paths:
                       detail: invalid
                     request_id: example-correlation-id
           description: Configured provider or infrastructure unavailable
+  /api/v1/auth/register/:
+    post:
+      operationId: api_v1_auth_register_post
+      description: |-
+        Register a passenger with email.
+
+        Create an active passenger account with a name, email, and password. Email ownership remains unverified. No OTP is required. Use the password login endpoint to obtain tokens. Duplicate addresses return DUPLICATE_EMAIL.
+      summary: Register a passenger with email
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  first_name: Rudo
+                  last_name: Moyo
+                  email: passenger@example.test
+                  password: <at least 15 characters>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  first_name: Rudo
+                  last_name: Moyo
+                  email: passenger@example.test
+                  password: <at least 15 characters>
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  first_name: Rudo
+                  last_name: Moyo
+                  email: passenger@example.test
+                  password: <at least 15 characters>
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResult'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    id: example
+                    email: developer@example.test
+                    email_verified: false
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Registration data is invalid
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: This email address is unavailable.
+                    code: DUPLICATE_EMAIL
+                    field_codes:
+                      detail: duplicate_email
+                    request_id: example-correlation-id
+          description: Email address unavailable or concurrent update conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Registration rate limit exceeded
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Authentication is temporarily unavailable. Try again
+                        later.
+                    code: ERROR
+                    field_codes:
+                      detail: error
+                    request_id: example-correlation-id
+          description: Registration is temporarily unavailable
   /api/v1/auth/token/refresh/:
     post:
       operationId: api_v1_auth_token_refresh_post
@@ -29110,6 +29237,46 @@ paths:
           description: Configured provider or infrastructure unavailable
 components:
   schemas:
+    RegistrationRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 15
+          maxLength: 256
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+    RegistrationResult:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        email_verified:
+          type: boolean
+      required:
+      - email
+      - email_verified
+      - id
     ActiveRide:
       type: object
       properties:

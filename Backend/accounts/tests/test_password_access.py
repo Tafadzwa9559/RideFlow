@@ -11,7 +11,7 @@ from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from accounts.models import PhoneIdentity
+from accounts.models import EmailIdentity, PhoneIdentity
 from accounts.services import passwords
 from drivers.models import DriverApplication
 
@@ -74,6 +74,105 @@ class PasswordAccessTests(TransactionTestCase):
         if channel == 'phone':
             return InMemorySMS.messages[PHONE]
         return mail.outbox[-1].body.splitlines()[0].split(': ')[-1]
+
+    def register(self, **overrides):
+        fields = {
+            'first_name': ' Tariro ', 'last_name': 'Moyo',
+            'email': '  NEW@example.net  ', 'password': NEW_PASSWORD,
+        }
+        return self.post('register', **{**fields, **overrides})
+
+    @override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.PBKDF2PasswordHasher'])
+    def test_email_registration_login_refresh_and_logout(self):
+        response = self.register()
+        self.assertEqual(response.status_code, 201, response.data)
+        user = get_user_model().objects.get(email='new@example.net')
+        self.assertEqual(response.data, {
+            'id': str(user.pk), 'email': user.email, 'email_verified': False,
+        })
+        self.assertEqual(response['Cache-Control'], 'no-store')
+        self.assertEqual((user.first_name, user.last_name), ('Tariro', 'Moyo'))
+        self.assertTrue(user.is_active)
+        self.assertFalse(user.is_staff or user.is_superuser)
+        self.assertTrue(user.check_password(NEW_PASSWORD))
+        self.assertNotEqual(user.password, NEW_PASSWORD)
+        self.assertIsNone(EmailIdentity.objects.get(user=user).verified_at)
+        self.assertFalse(PhoneIdentity.objects.filter(user=user).exists())
+        self.assertEqual(self.login('email', user.email, 'incorrect').data['code'], 'INVALID_CREDENTIALS')
+        login = self.login('email', ' NEW@EXAMPLE.NET ', NEW_PASSWORD)
+        self.assertEqual(login.status_code, 200, login.data)
+        self.assertEqual(login.data['user']['phone'], '')
+        self.assertEqual(login.data['user']['driver_status'], 'notRegistered')
+        refresh = self.post('token/refresh', refresh=login.data['refresh'])
+        self.assertEqual(refresh.status_code, 200, refresh.data)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.data['access']}")
+        self.assertEqual(self.client.get('/api/v1/users/me/').data['id'], str(user.pk))
+        self.assertEqual(self.client.get('/api/v1/admin/dashboard/overview/').status_code, 403)
+        self.assertEqual(self.post('logout').status_code, 204)
+        self.assertEqual(self.client.get('/api/v1/users/me/').status_code, 401)
+        self.assertEqual(self.post('token/refresh', refresh=refresh.data['refresh']).status_code, 401)
+
+    def test_registration_rejects_duplicate_and_invalid_inputs(self):
+        duplicate = self.register(email=f' {EMAIL.upper()} ')
+        self.assertEqual(duplicate.status_code, 409, duplicate.data)
+        self.assertEqual(duplicate.data['code'], 'DUPLICATE_EMAIL')
+        self.assertEqual(self.register().status_code, 201)
+        self.assertEqual(self.register(email='new@EXAMPLE.NET').status_code, 409)
+        for overrides in [
+            {'password': 'short'}, {'password': '12345678901234567890'},
+            {'first_name': ' '}, {'last_name': ''}, {'email': 'invalid'},
+        ]:
+            with self.subTest(overrides=overrides):
+                response = self.register(**overrides)
+                self.assertEqual(response.status_code, 400, response.data)
+                self.assertIn('code', response.data)
+        self.assertEqual(EmailIdentity.objects.count(), 1)
+
+    def test_registration_and_staff_login_are_isolated(self):
+        self.assertEqual(self.register(role='administrator', is_staff=True).status_code, 400)
+        staff = get_user_model().objects.create_superuser(
+            username='staff-user', email='staff@example.net', password=PASSWORD,
+        )
+        self.assertEqual(self.register(email=staff.email.upper()).status_code, 409)
+        self.assertEqual(self.login('email', staff.email).status_code, 401)
+        self.assertEqual(self.register().status_code, 201)
+        response = self.client.post('/api/v1/admin/auth/login/', {
+            'channel': 'email', 'identifier': 'new@example.net', 'password': NEW_PASSWORD,
+        }, format='json')
+        self.assertEqual(response.status_code, 401, response.data)
+        self.assertEqual(response.data['code'], 'INVALID_CREDENTIALS')
+
+    def test_unverified_registration_cannot_recover_by_email(self):
+        self.assertEqual(self.register().status_code, 201)
+        user = get_user_model().objects.get(email='new@example.net')
+        with override_settings(TRIVIA_VERIFIED_RECOVERY_EMAILS={str(user.pk): user.email}):
+            passwords.deliver_recovery('email', user.email)
+            PhoneIdentity.objects.create(user=user, phone='+263772345678', verified_at=timezone.now())
+            passwords.deliver_recovery('email', user.email)
+        self.assertEqual(mail.outbox, [])
+        self.assertEqual(self.verify('email', user.email, '123456').status_code, 400)
+
+    def test_registration_rate_limits_email_and_ip(self):
+        self.assertEqual(self.register().status_code, 201)
+        for _ in range(4):
+            self.assertEqual(self.register().status_code, 409)
+        contact_limit = self.register(email='NEW@EXAMPLE.NET')
+        self.assertEqual(contact_limit.status_code, 429)
+        self.assertEqual(contact_limit.data['code'], 'THROTTLED')
+        for _ in range(4):
+            self.assertEqual(self.register(email='bad-email').status_code, 400)
+        self.assertEqual(self.register(email='distinct@example.net').status_code, 429)
+
+    def test_registration_leaves_phone_otp_available(self):
+        self.assertEqual(self.register().status_code, 201)
+        phone = '+263772345678'
+        response = self.post('otp/request', phone=phone)
+        self.assertEqual(response.status_code, 202, response.data)
+        response = self.post('otp/verify', phone=phone, code=InMemorySMS.messages[phone])
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data['user']['phone'], phone)
+        self.assertTrue(PhoneIdentity.objects.get(phone=phone).verified_at)
+        self.assertEqual(EmailIdentity.objects.count(), 1)
 
     def test_phone_email_profile_refresh_and_logout(self):
         response = self.login(identifier='077 123 4567')

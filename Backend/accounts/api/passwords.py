@@ -31,6 +31,35 @@ class PasswordContactSerializer(serializers.Serializer):
         return data
 
 
+class RegistrationSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    email = serializers.EmailField(max_length=254)
+    password = serializers.CharField(
+        min_length=15, max_length=256, trim_whitespace=False, write_only=True,
+    )
+
+    def validate_email(self, value):
+        return value.lower()
+
+    def validate_password(self, value):
+        if not value.strip():
+            raise serializers.ValidationError('Enter a password.', code='blank')
+        return value
+
+    def validate(self, data):
+        protected = {'role', 'roles', 'is_staff', 'is_superuser', 'is_active', 'groups', 'user_permissions'}
+        if protected.intersection(self.initial_data):
+            raise serializers.ValidationError('Account roles and permissions cannot be set at registration.')
+        return data
+
+
+class RegistrationResultSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    email = serializers.EmailField()
+    email_verified = serializers.BooleanField()
+
+
 class LoginSerializer(PasswordContactSerializer):
     password = serializers.CharField(max_length=256, trim_whitespace=False, write_only=True)
 
@@ -91,6 +120,20 @@ class PublicPasswordView(APIView):
         response = self.process(**data.validated_data)
         response['Cache-Control'] = 'no-store'
         return response
+
+
+class RegistrationView(PublicPasswordView):
+    serializer_class = RegistrationSerializer
+    throttle_scope = 'register-ip'
+    ip_limit = (10, 3600)
+
+    def process(self, **data):
+        identity = passwords.register(**data)
+        return Response({
+            'id': str(identity.user_id),
+            'email': identity.user.email,
+            'email_verified': identity.verified_at is not None,
+        }, status=201)
 
 
 class PasswordLoginView(PublicPasswordView):
