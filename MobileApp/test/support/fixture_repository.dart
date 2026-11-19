@@ -25,6 +25,14 @@ const demoPlaces = [
 
 class TestRepository implements TriviaRepository {
   @override
+  Future<void> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<Session> login(LoginContact contact, String password) async =>
       throw UnimplementedError();
 

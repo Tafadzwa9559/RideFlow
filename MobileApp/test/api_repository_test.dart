@@ -66,6 +66,60 @@ void main() {
     expect(await repo.storage.read(key: 'access'), 'server-access');
     expect(adapter.calls.last.data['code'], '654321');
   });
+  test('Email registration submits passenger fields before secure login', () async {
+    const email = 'tariro@example.net';
+    const password = 'Horizon-Teak-Glass-187';
+    final dio = Dio();
+    final adapter = ContractAdapter((options) async {
+      expect(options.headers['Authorization'], isNull);
+      switch (options.path) {
+        case 'auth/register/':
+          expect(options.method, 'POST');
+          expect(options.data, {
+            'first_name': 'Tariro',
+            'last_name': 'Moyo',
+            'email': email,
+            'password': password,
+          });
+          return jsonBody({'email': email, 'email_verified': false}, 201);
+        case 'auth/login/':
+          expect(options.data, {
+            'channel': 'email',
+            'identifier': email,
+            'password': password,
+          });
+          return jsonBody({
+            'access': 'passenger-access',
+            'refresh': 'passenger-refresh',
+            'user': {'phone': '', 'email': email, 'first_name': 'Tariro'},
+          });
+      }
+      fail('Unexpected path: ${options.path}');
+    });
+    dio.httpClientAdapter = adapter;
+    final repository = ApiRepository(client: dio);
+    addTearDown(repository.dispose);
+    await repository.register(
+      firstName: 'Tariro',
+      lastName: 'Moyo',
+      email: email,
+      password: password,
+    );
+    expect(await repository.storage.read(key: 'access'), isNull);
+    final session = await repository.login(
+      const LoginContact(LoginChannel.email, email),
+      password,
+    );
+    expect(session.driverStatus, DriverStatus.notRegistered);
+    expect(session.email, email);
+    expect(await repository.storage.read(key: 'access'), 'passenger-access');
+    expect(await repository.storage.read(key: 'refresh'), 'passenger-refresh');
+    expect(adapter.calls.map((call) => call.path), [
+      'auth/register/',
+      'auth/login/',
+    ]);
+  });
+
   test('Password login stores backend tokens and recovery stays public', () async {
     const contact = LoginContact(LoginChannel.email, 'user@example.net');
     final dio = Dio();

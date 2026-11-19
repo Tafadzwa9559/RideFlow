@@ -14,6 +14,7 @@ import '../../shared/widgets.dart';
 
 part 'registration_art.dart';
 part 'password_access.dart';
+part 'email_registration.dart';
 
 class Onboarding extends StatefulWidget {
   const Onboarding({super.key, required this.app});
@@ -306,6 +307,15 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 14),
                       if (!otp) ...[
+                        TextButton(
+                          onPressed: widget.app.busy
+                              ? null
+                              : () => openPage(
+                                  context,
+                                  EmailRegistrationScreen(app: widget.app),
+                                ),
+                          child: const Text('Sign up with email'),
+                        ),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

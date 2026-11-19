@@ -21,6 +21,20 @@ class _UnavailableRecoveryRepository extends TestRepository {
   }
 }
 
+class _EmailSignupRepository extends TestRepository {
+  final submissions = <List<String>>[];
+
+  @override
+  Future<void> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+  }) async {
+    submissions.add([firstName, lastName, email, password]);
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
@@ -58,6 +72,49 @@ void main() {
     expect(find.text('SMS password recovery is currently unavailable.'), findsOneWidget);
     expect(find.text('Enter your verification code'), findsNothing);
 
+    await tester.pumpWidget(const SizedBox());
+    app.dispose();
+  });
+
+  testWidgets('Email signup confirms the password and opens email login', (
+    tester,
+  ) async {
+    final repository = _EmailSignupRepository();
+    final app = AppController(repository);
+    await tester.pumpWidget(
+      MaterialApp(theme: triviaTheme(), home: AuthScreen(app: app)),
+    );
+    Future<void> tap(String label) async {
+      final target = find.text(label);
+      await tester.ensureVisible(target);
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> enter(String label, String text) async {
+      final field = find.widgetWithText(TextFormField, label);
+      await tester.ensureVisible(field);
+      await tester.enterText(field, text);
+    }
+
+    const email = 'tariro@example.net';
+    const password = 'Horizon-Teak-Glass-187';
+    await tap('Sign up with email');
+    await enter('First name', 'Tariro');
+    await enter('Last name', 'Moyo');
+    await enter('Email address', email);
+    await enter('Password', password);
+    await enter('Confirm password', 'a different password');
+    await tap('Create account');
+    expect(find.text('The passwords must match.'), findsOneWidget);
+    expect(repository.submissions, isEmpty);
+
+    await enter('Confirm password', password);
+    await tap('Create account');
+    expect(repository.submissions.single, ['Tariro', 'Moyo', email, password]);
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text(email), findsOneWidget);
+    expect(app.session, isNull);
     await tester.pumpWidget(const SizedBox());
     app.dispose();
   });

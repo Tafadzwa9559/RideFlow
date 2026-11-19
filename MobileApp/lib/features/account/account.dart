@@ -41,7 +41,11 @@ class AccountPage extends StatelessWidget {
                     '${app.session!.firstName} ${app.session!.lastName}',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  Text(app.session!.phone),
+                  Text(
+                    app.session!.phone.isEmpty
+                        ? app.session!.email
+                        : app.session!.phone,
+                  ),
                   Text(
                     app.driverMode ? 'Driver mode' : 'Passenger mode',
                     style: const TextStyle(color: darkGreen),

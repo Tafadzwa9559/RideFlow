@@ -22,6 +22,12 @@ class LoginContact {
 }
 
 abstract class TriviaRepository {
+  Future<void> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+  });
   Future<Session> login(LoginContact contact, String password);
   Future<void> requestPasswordRecovery(LoginContact contact);
   Future<String> verifyPasswordRecovery(LoginContact contact, String code);
@@ -145,6 +151,7 @@ class ApiRepository implements TriviaRepository {
       path.startsWith('auth/otp/') ||
       path.startsWith('auth/password/') ||
       path == 'auth/login/' ||
+      path == 'auth/register/' ||
       path == 'auth/passenger-testing/' ||
       path == 'auth/token/refresh/';
 
@@ -228,6 +235,21 @@ class ApiRepository implements TriviaRepository {
       }
       rethrow;
     }
+  }
+
+  @override
+  Future<void> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+  }) async {
+    await _post('auth/register/', {
+      'first_name': firstName,
+      'last_name': lastName,
+      'email': email,
+      'password': password,
+    });
   }
 
   @override

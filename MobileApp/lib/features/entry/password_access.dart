@@ -1,8 +1,9 @@
 part of 'entry.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.app});
+  const LoginScreen({super.key, required this.app, this.registeredEmail});
   final AppController app;
+  final String? registeredEmail;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -10,9 +11,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final form = GlobalKey<FormState>();
-  final identifier = TextEditingController();
+  late final identifier = TextEditingController(text: widget.registeredEmail);
   final password = TextEditingController();
-  LoginChannel channel = LoginChannel.phone;
+  late LoginChannel channel = widget.registeredEmail == null
+      ? LoginChannel.phone
+      : LoginChannel.email;
   bool busy = false;
   bool passengerTesting = false;
   String? message;
@@ -50,6 +53,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void signUp() {
+    final app = widget.app;
+    Navigator.of(context).pushReplacement<void, void>(
+      MaterialPageRoute(builder: (_) => EmailRegistrationScreen(app: app)),
+    );
+  }
+
   Future<void> recover() async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -72,7 +82,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) => _AccessPage(
     title: 'Log in',
     heading: 'Welcome back',
-    subtitle: 'Log in to continue your journey.',
+    subtitle: widget.registeredEmail == null
+        ? 'Log in to continue your journey.'
+        : 'Your account is ready. Log in with your new password.',
     child: AutofillGroup(
       onDisposeAction: AutofillContextAction.cancel,
       child: Form(
@@ -133,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
             _AccessMessage(message),
             ActionButton('Log In', submit, busy: busy),
             TextButton(
-              onPressed: busy ? null : () => Navigator.maybePop(context),
+              onPressed: busy ? null : signUp,
               child: const Text('Sign Up'),
             ),
           ],

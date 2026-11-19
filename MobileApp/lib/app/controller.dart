@@ -180,7 +180,7 @@ class AppController extends ChangeNotifier {
       final bids = !driverMode && current?.status == RideStatus.searching
           ? await repository.offers(current!.id)
           : <DriverOffer>[];
-      if (session == null || session?.phone != identity?.phone || _disposed) {
+      if (!identical(session, identity) || _disposed) {
         return;
       }
       session = refreshed ?? session;
