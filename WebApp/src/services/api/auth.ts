@@ -1,30 +1,42 @@
-import { api, setAccessToken } from "./client";
-import type {
-  Credentials,
-  Registration,
-  TokenResponse,
-} from "../../types/auth";
+import { api, setSessionTokens } from "./client";
+import type { Registration, StaffTokenResponse } from "../../types/auth";
+
 export const authService = {
   signIn: async (email: string, password: string) => {
-    const response = await api.post<TokenResponse>("/auth/token/", {
-      email,
+    const { data } = await api.post<StaffTokenResponse>("/admin/auth/login/", {
+      channel: "email",
+      identifier: email.trim(),
       password,
-    } satisfies Credentials);
-    setAccessToken(response.data.access);
-    return response;
+    });
+    setSessionTokens(data);
+    return data.user;
   },
   signOut: async () => {
     try {
       return await api.post<void>("/auth/logout/");
     } finally {
-      setAccessToken(null);
+      setSessionTokens(null);
     }
   },
   register: (data: Registration) => api.post("/auth/register/", data),
   forgotPassword: (email: string) =>
-    api.post<void>("/auth/password/reset/", { email }),
-  resetPassword: (token: string, password: string) =>
-    api.post<void>("/auth/password/reset/confirm/", { token, password }),
-  verify: (channel: "email" | "phone", code: string) =>
-    api.post<void>(`/auth/verify-${channel}/`, { code }),
+    api.post("/auth/password/request/", { channel: "email", identifier: email }),
+  verify: (email: string, code: string) =>
+    api.post<{ token: string }>("/auth/password/verify/", {
+      channel: "email",
+      identifier: email,
+      code,
+    }),
+  resetPassword: (token: string, password: string, confirmation: string) =>
+    api.post<void>("/auth/password/reset/", {
+      token,
+      password,
+      password_confirmation: confirmation,
+    }),
+  changePassword: (current: string, password: string, confirmation: string) =>
+    api.post<void>("/auth/password/change/", {
+      current_password: current,
+      password,
+      password_confirmation: confirmation,
+    }),
 };

@@ -30,6 +30,7 @@ class TestRepository implements TriviaRepository {
     required String lastName,
     required String email,
     required String password,
+    required String confirmation,
   }) async => throw UnimplementedError();
 
   @override
@@ -45,7 +46,11 @@ class TestRepository implements TriviaRepository {
       throw UnimplementedError();
 
   @override
-  Future<void> resetPassword(String token, String password) async =>
+  Future<void> resetPassword(String token, String password, String confirmation) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> changePassword(String current, String password, String confirmation) async =>
       throw UnimplementedError();
 
   Session? _session;

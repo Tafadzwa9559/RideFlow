@@ -80,6 +80,7 @@ void main() {
             'last_name': 'Moyo',
             'email': email,
             'password': password,
+            'password_confirmation': password,
           });
           return jsonBody({'email': email, 'email_verified': false}, 201);
         case 'auth/login/':
@@ -104,6 +105,7 @@ void main() {
       lastName: 'Moyo',
       email: email,
       password: password,
+      confirmation: password,
     );
     expect(await repository.storage.read(key: 'access'), isNull);
     final session = await repository.login(
@@ -143,7 +145,7 @@ void main() {
           expect(options.data, {...contact.toJson(), 'code': 'test-code'});
           return jsonBody({'token': 'reset-token'});
         case 'auth/password/reset/':
-          expect(options.data, {'token': 'reset-token', 'password': 'new-password'});
+          expect(options.data, {'token': 'reset-token', 'password': 'new-password', 'password_confirmation': 'new-password'});
           return ResponseBody.fromString('', 204);
       }
       fail('Unexpected path: ${options.path}');
@@ -158,7 +160,7 @@ void main() {
     expect(await repository.storage.read(key: 'refresh'), 'refresh');
     await repository.requestPasswordRecovery(contact);
     final proof = await repository.verifyPasswordRecovery(contact, 'test-code');
-    await repository.resetPassword(proof, 'new-password');
+    await repository.resetPassword(proof, 'new-password', 'new-password');
     for (final call in adapter.calls) {
       expect(call.headers['Authorization'], isNull);
     }

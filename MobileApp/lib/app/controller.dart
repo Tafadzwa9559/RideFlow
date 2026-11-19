@@ -417,21 +417,32 @@ class AppController extends ChangeNotifier {
       }
       await repository.logout();
     } finally {
-      _stopSync();
-      _gpsHeartbeat?.cancel();
-      await _positions?.cancel();
-      session = null;
-      ride = null;
-      history = [];
-      offers = [];
-      saved = [];
-      recent = [];
-      paymentMethod = 'cash-usd';
-      paymentLabel = 'Cash';
-      driverMode = false;
-      online = false;
+      await _clearAccountState();
     }
   });
+
+  Future<bool> changePassword(String current, String password, String confirmation) =>
+      perform(() async {
+        await repository.changePassword(current, password, confirmation);
+        await _clearAccountState();
+      });
+
+  Future<void> _clearAccountState() async {
+    _stopSync();
+    _gpsHeartbeat?.cancel();
+    await _positions?.cancel();
+    session = null;
+    ride = null;
+    history = [];
+    offers = [];
+    saved = [];
+    recent = [];
+    paymentMethod = 'cash-usd';
+    paymentLabel = 'Cash';
+    driverMode = false;
+    online = false;
+  }
+
   void selectCurrency(String value) {
     currency = value;
     _prefs?.setString('trivia_currency', value);

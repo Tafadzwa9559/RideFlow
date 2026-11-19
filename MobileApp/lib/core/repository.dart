@@ -27,11 +27,13 @@ abstract class TriviaRepository {
     required String lastName,
     required String email,
     required String password,
+    required String confirmation,
   });
   Future<Session> login(LoginContact contact, String password);
   Future<void> requestPasswordRecovery(LoginContact contact);
   Future<String> verifyPasswordRecovery(LoginContact contact, String code);
-  Future<void> resetPassword(String token, String password);
+  Future<void> resetPassword(String token, String password, String confirmation);
+  Future<void> changePassword(String current, String password, String confirmation);
   Future<Session?> restore();
   Future<void> requestOtp(String phone);
   Future<Session> verifyOtp(
@@ -149,7 +151,9 @@ class ApiRepository implements TriviaRepository {
   }
   static bool _isPublicAuth(String path) =>
       path.startsWith('auth/otp/') ||
-      path.startsWith('auth/password/') ||
+      path == 'auth/password/request/' ||
+      path == 'auth/password/verify/' ||
+      path == 'auth/password/reset/' ||
       path == 'auth/login/' ||
       path == 'auth/register/' ||
       path == 'auth/passenger-testing/' ||
@@ -243,12 +247,14 @@ class ApiRepository implements TriviaRepository {
     required String lastName,
     required String email,
     required String password,
+    required String confirmation,
   }) async {
     await _post('auth/register/', {
       'first_name': firstName,
       'last_name': lastName,
       'email': email,
       'password': password,
+      'password_confirmation': confirmation,
     });
   }
 
@@ -290,8 +296,22 @@ class ApiRepository implements TriviaRepository {
   }
 
   @override
-  Future<void> resetPassword(String token, String password) async {
-    await _post('auth/password/reset/', {'token': token, 'password': password});
+  Future<void> resetPassword(String token, String password, String confirmation) async {
+    await _post('auth/password/reset/', {
+      'token': token,
+      'password': password,
+      'password_confirmation': confirmation,
+    });
+  }
+
+  @override
+  Future<void> changePassword(String current, String password, String confirmation) async {
+    await _post('auth/password/change/', {
+      'current_password': current,
+      'password': password,
+      'password_confirmation': confirmation,
+    });
+    await clearSession();
   }
 
   @override

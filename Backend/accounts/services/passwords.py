@@ -1,4 +1,5 @@
 """Passenger registration, password authentication and recovery."""
+import json
 import logging
 import secrets
 import uuid
@@ -14,6 +15,7 @@ from django.core import signing
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import send_mail
 from django.db.models import F
+from django.utils import timezone
 from django.utils.crypto import salted_hmac
 from redis import Redis, RedisError
 from redis.backoff import NoBackoff
@@ -28,7 +30,10 @@ from accounts.test_otp import validate_test_otp_settings
 from core import transactions as transaction
 
 logger = logging.getLogger(__name__)
-RESET_SALT = 'trivia.password-reset'
+RESET_SALT = 'trivia.password-reset.v2'
+RESET_AUTHORIZATION_TTL = 300
+EMAIL_CODE_TTL = 600
+EMAIL_RESEND_DELAY = 60
 INVALID_PROOF = 'Invalid or expired verification. Request a new code.'
 ACCEPTED = 'If the account is eligible, a verification code will be sent.'
 
@@ -97,10 +102,7 @@ def register(first_name, last_name, email, password):
         first_name=first_name, last_name=last_name,
         is_active=True, is_staff=False, is_superuser=False,
     )
-    try:
-        validate_password(password, user)
-    except DjangoValidationError as exc:
-        raise ValidationError({'password': exc.messages}, code='invalid_password') from None
+    validate_new_password(password, user)
     user.set_password(password)
     return create_email_account(user)
 
@@ -221,13 +223,18 @@ def check_delivery(channel):
 
 
 def recovery_account(channel, identifier):
+    if channel == 'email':
+        user = unique_email_user(identifier)
+        if not passenger(user):
+            return None
+        # The emailed code establishes ownership of the email sign-in address.
+        identity = EmailIdentity.objects.filter(user=user).select_related('user').first()
+        if identity:
+            return identity
+        # A mutable legacy profile email must still have a trusted ownership binding.
+        if settings.TRIVIA_VERIFIED_RECOVERY_EMAILS.get(str(user.pk), '').lower() != identifier:
+            return None
     identity = account(channel, identifier)
-    if identity and channel == 'email':
-        if EmailIdentity.objects.filter(user_id=identity.user_id, verified_at__isnull=True).exists():
-            return None
-        # The editable legacy email field alone does not establish ownership.
-        if settings.TRIVIA_VERIFIED_RECOVERY_EMAILS.get(str(identity.user_id), '').lower() != identifier:
-            return None
     if identity and channel == 'phone' and local_recovery():
         if identifier not in settings.TRIVIA_TEST_OTP_PHONES:
             return None
@@ -249,18 +256,16 @@ def deliver_recovery(channel, identifier):
         identity = recovery_account(channel, identifier)
         if identity is None:
             return
-        code = f'{secrets.randbelow(1000000):06d}' if channel == 'phone' else secrets.token_urlsafe(24)
-        proof = signing.dumps(
-            [channel, identifier, str(identity.user_id), password_state(identity)],
-            salt=RESET_SALT,
-        )
+        code = f'{secrets.randbelow(1000000):06d}'
+        challenge = json.dumps([channel, identifier, str(identity.user_id), password_state(identity), secrets.token_urlsafe(16)])
+        ttl = EMAIL_CODE_TTL if channel == 'email' else settings.OTP_TTL_SECONDS
         key = recovery_key(channel, identifier)
         challenge_digest = digest(key, code)
         run_script("""
-            redis.call('HSET', KEYS[1], 'code', ARGV[1], 'proof', ARGV[2], 'attempts', 0)
+            redis.call('HSET', KEYS[1], 'code', ARGV[1], 'challenge', ARGV[2], 'attempts', 0)
             redis.call('EXPIRE', KEYS[1], ARGV[3])
             return 1
-        """, key, challenge_digest, proof, settings.OTP_TTL_SECONDS)
+        """, key, challenge_digest, challenge, ttl)
         try:
             if channel == 'phone':
                 if local_recovery():
@@ -270,17 +275,17 @@ def deliver_recovery(channel, identifier):
             elif send_mail(
                 'Trivia password recovery',
                 f'Enter this verification code in Trivia: {code}\n\n'
-                'It expires in five minutes. Ignore this email if you did not request it.',
+                'It expires in ten minutes. Ignore this email if you did not request it.',
                 settings.DEFAULT_FROM_EMAIL, [identifier],
             ) != 1:
                 raise Unavailable()
         except Exception:
             run_script("""
-                if redis.call('HGET', KEYS[1], 'code') == ARGV[1] then
+                if redis.call('HGET', KEYS[1], 'challenge') == ARGV[1] then
                     return redis.call('DEL', KEYS[1])
                 end
                 return 0
-            """, key, challenge_digest)
+            """, key, challenge)
             raise
     except Exception:
         # Provider exceptions can contain message bodies or recipient addresses.
@@ -290,7 +295,8 @@ def deliver_recovery(channel, identifier):
 def request_recovery(channel, identifier):
     check_delivery(channel)
     subject = f'{channel}:{identifier}'
-    limit('reset-resend', subject, 1, settings.OTP_RESEND_SECONDS)
+    cooldown = EMAIL_RESEND_DELAY if channel == 'email' else settings.OTP_RESEND_SECONDS
+    limit('reset-resend', subject, 1, cooldown)
     limit('reset-contact', subject, 5, 3600)
     try:
         deliver_recovery.apply_async(
@@ -303,10 +309,10 @@ def verify_recovery(channel, identifier, code):
     limit('reset-verify-contact', f'{channel}:{identifier}', 15, 3600)
     key = recovery_key(channel, identifier)
     proof = run_script("""
-        if redis.call('HEXISTS', KEYS[1], 'code') == 0 then return false end
+        if redis.call('HEXISTS', KEYS[1], 'challenge') == 0 then return false end
         local attempts = redis.call('HINCRBY', KEYS[1], 'attempts', 1)
         if redis.call('HGET', KEYS[1], 'code') == ARGV[1] then
-            local proof = redis.call('HGET', KEYS[1], 'proof')
+            local proof = redis.call('HGET', KEYS[1], 'challenge')
             redis.call('DEL', KEYS[1])
             return proof
         end
@@ -315,14 +321,15 @@ def verify_recovery(channel, identifier, code):
     """, key, digest(key, code), settings.OTP_MAX_ATTEMPTS)
     if not proof:
         raise ValidationError({'code': INVALID_PROOF})
-    return proof.decode()
+    channel, identifier, user_id, state, _ = json.loads(proof)
+    return signing.dumps([channel, identifier, user_id, state], salt=RESET_SALT)
 
 
 @transaction.atomic
 def reset_password(proof, password):
     try:
         channel, identifier, user_id, state = signing.loads(
-            proof, salt=RESET_SALT, max_age=settings.OTP_TTL_SECONDS)
+            proof, salt=RESET_SALT, max_age=RESET_AUTHORIZATION_TTL)
     except signing.BadSignature:
         raise ValidationError({'token': INVALID_PROOF}) from None
 
@@ -333,12 +340,32 @@ def reset_password(proof, password):
     if not identity or str(identity.user_id) != user_id or not secrets.compare_digest(password_state(identity), state):
         raise ValidationError({'token': INVALID_PROOF})
 
-    user = identity.user
+    if isinstance(identity, EmailIdentity) and identity.verified_at is None:
+        identity.verified_at = timezone.now()
+        identity.save(update_fields=['verified_at'])
+    save_new_password(identity.user, password)
+
+
+def validate_new_password(password, user):
     try:
         validate_password(password, user)
     except DjangoValidationError as exc:
-        raise ValidationError({'password': exc.messages}) from None
+        raise ValidationError({'password': exc.messages}, code='invalid_password') from None
+
+
+def save_new_password(user, password):
+    validate_new_password(password, user)
     user.set_password(password)
     user.save(update_fields=['password'])
-    PhoneIdentity.objects.filter(pk=identity.pk).update(session_version=F('session_version') + 1)
+    PhoneIdentity.objects.filter(user=user).update(session_version=F('session_version') + 1)
     EmailIdentity.objects.filter(user=user).update(session_version=F('session_version') + 1)
+
+
+@transaction.atomic
+def change_password(user_id, current_password, password):
+    user_model = get_user_model()
+    transaction.guard(user_model, user_id)
+    user = user_model.objects.get(pk=user_id)
+    if not user.is_active or not user.check_password(current_password):
+        raise ValidationError({'current_password': 'Your current password is incorrect.'})
+    save_new_password(user, password)

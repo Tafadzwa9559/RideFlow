@@ -11,7 +11,7 @@ import "../shared/marketing.css";
 import { projectConfig } from "../../config/project";
 const schema = z.object({
   email: z.email("Enter a valid email address."),
-  password: z.string().min(8, "Use at least 8 characters."),
+  password: z.string().min(1, "Enter your password."),
 });
 type Fields = z.infer<typeof schema>;
 export default function AuthPage() {

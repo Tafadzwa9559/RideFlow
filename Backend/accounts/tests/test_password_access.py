@@ -61,6 +61,10 @@ class PasswordAccessTests(TransactionTestCase):
     def post(self, path, **body):
         return self.client.post(f'/api/v1/auth/{path}/', body, format='json')
 
+    def reset(self, token, password, confirmation=None):
+        return self.post('password/reset', token=token, password=password,
+                         password_confirmation=password if confirmation is None else confirmation)
+
     def login(self, channel='phone', identifier=PHONE, password=PASSWORD):
         return self.post('login', channel=channel, identifier=identifier, password=password)
 
@@ -80,7 +84,7 @@ class PasswordAccessTests(TransactionTestCase):
             'first_name': ' Tariro ', 'last_name': 'Moyo',
             'email': '  NEW@example.net  ', 'password': NEW_PASSWORD,
         }
-        return self.post('register', **{**fields, **overrides})
+        return self.post('register', **{**fields, 'password_confirmation': overrides.get('password', NEW_PASSWORD), **overrides})
 
     @override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.PBKDF2PasswordHasher'])
     def test_email_registration_login_refresh_and_logout(self):
@@ -142,15 +146,73 @@ class PasswordAccessTests(TransactionTestCase):
         self.assertEqual(response.status_code, 401, response.data)
         self.assertEqual(response.data['code'], 'INVALID_CREDENTIALS')
 
-    def test_unverified_registration_cannot_recover_by_email(self):
+    def test_email_signup_recovery_verifies_mailbox_and_revokes_sessions(self):
         self.assertEqual(self.register().status_code, 201)
         user = get_user_model().objects.get(email='new@example.net')
-        with override_settings(TRIVIA_VERIFIED_RECOVERY_EMAILS={str(user.pk): user.email}):
-            passwords.deliver_recovery('email', user.email)
-            PhoneIdentity.objects.create(user=user, phone='+263772345678', verified_at=timezone.now())
-            passwords.deliver_recovery('email', user.email)
+        session = self.login('email', user.email, NEW_PASSWORD).data
+        absent = self.post('password/request', channel='email', identifier='unknown@example.net')
+        self.assertEqual(absent.status_code, 202)
         self.assertEqual(mail.outbox, [])
-        self.assertEqual(self.verify('email', user.email, '123456').status_code, 400)
+        code = self.request_code('email', user.email)
+        self.assertEqual(absent.data, {'detail': passwords.ACCEPTED})
+        self.assertRegex(code, r'^[0-9]{6}$')
+        self.assertNotIn(code, str(absent.data))
+        self.assertIsNone(EmailIdentity.objects.get(user=user).verified_at)
+        resend = self.post('password/request', channel='email', identifier=user.email)
+        self.assertEqual(resend.status_code, 429)
+        self.assertLessEqual(int(resend['Retry-After']), 60)
+        wrong = '000000' if code != '000000' else '111111'
+        self.assertEqual(self.verify('email', user.email, wrong).status_code, 400)
+        token = self.verify('email', user.email, code).data['token']
+        self.assertEqual(self.verify('email', user.email, code).status_code, 400)
+        self.assertEqual(self.reset(token, PASSWORD, 'Different1!').status_code, 400)
+        self.assertEqual(self.reset(token, 'Weakpass1', 'Weakpass1').status_code, 400)
+        self.assertEqual(self.reset(token, PASSWORD).status_code, 204)
+        self.assertIsNotNone(EmailIdentity.objects.get(user=user).verified_at)
+        self.assertEqual(self.reset(token, NEW_PASSWORD).status_code, 400)
+        self.assertEqual(self.post('token/refresh', refresh=session['refresh']).status_code, 401)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {session['access']}")
+        self.assertEqual(self.client.get('/api/v1/users/me/').status_code, 401)
+        self.client.credentials()
+        self.assertEqual(self.login('email', user.email, NEW_PASSWORD).status_code, 401)
+        self.assertEqual(self.login('email', user.email, PASSWORD).status_code, 200)
+
+    def test_signup_rejects_each_missing_requirement_or_confirmation(self):
+        for i, (password, confirmation) in enumerate([
+            ('Aa1!', 'Aa1!'),
+            ('lowercase1!', 'lowercase1!'),
+            ('UPPERCASE1!', 'UPPERCASE1!'),
+            ('JollyMango!', 'JollyMango!'),
+            ('JollyMango1', 'JollyMango1'),
+            ('JollyMango1!', 'Different1!'),
+            ('Password1!', 'Password1!'),
+        ]):
+            with self.subTest(case=i):
+                response = self.register(
+                    email=f'policy{i}@example.net', password=password,
+                    password_confirmation=confirmation,
+                )
+                self.assertEqual(response.status_code, 400, response.data)
+        self.assertFalse(EmailIdentity.objects.exists())
+        login = self.register(password='A9!nest7')
+        self.assertEqual(login.status_code, 201, login.data)
+
+    def test_authenticated_password_change_and_immutable_email_sign_in(self):
+        email = 'new@example.net'
+        self.assertEqual(self.register().status_code, 201)
+        fields = {'current_password': NEW_PASSWORD, 'password': PASSWORD, 'password_confirmation': PASSWORD}
+        self.assertEqual(self.post('password/change', **fields).status_code, 401)
+        session = self.login('email', email, NEW_PASSWORD).data
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {session['access']}")
+        response = self.client.patch('/api/v1/users/me/', {'email': 'other@example.net'}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.post('password/change', **{**fields, 'current_password': 'wrong'}).status_code, 400)
+        self.assertEqual(self.post('password/change', **{**fields, 'password_confirmation': 'wrong'}).status_code, 400)
+        self.assertEqual(self.post('password/change', **fields).status_code, 204)
+        self.assertEqual(self.client.get('/api/v1/users/me/').status_code, 401)
+        self.client.credentials()
+        self.assertEqual(self.post('token/refresh', refresh=session['refresh']).status_code, 401)
+        self.assertEqual(self.login('email', email, PASSWORD).status_code, 200)
 
     def test_registration_rate_limits_email_and_ip(self):
         self.assertEqual(self.register().status_code, 201)
@@ -242,9 +304,9 @@ class PasswordAccessTests(TransactionTestCase):
         self.assertEqual(result.status_code, 200, result.data)
         self.assertEqual(self.verify('phone', PHONE, code).status_code, 400)
         token = result.data['token']
-        self.assertEqual(self.post('password/reset', token=token, password='123').status_code, 400)
-        self.assertEqual(self.post('password/reset', token=token, password=NEW_PASSWORD).status_code, 204)
-        self.assertEqual(self.post('password/reset', token=token, password=PASSWORD).status_code, 400)
+        self.assertEqual(self.reset(token, '123').status_code, 400)
+        self.assertEqual(self.reset(token, NEW_PASSWORD).status_code, 204)
+        self.assertEqual(self.reset(token, PASSWORD).status_code, 400)
         self.assertEqual(self.post('token/refresh', refresh=session['refresh']).status_code, 401)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {session['access']}")
         self.assertEqual(self.client.get('/api/v1/users/me/').status_code, 401)
@@ -257,10 +319,10 @@ class PasswordAccessTests(TransactionTestCase):
         self.assertEqual(result.status_code, 200, result.data)
         token = result.data['token']
         with patch('django.core.signing.time.time', return_value=(
-            timezone.now() + timedelta(seconds=settings.OTP_TTL_SECONDS + 1)
+            timezone.now() + timedelta(seconds=passwords.RESET_AUTHORIZATION_TTL + 1)
         ).timestamp()):
-            self.assertEqual(self.post('password/reset', token=token, password=NEW_PASSWORD).status_code, 400)
-        self.assertEqual(self.post('password/reset', token=token, password=NEW_PASSWORD).status_code, 204)
+            self.assertEqual(self.reset(token, NEW_PASSWORD).status_code, 400)
+        self.assertEqual(self.reset(token, NEW_PASSWORD).status_code, 204)
         self.assertEqual(self.login('email', EMAIL, NEW_PASSWORD).status_code, 200)
 
     def test_expired_code_and_attempt_limit(self):
@@ -269,10 +331,18 @@ class PasswordAccessTests(TransactionTestCase):
         # Expire the Redis challenge immediately to avoid wall-clock sleeps.
         passwords.run_script("return redis.call('EXPIRE', KEYS[1], 0)", passwords.recovery_key('phone', PHONE))
         self.assertEqual(self.verify('phone', PHONE, code).status_code, 400)
-        token = self.request_code('email', EMAIL)
+        email_code = self.request_code('email', EMAIL)
+        key = passwords.recovery_key('email', EMAIL)
+        ttl = passwords.run_script("return redis.call('TTL', KEYS[1])", key)
+        self.assertGreater(ttl, 590)
+        wrong = '000000' if email_code != '000000' else '111111'
         for _ in range(settings.OTP_MAX_ATTEMPTS):
-            self.assertEqual(self.verify('email', EMAIL, 'invalid').status_code, 400)
-        self.assertEqual(self.verify('email', EMAIL, token).status_code, 400)
+            self.assertEqual(self.verify('email', EMAIL, wrong).status_code, 400)
+        self.assertEqual(self.verify('email', EMAIL, email_code).status_code, 400)
+        passwords.deliver_recovery('email', EMAIL)
+        expired = mail.outbox[-1].body.splitlines()[0].split(': ')[-1]
+        passwords.run_script("return redis.call('EXPIRE', KEYS[1], 0)", key)
+        self.assertEqual(self.verify('email', EMAIL, expired).status_code, 400)
 
     def test_unknown_unverified_and_ambiguous_email_delivery(self):
         with override_settings(TRIVIA_VERIFIED_RECOVERY_EMAILS={}):
@@ -297,5 +367,5 @@ class PasswordAccessTests(TransactionTestCase):
         self.assertEqual(self.login().status_code, 401)
         code = self.request_code('phone', PHONE)
         proof = self.verify('phone', PHONE, code).data['token']
-        self.assertEqual(self.post('password/reset', token=proof, password=NEW_PASSWORD).status_code, 204)
+        self.assertEqual(self.reset(proof, NEW_PASSWORD).status_code, 204)
         self.assertEqual(self.login(password=NEW_PASSWORD).status_code, 200)

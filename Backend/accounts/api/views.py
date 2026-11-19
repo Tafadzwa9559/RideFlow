@@ -97,8 +97,11 @@ class MeView(APIView):
                 if get_user_model().objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
                     raise serializers.ValidationError({'email': 'This email address is unavailable.'})
                 data.validated_data['email'] = email
-            if email != user.email.lower():
-                EmailIdentity.objects.filter(user=user).update(verified_at=None)
+            if email != user.email.lower() and EmailIdentity.objects.filter(user=user).exists():
+                raise serializers.ValidationError(
+                    {'email': 'Your sign-in email can only be changed through a verified email change.'},
+                    code='email_change_requires_verification',
+                )
         for key, value in data.validated_data.items():
             setattr(user, key, value)
         if data.validated_data:

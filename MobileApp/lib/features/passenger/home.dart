@@ -498,7 +498,7 @@ class TripPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Payment method: ${directPaymentLabel(r.paymentMethod, r.paymentMethodName)}. Please pay your driver directly using your selected payment method. Trivia does not collect or verify payment.',
+          'Payment method: ${directPaymentLabel(r.paymentMethod, r.paymentMethodName)}',
         ),
         if (r.status == RideStatus.searching) ...[
           const SizedBox(height: 20),

@@ -54,6 +54,7 @@ def contract(view, method, path):
         password_api.PasswordLoginView: {'POST': result(c.TokensSerializer, password_api.LoginSerializer)},
         password_api.RecoveryRequestView: {'POST': result(c.DetailSerializer, password_api.PasswordContactSerializer, 202)},
         password_api.RecoveryVerifyView: {'POST': result(password_api.RecoveryTokenSerializer, password_api.RecoveryVerificationSerializer)},
+        password_api.ChangePasswordView: {'POST': result(None, password_api.ChangePasswordSerializer, 204)},
         password_api.RecoveryResetView: {'POST': result(None, password_api.ResetSerializer, 204)},
         a.OTPRequestView: {'POST': result(c.DetailSerializer, a.PhoneSerializer, 202)},
         a.OTPVerifyView: {'POST': result(c.TokensSerializer, a.CodeSerializer)},
@@ -180,6 +181,7 @@ class TriviaAutoSchema(AutoSchema):
             '/api/v1/auth/password/request/': 'Request password recovery',
             '/api/v1/auth/password/verify/': 'Verify recovery code',
             '/api/v1/auth/password/reset/': 'Reset password',
+            '/api/v1/auth/password/change/': 'Change an authenticated account password',
         }
         if self.path in auth_summaries:
             return auth_summaries[self.path]
@@ -210,9 +212,10 @@ class TriviaAutoSchema(AutoSchema):
             '/api/v1/auth/logout/': 'Requires an access token. Revokes all phone-account sessions or the current staff API session.',
             '/api/v1/auth/logout-all/': 'Alias of logout. For staff API tokens it revokes the current staff API session.',
             '/api/v1/auth/me/': 'Return the authenticated account profile and current driver approval status.',
-            '/api/v1/auth/password/request/': 'Request recovery on an enabled channel. A generic 202 does not confirm account existence. Phone delivery needs SMS configuration; email requires a verified ownership binding.',
+            '/api/v1/auth/password/request/': 'Request recovery on an enabled channel. A generic 202 does not confirm account existence. Phone delivery needs SMS configuration; email sign-up accounts verify by code and legacy profile email requires a verified ownership binding.',
             '/api/v1/auth/password/verify/': 'Exchange the delivered one-time code for a short-lived password reset token.',
-            '/api/v1/auth/password/reset/': 'Set a validated new password using the reset token. Existing phone-account sessions are revoked.',
+            '/api/v1/auth/password/change/': 'Supply the current password and a matching new password and confirmation. Existing authentication sessions are revoked.',
+            '/api/v1/auth/password/reset/': 'Set a validated new password using the reset token. Include matching password confirmation. Existing authentication sessions are revoked.',
         }
         permission = descriptions.get(self.path)
         if permission is None:
@@ -277,12 +280,13 @@ def examples_hook(result, generator, request, public):
                 properties[name].setdefault('description', description)
 
     auth_examples = {
-        '/api/v1/auth/register/': {'first_name': 'Rudo', 'last_name': 'Moyo', 'email': 'passenger@example.test', 'password': '<at least 15 characters>'},
+        '/api/v1/auth/register/': {'first_name': 'Rudo', 'last_name': 'Moyo', 'email': 'passenger@example.test', 'password': '<new strong password>', 'password_confirmation': '<same password>'},
         '/api/v1/auth/login/': {'channel': 'email', 'identifier': 'passenger@example.test', 'password': '<account password>'},
         '/api/v1/admin/auth/login/': {'channel': 'email', 'identifier': 'staff@example.test', 'password': '<staff password>'},
         '/api/v1/auth/password/request/': {'channel': 'email', 'identifier': 'passenger@example.test'},
         '/api/v1/auth/password/verify/': {'channel': 'phone', 'identifier': '+263771234567', 'code': '000000'},
-        '/api/v1/auth/password/reset/': {'token': '<reset proof from verification>', 'password': '<new password>'},
+        '/api/v1/auth/password/reset/': {'token': '<reset proof from verification>', 'password': '<new strong password>', 'password_confirmation': '<same password>'},
+        '/api/v1/auth/password/change/': {'current_password': '<current password>', 'password': '<new strong password>', 'password_confirmation': '<same password>'},
         '/api/v1/auth/otp/verify/': {'phone': '+263771234567', 'code': '000000'},
     }
 

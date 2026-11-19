@@ -65,17 +65,12 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(
         builder: (_) => _PasswordRecovery(
           repository: widget.app.repository,
-          initialChannel: channel,
+          initialChannel: identifier.text.trim().isEmpty ? LoginChannel.email : channel,
           initialIdentifier: identifier.text,
         ),
       ),
     );
-    if (mounted && changed == true) {
-      password.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password updated. Log in to continue.')),
-      );
-    }
+    if (mounted && changed == true) password.clear();
   }
 
   @override
@@ -155,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
   );
 }
 
-enum _RecoveryStep { contact, code, password }
+enum _RecoveryStep { contact, code, password, success }
 
 class _PasswordRecovery extends StatefulWidget {
   const _PasswordRecovery({
@@ -184,9 +179,12 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
   String? token;
   String? message;
   bool busy = false;
+  Timer? resendTimer;
+  int remaining = 0;
 
   @override
   void dispose() {
+    resendTimer?.cancel();
     identifier.dispose();
     code.dispose();
     password.dispose();
@@ -209,6 +207,16 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
     }
   }
 
+  void startCooldown() {
+    resendTimer?.cancel();
+    remaining = 60;
+    resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final seconds = 60 - timer.tick;
+      setState(() => remaining = seconds > 0 ? seconds : 0);
+      if (remaining == 0) timer.cancel();
+    });
+  }
+
   Future<void> send() => run(() async {
     final target = step == _RecoveryStep.contact
         ? LoginContact(channel, _identifier(channel, identifier.text))
@@ -219,6 +227,7 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
       contact = target;
       code.clear();
       step = _RecoveryStep.code;
+      startCooldown();
     });
   });
 
@@ -242,14 +251,26 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
         });
       case _RecoveryStep.password:
         await run(() async {
-          await widget.repository.resetPassword(token!, password.text);
-          if (mounted) Navigator.of(context).pop(true);
+          await widget.repository.resetPassword(token!, password.text, confirmation.text);
+          if (mounted) {
+            setState(() {
+              token = null;
+              resendTimer?.cancel();
+              password.clear();
+              confirmation.clear();
+              step = _RecoveryStep.success;
+            });
+          }
         });
+      case _RecoveryStep.success:
+        Navigator.of(context).pop(true);
     }
   }
 
   void startOver() => setState(() {
     step = _RecoveryStep.contact;
+    resendTimer?.cancel();
+    remaining = 0;
     token = null;
     message = null;
     code.clear();
@@ -261,20 +282,21 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
   Widget build(BuildContext context) {
     final phone = channel == LoginChannel.phone;
     return _AccessPage(
-      title: 'Password recovery',
+      title: 'Forgot password',
       heading: switch (step) {
         _RecoveryStep.contact => 'Reset your password',
         _RecoveryStep.code => 'Enter your verification code',
         _RecoveryStep.password => 'Choose a new password',
+        _RecoveryStep.success => 'Password Reset Successful!',
       },
       subtitle: switch (step) {
-        _RecoveryStep.contact =>
-          'Enter the contact details registered with Trivia.',
+        _RecoveryStep.contact => '',
         _RecoveryStep.code =>
           phone
               ? 'If your account is eligible, look for a six-digit SMS code.'
-              : 'If your account is eligible, look for a verification code in your email.',
-        _RecoveryStep.password => 'Use at least eight characters.',
+              : 'If your account is eligible, look for a six-digit code in your email.',
+        _RecoveryStep.password => '',
+        _RecoveryStep.success => 'Your password has been updated. You can now log in using your new password.',
       },
       child: Form(
         key: form,
@@ -303,27 +325,20 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
               TextFormField(
                 controller: code,
                 enabled: !busy,
-                keyboardType: phone ? TextInputType.number : TextInputType.text,
+                keyboardType: TextInputType.number,
                 autofillHints: const [AutofillHints.oneTimeCode],
-                inputFormatters: phone
-                    ? [FilteringTextInputFormatter.digitsOnly]
-                    : null,
-                maxLength: phone ? 6 : 64,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                maxLength: 6,
                 autocorrect: false,
                 enableSuggestions: false,
-                decoration: const InputDecoration(
-                  labelText: 'Verification code',
-                ),
-                validator: (value) {
-                  final pattern = phone ? r'^\d{6}$' : r'^[A-Za-z0-9_-]{6,64}$';
-                  return RegExp(pattern).hasMatch(value?.trim() ?? '')
-                      ? null
-                      : 'Enter the verification code.';
-                },
+                decoration: const InputDecoration(labelText: 'Verification code'),
+                validator: (value) => (value ?? '').length == 6
+                    ? null
+                    : 'Enter the six-digit code.',
               ),
               TextButton(
-                onPressed: busy ? null : send,
-                child: const Text('Resend code'),
+                onPressed: busy || remaining > 0 ? null : send,
+                child: Text(remaining > 0 ? 'Resend code in ${remaining}s' : 'Resend Code'),
               ),
             ],
             if (step == _RecoveryStep.password) ...[
@@ -332,14 +347,13 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
                 label: 'New password',
                 enabled: !busy,
                 isNew: true,
-                validator: (value) => (value ?? '').length < 8
-                    ? 'Enter at least eight characters.'
-                    : null,
+                validator: _newPasswordError,
               ),
+              _PasswordRequirements(password),
               const SizedBox(height: 14),
               _PasswordField(
                 controller: confirmation,
-                label: 'Confirm password',
+                label: 'Confirm New Password',
                 enabled: !busy,
                 isNew: true,
                 validator: (value) =>
@@ -351,14 +365,20 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
             _AccessMessage(message),
             ActionButton(
               switch (step) {
-                _RecoveryStep.contact => 'Send verification code',
-                _RecoveryStep.code => 'Verify code',
-                _RecoveryStep.password => 'Set new password',
+                _RecoveryStep.contact => 'Send Reset Code',
+                _RecoveryStep.code => 'Verify Code',
+                _RecoveryStep.password => 'Reset Password',
+                _RecoveryStep.success => 'Back to Login',
               },
               submit,
               busy: busy,
             ),
-            if (step != _RecoveryStep.contact)
+            if (step == _RecoveryStep.contact)
+              TextButton(
+                onPressed: busy ? null : () => Navigator.of(context).pop(),
+                child: const Text('Back to Login'),
+              ),
+            if (step == _RecoveryStep.code || step == _RecoveryStep.password)
               TextButton(
                 onPressed: busy ? null : startOver,
                 child: const Text('Start over'),
@@ -562,8 +582,10 @@ class _AccessPage extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineMedium,
                       ),
-                      const SizedBox(height: 8),
-                      Text(subtitle, textAlign: TextAlign.center),
+                      if (subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(subtitle, textAlign: TextAlign.center),
+                      ],
                       const SizedBox(height: 22),
                       child,
                     ],
@@ -576,4 +598,142 @@ class _AccessPage extends StatelessWidget {
       ),
     );
   }
+}
+
+final _passwordRequirements = [
+  ('At least 8 characters', (String value) => value.runes.length >= 8),
+  ('One uppercase letter', RegExp(r'[A-Z]').hasMatch),
+  ('One lowercase letter', RegExp(r'[a-z]').hasMatch),
+  ('One number', RegExp(r'[0-9]').hasMatch),
+  ('One special character', RegExp(r'[!-\/:-@\[-`{-~]').hasMatch),
+];
+
+String? _newPasswordError(String? value) =>
+    _passwordRequirements.every((rule) => rule.$2(value ?? ''))
+    ? null
+    : 'Choose a password that meets all five requirements.';
+
+class _PasswordRequirements extends StatelessWidget {
+  const _PasswordRequirements(this.controller);
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return ValueListenableBuilder(
+      valueListenable: controller,
+      builder: (context, value, _) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Password requirements'),
+            for (final (label, check) in _passwordRequirements)
+              Builder(builder: (context) {
+                final satisfied = check(value.text);
+                final color = satisfied
+                    ? (colors.brightness == Brightness.dark ? Colors.greenAccent : darkGreen)
+                    : colors.onSurfaceVariant;
+                return Row(
+                  children: [
+                    Icon(satisfied ? Icons.check : Icons.circle_outlined, size: 14, color: color),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(label, style: TextStyle(color: color)),
+                    ),
+                  ],
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({super.key, required this.app});
+  final AppController app;
+
+  @override
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+}
+
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  final form = GlobalKey<FormState>();
+  final current = TextEditingController();
+  final password = TextEditingController();
+  final confirmation = TextEditingController();
+  bool busy = false;
+  String? message;
+
+  @override
+  void dispose() {
+    current.dispose();
+    password.dispose();
+    confirmation.dispose();
+    super.dispose();
+  }
+
+  Future<void> submit() async {
+    if (busy || !form.currentState!.validate()) return;
+    setState(() {
+      busy = true;
+      message = null;
+    });
+    final app = widget.app;
+    final changed = await app.changePassword(current.text, password.text, confirmation.text);
+    if (!mounted) return;
+    if (changed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password updated. Sign in with your new password.')),
+      );
+    } else {
+      setState(() {
+        busy = false;
+        message = app.error;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => _AccessPage(
+    title: 'Security',
+    heading: 'Change password',
+    subtitle: 'You’ll sign in again after updating your password.',
+    child: Form(
+      key: form,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _PasswordField(
+            controller: current,
+            label: 'Current password',
+            enabled: !busy,
+            validator: (value) => (value ?? '').isEmpty ? 'Enter your current password.' : null,
+          ),
+          const SizedBox(height: 14),
+          _PasswordField(
+            controller: password,
+            label: 'New password',
+            enabled: !busy,
+            isNew: true,
+            validator: _newPasswordError,
+          ),
+          _PasswordRequirements(password),
+          _PasswordField(
+            controller: confirmation,
+            label: 'Confirm new password',
+            enabled: !busy,
+            isNew: true,
+            validator: (value) => value == password.text ? null : 'The passwords must match.',
+            onSubmitted: submit,
+          ),
+          const SizedBox(height: 16),
+          _AccessMessage(message),
+          ActionButton('Change password', submit, busy: busy),
+        ],
+      ),
+    ),
+  );
 }

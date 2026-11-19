@@ -43,6 +43,7 @@ class _EmailRegistrationScreenState extends State<EmailRegistrationScreen> {
         lastName: lastName.text.trim(),
         email: address,
         password: password.text,
+        confirmation: confirmation.text,
       );
     } catch (error) {
       if (mounted) {
@@ -80,7 +81,7 @@ class _EmailRegistrationScreenState extends State<EmailRegistrationScreen> {
   Widget build(BuildContext context) => _AccessPage(
     title: 'Sign up',
     heading: 'Create a passenger account',
-    subtitle: 'Use at least 15 characters for your password.',
+    subtitle: '',
     child: AutofillGroup(
       onDisposeAction: AutofillContextAction.cancel,
       child: Form(
@@ -103,14 +104,9 @@ class _EmailRegistrationScreenState extends State<EmailRegistrationScreen> {
               label: 'Password',
               enabled: !busy,
               isNew: true,
-              validator: (value) {
-                final candidate = value ?? '';
-                if (candidate.trim().isEmpty) return 'Enter a password.';
-                return candidate.runes.length < 15
-                    ? 'Enter at least 15 characters.'
-                    : null;
-              },
+              validator: _newPasswordError,
             ),
+            _PasswordRequirements(password),
             const SizedBox(height: 14),
             _PasswordField(
               controller: confirmation,

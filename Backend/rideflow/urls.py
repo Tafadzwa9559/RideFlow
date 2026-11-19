@@ -18,7 +18,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.routers import DefaultRouter
 
 from accounts.api.passwords import (
-    PassengerTestingView, PasswordLoginView, RecoveryRequestView, RecoveryResetView, RecoveryVerifyView, RegistrationView, StaffLoginView,
+    ChangePasswordView, PassengerTestingView, PasswordLoginView, RecoveryRequestView, RecoveryResetView, RecoveryVerifyView, RegistrationView, StaffLoginView,
 )
 from accounts.api.views import LogoutView, MeView, OTPRequestView, OTPVerifyView, RefreshView
 from core.admin_api import (
@@ -82,6 +82,7 @@ api_patterns = [
     path("auth/passenger-testing/", PassengerTestingView.as_view(), name="auth-passenger-testing"),
     path("auth/password/request/", RecoveryRequestView.as_view(), name="auth-password-request"),
     path("auth/password/verify/", RecoveryVerifyView.as_view(), name="auth-password-verify"),
+    path("auth/password/change/", ChangePasswordView.as_view(), name="auth-password-change"),
     path("auth/password/reset/", RecoveryResetView.as_view(), name="auth-password-reset"),
     path("auth/otp/request/", OTPRequestView.as_view(), name="auth-otp-request"),
     path("auth/otp/verify/", OTPVerifyView.as_view(), name="auth-otp-verify"),

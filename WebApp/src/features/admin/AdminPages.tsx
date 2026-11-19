@@ -1,3 +1,4 @@
+import { ChangePasswordForm } from "../auth/ChangePasswordForm";
 import { demoFareRules } from "../../config/project";
 import { formatDateTime } from "../../utils/localisation";
 import { Transactions, Disputes } from "./Operations";
@@ -302,6 +303,7 @@ export default function AdminPages({ page = "dashboard" }: { page?: string }) {
     return (
       <>
         <Settings />
+        <ChangePasswordForm />
         <Fares />
       </>
     );

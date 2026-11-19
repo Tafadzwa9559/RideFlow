@@ -226,32 +226,24 @@ test("admin guard ignores forged persisted legacy user and login validates passw
     "password",
   );
 });
-test("backend-authenticated passenger role is rejected by the admin login", async ({
-  page,
-}) => {
-  await page.goto("/admin/login");
-  await page.route("http://127.0.0.1:8000/api/auth/token/", (route) =>
-    route.fulfill({ headers: cors, json: { access: "sample-response-token" } }),
-  );
-  await page.route("http://127.0.0.1:8000/api/users/me/", (route) =>
-    route.fulfill({
+test("the admin login displays the staff API credential rejection", async ({ page }) => {
+  await page.route("http://127.0.0.1:8000/api/admin/auth/login/", async (route) => {
+    expect(route.request().postDataJSON()).toEqual({
+      channel: "email",
+      identifier: "sample@example.test",
+      password: "samplepass123",
+    });
+    await route.fulfill({
       headers: cors,
-      json: {
-        id: "p1",
-        role: "passenger",
-        firstName: "Sample",
-        lastName: "Person",
-        email: "sample@example.test",
-        phone: "",
-      },
-    }),
-  );
-  await page
-    .getByLabel("Email address", { exact: true })
-    .fill("sample@example.test");
+      status: 401,
+      json: { errors: { detail: "The account details or password are incorrect." } },
+    });
+  });
+  await page.goto("/admin/login");
+  await page.getByLabel("Email address", { exact: true }).fill("sample@example.test");
   await page.getByLabel("Password", { exact: true }).fill("samplepass123");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("not authorised");
+  await expect(page.getByRole("alert")).toContainText("The account details or password are incorrect.");
   await expect(page).toHaveURL(/\/admin\/login$/);
 });
 test("admin demo navigation, verification confirmation and logout", async ({

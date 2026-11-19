@@ -2,6 +2,7 @@ from ipaddress import ip_address
 import re
 
 from django.conf import settings
+from django.utils.crypto import constant_time_compare
 from rest_framework.exceptions import NotFound
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
@@ -31,27 +32,29 @@ class PasswordContactSerializer(serializers.Serializer):
         return data
 
 
-class RegistrationSerializer(serializers.Serializer):
+class NewPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(min_length=8, max_length=256, trim_whitespace=False, write_only=True)
+    password_confirmation = serializers.CharField(max_length=256, trim_whitespace=False, write_only=True)
+
+    def validate(self, data):
+        if not constant_time_compare(data['password'], data.pop('password_confirmation')):
+            raise serializers.ValidationError({'password_confirmation': 'The passwords must match.'})
+        return data
+
+
+class RegistrationSerializer(NewPasswordSerializer):
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
     email = serializers.EmailField(max_length=254)
-    password = serializers.CharField(
-        min_length=15, max_length=256, trim_whitespace=False, write_only=True,
-    )
 
     def validate_email(self, value):
         return value.lower()
-
-    def validate_password(self, value):
-        if not value.strip():
-            raise serializers.ValidationError('Enter a password.', code='blank')
-        return value
 
     def validate(self, data):
         protected = {'role', 'roles', 'is_staff', 'is_superuser', 'is_active', 'groups', 'user_permissions'}
         if protected.intersection(self.initial_data):
             raise serializers.ValidationError('Account roles and permissions cannot be set at registration.')
-        return data
+        return super().validate(data)
 
 
 class RegistrationResultSerializer(serializers.Serializer):
@@ -74,20 +77,15 @@ class StaffLoginSerializer(LoginSerializer):
 
 
 class RecoveryVerificationSerializer(PasswordContactSerializer):
-    code = serializers.RegexField(r'^[A-Za-z0-9_-]{6,64}\Z', write_only=True)
-
-    def validate(self, data):
-        data = super().validate(data)
-        if data['channel'] == 'phone' and not (
-            len(data['code']) == 6 and data['code'].isdigit()
-        ):
-            raise serializers.ValidationError({'code': 'Enter the six-digit code.'})
-        return data
+    code = serializers.RegexField(r'^[0-9]{6}\Z', write_only=True)
 
 
-class ResetSerializer(serializers.Serializer):
+class ResetSerializer(NewPasswordSerializer):
     token = serializers.CharField(max_length=1024, write_only=True)
-    password = serializers.CharField(max_length=256, trim_whitespace=False, write_only=True)
+
+
+class ChangePasswordSerializer(NewPasswordSerializer):
+    current_password = serializers.CharField(max_length=256, trim_whitespace=False, write_only=True)
 
 
 def client_ip(request):
@@ -199,3 +197,16 @@ class RecoveryResetView(PublicPasswordView):
     def process(self, token, password):
         passwords.reset_password(token, password)
         return Response(status=204)
+
+
+class ChangePasswordView(APIView):
+    serializer_class = ChangePasswordSerializer
+    renderer_classes = [JSONRenderer]
+
+    def post(self, request):
+        passwords.limit('password-change-ip', client_ip(request), 20, 900)
+        passwords.limit('password-change-user', str(request.user.pk), 8, 900)
+        data = self.serializer_class(data=request.data)
+        data.is_valid(raise_exception=True)
+        passwords.change_password(request.user.pk, **data.validated_data)
+        return Response(status=204, headers={'Cache-Control': 'no-store'})

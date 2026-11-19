@@ -12,6 +12,7 @@ type Session = {
   login: (email: string, password: string) => Promise<void>;
   loginDemo: () => void;
   logout: () => Promise<void>;
+  clearSession: () => void;
 };
 let initialization: Promise<void> | undefined;
 export const useAuthStore = create<Session>((set) => ({
@@ -43,21 +44,17 @@ export const useAuthStore = create<Session>((set) => ({
       throw new Error(
         "Admin authentication is not configured. Contact your platform administrator.",
       );
-    await authService.signIn(email, password);
-    try {
-      const { data } = await api.get<User>("/users/me/", {
-        withCredentials: true,
-      });
-      if (data.role !== "admin")
-        throw new Error(
-          "This account is not authorised for the administration portal.",
-        );
-      set({ user: data, demo: false, initialized: true });
-      useAppStore.setState({ user: data });
-    } catch (error) {
-      setAccessToken(null);
-      throw error;
-    }
+    const profile = await authService.signIn(email, password);
+    const user: User = {
+      id: profile.id,
+      firstName: profile.first_name,
+      lastName: profile.last_name,
+      email: profile.email,
+      phone: profile.phone,
+      role: "admin",
+    };
+    set({ user, demo: false, initialized: true });
+    useAppStore.setState({ user });
   },
   loginDemo: () => {
     if (!env.adminDemo) return;
@@ -72,14 +69,17 @@ export const useAuthStore = create<Session>((set) => ({
     set({ user, demo: true, initialized: true });
     useAppStore.setState({ user });
   },
-  logout: async () => {
-    const wasDemo = useAuthStore.getState().demo;
+  clearSession: () => {
+    setAccessToken(null);
     set({ user: null, demo: false });
     useAppStore.getState().logout();
+  },
+  logout: async () => {
+    const wasDemo = useAuthStore.getState().demo;
     try {
       if (!wasDemo && env.apiBaseUrl) await authService.signOut();
     } finally {
-      setAccessToken(null);
+      useAuthStore.getState().clearSession();
     }
   },
 }));

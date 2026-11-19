@@ -38,7 +38,7 @@ class SchemaTests(SimpleTestCase):
         self.assertEqual(set(operation['responses']), {'201', '400', '409', '429', '503'})
         schemas = self.schema['components']['schemas']
         self.assertEqual(set(schemas['RegistrationRequest']['required']), {
-            'first_name', 'last_name', 'email', 'password',
+            'first_name', 'last_name', 'email', 'password', 'password_confirmation',
         })
         self.assertIn('email_verified', schemas['RegistrationResult']['required'])
 

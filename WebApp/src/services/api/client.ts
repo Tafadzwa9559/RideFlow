@@ -9,9 +9,15 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 let accessToken: string | null = null;
+let refreshToken: string | null = null;
 let refreshFlight: Promise<string> | null = null;
 export function setAccessToken(token: string | null) {
   accessToken = token;
+  if (token === null) refreshToken = null;
+}
+export function setSessionTokens(tokens: TokenResponse | null) {
+  accessToken = tokens?.access ?? null;
+  refreshToken = tokens?.refresh ?? null;
 }
 api.interceptors.request.use((config) => {
   if (!env.apiBaseUrl)
@@ -25,13 +31,17 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config;
-    if (error.response?.status === 401 && config && !config._retry) {
+    if (
+      error.response?.status === 401 && config && !config._retry &&
+      config.headers?.Authorization && refreshToken
+    ) {
       config._retry = true;
       try {
+        const originalRefresh = refreshToken;
         refreshFlight ??= axios
           .post<TokenResponse>(
             `${env.apiBaseUrl}/auth/token/refresh/`,
-            {},
+            { refresh: originalRefresh },
             { withCredentials: true },
           )
           .then((r) => {
@@ -49,7 +59,7 @@ api.interceptors.response.use(
     }
     return Promise.reject(
       new Error(
-        error.response?.data?.detail ||
+        responseMessage(error.response?.data) ||
           (error.code === "ERR_CANCELED"
             ? "Request cancelled"
             : "Unable to complete the request. Please try again."),
@@ -57,3 +67,11 @@ api.interceptors.response.use(
     );
   },
 );
+
+function responseMessage(data: { detail?: string; errors?: Record<string, string | string[]> } | undefined) {
+  if (typeof data?.detail === "string") return data.detail;
+  if (data?.errors && typeof data.errors === "object") {
+    return Object.values(data.errors).flat().filter((value) => typeof value === "string").join(" ");
+  }
+  return "";
+}

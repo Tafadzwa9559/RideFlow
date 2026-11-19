@@ -167,62 +167,26 @@ class BookingFields extends StatelessWidget {
               onPressed: booking.loadConfiguration,
               child: Text(booking.configurationError!),
             ),
-          for (final group in [
-            ('mobile_money', 'Mobile money'),
-            ('cash', 'Cash'),
-          ]) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 4),
-              child: Text(
-                group.$2,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            for (final m in booking.methods.where((v) => v.kind == group.$1))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: AnimatedContainer(
-                  duration: MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 200),
-                  decoration: BoxDecoration(
-                    color: booking.method?.id == m.id
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Theme.of(context).colorScheme.surface,
-                    borderRadius: controlRadius,
-                    border: Border.all(
-                      color: booking.method?.id == m.id
-                          ? darkGreen
-                          : Theme.of(context).colorScheme.outlineVariant,
-                    ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final method in booking.methods)
+                ChoiceChip(
+                  avatar: Icon(
+                    method.kind == 'cash'
+                        ? Icons.payments_outlined
+                        : Icons.phone_android_outlined,
+                    size: 18,
                   ),
-                  child: Material(
-                    type: MaterialType.transparency,
-                    borderRadius: controlRadius,
-                    clipBehavior: Clip.antiAlias,
-                    child: ListTile(
-                      dense: true,
-                      enabled: !booking.submitting,
-                      leading: Icon(
-                        m.kind == 'cash'
-                            ? Icons.payments_outlined
-                            : Icons.phone_android_outlined,
-                        color: darkGreen,
-                      ),
-                      title: Text(m.name),
-                      subtitle: Text(m.description),
-                      trailing: Icon(
-                        booking.method?.id == m.id
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        color: darkGreen,
-                      ),
-                      onTap: () => booking.setPayment(m),
-                    ),
-                  ),
+                  label: Text(method.name),
+                  selected: booking.method?.id == method.id,
+                  showCheckmark: false,
+                  onSelected: booking.submitting ? null : (_) => booking.setPayment(method),
                 ),
-              ),
-          ],
+            ],
+          ),
           if (booking.paymentError != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),

@@ -221,6 +221,10 @@ void main() {
       '4.25',
     );
     expect(find.textContaining('ZiG'), findsNothing);
+    expect(find.textContaining(RegExp('pay (your |the )?driver directly', caseSensitive: false)), findsNothing);
+    expect(find.widgetWithText(ChoiceChip, 'EcoCash'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'OneMoney'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Cash'), findsOneWidget);
     await tester.ensureVisible(find.text('EcoCash'));
     await tester.tap(find.text('EcoCash'));
     await tester.pumpAndSettle();

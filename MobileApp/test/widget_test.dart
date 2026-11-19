@@ -30,8 +30,31 @@ class _EmailSignupRepository extends TestRepository {
     required String lastName,
     required String email,
     required String password,
+    required String confirmation,
   }) async {
     submissions.add([firstName, lastName, email, password]);
+  }
+}
+
+class _EmailRecoveryRepository extends TestRepository {
+  LoginContact? contact;
+  String? usedAuthorization;
+
+  @override
+  Future<void> requestPasswordRecovery(LoginContact contact) async {
+    this.contact = contact;
+  }
+
+  @override
+  Future<String> verifyPasswordRecovery(LoginContact contact, String code) async {
+    if (code != '184306') throw const FormatException('Invalid or expired verification.');
+    return 'issued-reset-authorization';
+  }
+
+  @override
+  Future<void> resetPassword(String token, String password, String confirmation) async {
+    if (password != confirmation) throw const FormatException('The passwords must match.');
+    usedAuthorization = token;
   }
 }
 
@@ -67,7 +90,7 @@ void main() {
     await tapText('Phone number');
     await tester.enterText(find.byType(TextFormField).first, '077 123 4567');
     await tapText('Forgot Password?');
-    await tapText('Send verification code');
+    await tapText('Send Reset Code');
     expect(repository.requestedContact?.identifier, '+263771234567');
     expect(find.text('SMS password recovery is currently unavailable.'), findsOneWidget);
     expect(find.text('Enter your verification code'), findsNothing);
@@ -114,6 +137,49 @@ void main() {
     expect(repository.submissions.single, ['Tariro', 'Moyo', email, password]);
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.text(email), findsOneWidget);
+    expect(app.session, isNull);
+    await tester.pumpWidget(const SizedBox());
+    app.dispose();
+  });
+
+  testWidgets('Email recovery verifies a code before resetting and returns to login', (
+    tester,
+  ) async {
+    final repository = _EmailRecoveryRepository();
+    final app = AppController(repository);
+    await tester.pumpWidget(MaterialApp(theme: triviaTheme(), home: LoginScreen(app: app)));
+
+    Future<void> tap(String label) async {
+      final target = find.text(label).last;
+      await tester.ensureVisible(target);
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> enter(String label, String value) async {
+      final field = find.widgetWithText(TextFormField, label);
+      await tester.ensureVisible(field);
+      await tester.enterText(field, value);
+    }
+
+    await tap('Forgot Password?');
+    await enter('Email address', 'tariro@example.net');
+    await tap('Send Reset Code');
+    expect(repository.contact?.channel, LoginChannel.email);
+    expect(find.textContaining('Resend code in'), findsOneWidget);
+    await enter('Verification code', '123456');
+    await tap('Verify Code');
+    expect(find.text('Invalid or expired verification.'), findsOneWidget);
+    expect(find.text('Reset Password'), findsNothing);
+    await enter('Verification code', '184306');
+    await tap('Verify Code');
+    await enter('New password', 'A9!nest7');
+    await enter('Confirm New Password', 'A9!nest7');
+    await tap('Reset Password');
+    expect(repository.usedAuthorization, 'issued-reset-authorization');
+    expect(find.text('Password Reset Successful!'), findsOneWidget);
+    await tap('Back to Login');
+    expect(find.byType(LoginScreen), findsOneWidget);
     expect(app.session, isNull);
     await tester.pumpWidget(const SizedBox());
     app.dispose();

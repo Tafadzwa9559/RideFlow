@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../app/controller.dart';
 import '../../shared/widgets.dart';
 import '../legal/legal_page.dart';
+import '../entry/entry.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key, required this.app});
@@ -74,6 +75,12 @@ class _SettingsPageState extends State<SettingsPage> {
             TextButton(onPressed: loadPreferences, child: const Text('Retry')),
           ],
           const SizedBox(height: 8),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.lock_outline),
+            title: const Text('Change password'),
+            onTap: () => openPage(context, ChangePasswordScreen(app: widget.app)),
+          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.palette_outlined),
