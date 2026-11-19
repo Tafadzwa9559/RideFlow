@@ -25,4 +25,4 @@ USER trivia
 EXPOSE 10000
 
 # Start Django Channels with Daphne
-CMD ["sh", "-c", "exec daphne -b 0.0.0.0 -p ${PORT:-10000} rideflow.asgi:application"]
+CMD ["bash", "start-dev.sh"]
