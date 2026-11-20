@@ -29364,10 +29364,24 @@ components:
       properties:
         ride:
           allOf:
-          - $ref: '#/components/schemas/Ride'
+          - $ref: '#/components/schemas/ActiveRideDetail'
           nullable: true
       required:
       - ride
+    ActiveRideDetail:
+      allOf:
+      - $ref: '#/components/schemas/Ride'
+      - type: object
+        properties:
+          viewer_role:
+            type: string
+            enum:
+            - passenger
+            - driver
+          driver:
+            $ref: '#/components/schemas/Offer'
+        required:
+        - viewer_role
     AdminTimelinePage:
       type: object
       properties:
@@ -32159,6 +32173,11 @@ components:
           type: string
           pattern: ^[0-9a-fA-F]{24}$
           minLength: 1
+        fare_cents:
+          type: integer
+          minimum: 1
+          maximum: 999999999999
+          description: The fare shown at confirmation. Selection fails if the offer amount has changed.
       required:
       - offer_id
     ServiceArea:

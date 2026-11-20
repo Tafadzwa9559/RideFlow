@@ -230,7 +230,7 @@ class TestRepository implements TriviaRepository {
   }
 
   @override
-  Future<Ride> accept(String rideId, String offerId) async {
+  Future<Ride> accept(String rideId, String offerId, {int? expectedFare}) async {
     final ride = _get(rideId);
     if (ride.status != RideStatus.searching) {
       throw StateError('This ride already has a driver.');
@@ -328,6 +328,10 @@ class TestRepository implements TriviaRepository {
       cents: cents,
     );
   }
+
+  @override
+  Future<void> acceptFare(String rideId) =>
+      counteroffer(rideId, _get(rideId).cents);
 
   int get _demoGross => _rides
       .where(

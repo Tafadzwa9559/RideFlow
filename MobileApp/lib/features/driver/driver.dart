@@ -114,40 +114,67 @@ class _DriverRequestsState extends State<DriverRequests> {
   bool loading = false;
   bool lastOnline = false;
   int lastRevision = -1;
+  int _requestLoad = 0;
+  bool get _onTrip => widget.app.driverMode && widget.app.ride?.active == true;
   @override
   void initState() {
     super.initState();
     lastOnline = widget.app.online;
+    lastRevision = widget.app.dataRevision;
+    widget.app.addListener(_appChanged);
     load();
   }
 
   @override
   void didUpdateWidget(DriverRequests oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.app != widget.app) {
+      oldWidget.app.removeListener(_appChanged);
+      widget.app.addListener(_appChanged);
+      lastOnline = widget.app.online;
+      lastRevision = widget.app.dataRevision;
+      load();
+    }
+  }
+
+  void _appChanged() {
     if (lastOnline != widget.app.online ||
         lastRevision != widget.app.dataRevision) {
       lastRevision = widget.app.dataRevision;
       lastOnline = widget.app.online;
       load();
+    } else {
+      setState(() {});
     }
   }
 
+  @override
+  void dispose() {
+    widget.app.removeListener(_appChanged);
+    super.dispose();
+  }
+
   Future<void> load() async {
+    final load = ++_requestLoad;
     setState(() {
       loading = true;
       error = null;
     });
     try {
-      if (widget.app.session!.driverStatus != DriverStatus.approved ||
-          !widget.app.online) {
-        requests = [];
-      } else {
-        requests = await widget.app.repository.requests();
-      }
+      final available =
+          widget.app.session?.driverStatus == DriverStatus.approved &&
+          widget.app.online &&
+          !_onTrip;
+      final result = available
+          ? await widget.app.repository.requests()
+          : <Ride>[];
+      if (mounted && load == _requestLoad) requests = result;
     } catch (_) {
-      error = 'Requests unavailable. Check your connection and retry.';
+      if (mounted && load == _requestLoad) {
+        error = 'Requests unavailable. Check your connection and retry.';
+      }
     }
-    if (mounted) {
+    if (mounted && load == _requestLoad) {
       setState(() => loading = false);
     }
   }
@@ -159,13 +186,15 @@ class _DriverRequestsState extends State<DriverRequests> {
         context: context,
         builder: (_) => _CounterDialog(currency: r.currency),
       );
-      if (value == null) {
+      if (value == null || !mounted) {
         return;
       }
       cents = parseFare(value);
     }
     final ok = await widget.app.perform(
-      () => widget.app.repository.counteroffer(r.id, cents),
+      () => counter
+          ? widget.app.repository.counteroffer(r.id, cents)
+          : widget.app.repository.acceptFare(r.id),
     );
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -193,80 +222,94 @@ class _DriverRequestsState extends State<DriverRequests> {
               ),
             ],
           ),
-          body: RefreshIndicator(
-            onRefresh: load,
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                if (loading) const LinearProgressIndicator(),
-                if (error != null) Text(error!),
-                ErrorNotice(widget.app),
-                if (!widget.app.online)
-                  const EmptyState(
-                    'You’re offline',
-                    'Go online from the driver home to see available requests.',
-                  ),
-                if (widget.app.online &&
-                    requests.where((r) => !declined.contains(r.id)).isEmpty &&
-                    !loading)
-                  const EmptyState(
-                    'No requests right now',
-                    'Pull down to refresh. Availability depends on your approved service area.',
-                  ),
-                for (final r in requests.where((r) => !declined.contains(r.id)))
-                  Card.outlined(
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            money(r.cents, currency: r.currency),
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          Text('Trivia ${r.category}'),
-                          const SizedBox(height: 16),
-                          Text('${r.pickup.name}\n↓\n${r.destination.name}'),
-                          Text(
-                            'Payment method: ${directPaymentLabel(r.paymentMethod, r.paymentMethodName)}',
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Road distance and pickup estimate unavailable.',
-                          ),
-                          const SizedBox(height: 16),
-                          ActionButton(
-                            'Accept fare',
-                            () => offer(r),
-                            busy: widget.app.busy,
-                          ),
-                          TextButton(
-                            onPressed: widget.app.busy
-                                ? null
-                                : () => offer(r, counter: true),
-                            child: const Text('Make a counteroffer'),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              final ok = await widget.app.perform(
-                                () => widget.app.repository.write(
-                                  'rides/${r.id}/driver-request-decline',
-                                  {},
+          body: _onTrip
+              ? ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [TripPanel(app: widget.app)],
+                )
+              : RefreshIndicator(
+                  onRefresh: load,
+                  child: ListView(
+                    padding: const EdgeInsets.all(20),
+                    children: [
+                      if (loading) const LinearProgressIndicator(),
+                      if (error != null) Text(error!),
+                      ErrorNotice(widget.app),
+                      if (!widget.app.online)
+                        const EmptyState(
+                          'You’re offline',
+                          'Go online from the driver home to see available requests.',
+                        ),
+                      if (widget.app.online &&
+                          requests
+                              .where((r) => !declined.contains(r.id))
+                              .isEmpty &&
+                          !loading)
+                        const EmptyState(
+                          'No requests right now',
+                          'Pull down to refresh. Availability depends on your approved service area.',
+                        ),
+                      for (final r in requests.where(
+                        (r) => !declined.contains(r.id),
+                      ))
+                        Card.outlined(
+                          child: Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  money(r.cents, currency: r.currency),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium,
                                 ),
-                              );
-                              if (ok && mounted) {
-                                setState(() => declined.add(r.id));
-                              }
-                            },
-                            child: const Text('Decline'),
+                                Text('Trivia ${r.category}'),
+                                const SizedBox(height: 16),
+                                Text(
+                                  '${r.pickup.name}\n↓\n${r.destination.name}',
+                                ),
+                                Text(
+                                  'Payment method: ${directPaymentLabel(r.paymentMethod, r.paymentMethodName)}',
+                                ),
+                                const SizedBox(height: 12),
+                                if (r.distanceMetres case final distance?)
+                                  Text(
+                                    '${(distance / 1000).toStringAsFixed(1)} km by road',
+                                  ),
+                                const SizedBox(height: 16),
+                                ActionButton(
+                                  'Accept fare',
+                                  () => offer(r),
+                                  busy: widget.app.busy,
+                                ),
+                                TextButton(
+                                  onPressed: widget.app.busy
+                                      ? null
+                                      : () => offer(r, counter: true),
+                                  child: const Text('Make a counteroffer'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    final ok = await widget.app.perform(
+                                      () => widget.app.repository.write(
+                                        'rides/${r.id}/driver-request-decline',
+                                        {},
+                                      ),
+                                    );
+                                    if (ok && mounted) {
+                                      setState(() => declined.add(r.id));
+                                    }
+                                  },
+                                  child: const Text('Decline'),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                    ],
                   ),
-              ],
-            ),
-          ),
+                ),
         );
 }
 

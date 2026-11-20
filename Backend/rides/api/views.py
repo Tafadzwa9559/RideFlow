@@ -1,4 +1,5 @@
 from core.identifiers import ObjectIdSerializerField
+from core.contracts import SelectionSerializer
 from core import transactions as transaction
 from django.db.models import Q, Sum, Avg, Count
 from django.shortcuts import get_object_or_404
@@ -158,7 +159,17 @@ class RideDetailView(APIView):
 class ActiveRideView(APIView):
     def get(self, request):
         ride = visible_rides(request.user).exclude(status__in=['completed', 'cancelled', 'expired']).first()
-        return Response({'ride': RideSerializer(ride).data if ride else None})
+        if not ride:
+            return Response({'ride': None})
+        data = RideSerializer(ride).data
+        data['viewer_role'] = 'passenger' if ride.passenger_id == request.user.pk else 'driver'
+        if ride.assigned_driver_id:
+            offer = ride.counteroffers.select_related('driver__user', 'vehicle').filter(
+                driver_id=ride.assigned_driver_id, status='accepted', vehicle__isnull=False
+            ).first()
+            if offer:
+                data['driver'] = offer_json(offer)
+        return Response({'ride': data})
 
 
 class OffersView(APIView):
@@ -228,8 +239,13 @@ class RideStatusView(APIView):
 class RideAcceptView(APIView):
     def post(self, request, pk):
         get_object_or_404(passenger_rides(request.user), pk=pk)
-        offer_id = ObjectIdSerializerField().run_validation(request.data.get('offer_id'))
-        return Response(RideSerializer(select_offer(request.user, pk, offer_id)).data)
+        data = SelectionSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        ride = select_offer(
+            request.user, pk, data.validated_data['offer_id'],
+            expected_fare=data.validated_data.get('fare_cents'),
+        )
+        return Response(RideSerializer(ride).data)
 
 
 class WithdrawView(APIView):

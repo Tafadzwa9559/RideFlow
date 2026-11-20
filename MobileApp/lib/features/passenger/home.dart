@@ -597,7 +597,13 @@ class TripPanel extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text('${o.vehicle} • ${o.plate}'),
+                    Text(
+                      [
+                        o.vehicle,
+                        if (o.colour?.isNotEmpty == true) o.colour!,
+                        o.plate,
+                      ].join(' • '),
+                    ),
                     Text(
                       '${o.rating == null ? 'No rating yet' : '★ ${o.rating}'}${o.minutes == null ? '' : ' · ${o.minutes} min pickup'}${o.verified ? ' · Verified by platform' : ''}',
                     ),
@@ -634,7 +640,13 @@ class TripPanel extends StatelessWidget {
               child: Icon(Icons.person_outline),
             ),
             title: Text(d.name),
-            subtitle: Text('${d.vehicle}\n${d.plate}'),
+            subtitle: Text(
+              [
+                d.vehicle,
+                if (d.colour?.isNotEmpty == true) d.colour!,
+                d.plate,
+              ].join('\n'),
+            ),
           ),
           Text(
             r.freshLocation

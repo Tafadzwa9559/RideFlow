@@ -22,7 +22,13 @@ enum DriverStatus {
 }
 
 class Place {
-  const Place(this.name, this.lat, this.lng, {this.formattedAddress, this.provider});
+  const Place(
+    this.name,
+    this.lat,
+    this.lng, {
+    this.formattedAddress,
+    this.provider,
+  });
   final String? formattedAddress, provider;
   final String name;
   final double lat, lng;
@@ -48,11 +54,13 @@ class DriverOffer {
     required this.vehicle,
     required this.plate,
     required this.cents,
+    this.colour,
     this.rating,
     this.minutes,
     this.verified = false,
   });
   final String id, name, vehicle, plate;
+  final String? colour;
   final int cents;
   final double? rating;
   final int? minutes;
@@ -62,6 +70,7 @@ class DriverOffer {
     name: j['driver_name'] as String? ?? 'Driver details unavailable',
     vehicle: j['vehicle'] as String? ?? 'Vehicle details unavailable',
     plate: j['registration'] as String? ?? '',
+    colour: j['colour'] as String?,
     cents: j['fare_cents'] as int,
     rating: (j['rating'] as num?)?.toDouble(),
     minutes: j['pickup_minutes'] as int?,
@@ -87,10 +96,14 @@ class Ride {
     this.paymentMethodName,
     this.driverLocation,
     this.locationUpdatedAt,
+    this.distanceMetres,
+    this.viewerRole,
     this.route = const [],
   });
   final String id, category, paymentStatus, currency;
   final int? offeredCents, agreedCents;
+  final int? distanceMetres;
+  final String? viewerRole;
   final String? paymentMethod, paymentMethodName;
   final Place pickup, destination;
   final int cents;
@@ -136,6 +149,8 @@ class Ride {
     paymentMethodName: paymentMethodName,
     driverLocation: driverLocation,
     locationUpdatedAt: locationUpdatedAt,
+    distanceMetres: distanceMetres,
+    viewerRole: viewerRole,
     route: route,
   );
   factory Ride.fromJson(Map<String, dynamic> j) => Ride(
@@ -165,6 +180,8 @@ class Ride {
     locationUpdatedAt: j['location_updated_at'] == null
         ? null
         : DateTime.parse(j['location_updated_at'] as String),
+    distanceMetres: j['distance_metres'] as int?,
+    viewerRole: j['viewer_role'] as String?,
     route: _parseGeometry(j['route_geometry'] as List? ?? []),
   );
 }

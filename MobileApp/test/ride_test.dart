@@ -1,13 +1,87 @@
+import 'dart:async';
+
 import 'support/fixture_repository.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:rideflow_mobile/shared/models.dart';
 import 'package:rideflow_mobile/app/controller.dart';
+
+class _DelayedActiveRide extends TestRepository {
+  Completer<void>? hold;
+  final waiting = Completer<void>();
+  int reads = 0;
+
+  @override
+  Future<Ride?> activeRide() async {
+    final snapshot = await super.activeRide();
+    reads++;
+    final pending = hold;
+    hold = null;
+    if (pending != null) waiting.complete();
+    await pending?.future;
+    return snapshot;
+  }
+}
+
+class _LocationRepository extends TestRepository {
+  Map<String, dynamic>? location;
+
+  @override
+  Future<void> write(String resource, Map<String, dynamic> data) async {
+    expect(resource, 'drivers/me/location');
+    location = data;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+  test('Driver GPS uses the backend coordinate precision and rejects stale fixes', () async {
+    final repo = _LocationRepository();
+    final app = AppController(repo);
+    addTearDown(app.dispose);
+    await app.verify('+263771234567', '123456');
+    app.online = true;
+    Position fix(DateTime time) => Position(
+      latitude: -17.822512345,
+      longitude: 31.045698765,
+      timestamp: time,
+      accuracy: 4,
+      altitude: 0,
+      altitudeAccuracy: 0,
+      heading: 0,
+      headingAccuracy: 0,
+      speed: 0,
+      speedAccuracy: 0,
+    );
+    await app.publishPosition(fix(DateTime.now().subtract(const Duration(minutes: 2))));
+    expect(repo.location, isNull);
+    await app.publishPosition(fix(DateTime.now()));
+    expect(repo.location, {'latitude': '-17.822512', 'longitude': '31.045699'});
+  });
+
+  test('A cancellation event received during sync refreshes the terminal ride', () async {
+    final repo = _DelayedActiveRide();
+    final app = AppController(repo);
+    addTearDown(app.dispose);
+    await app.verify('+263771234567', '123456');
+    await app.book(demoPlaces[0], demoPlaces[1], 'Standard', 500);
+    final blocked = Completer<void>();
+    repo.hold = blocked;
+    final startReads = repo.reads;
+    final firstSync = app.sync();
+    await repo.waiting.future;
+    await repo.transition(app.ride!.id, RideStatus.cancelled);
+    final eventSync = app.sync();
+    blocked.complete();
+    await Future.wait([firstSync, eventSync]);
+    expect(repo.reads - startReads, 2);
+    expect(app.ride?.status, RideStatus.cancelled);
+    expect(app.offers, isEmpty);
+  });
+
   test('Fare parsing uses cents and rejects invalid input', () {
     expect(parseFare('12.3'), 1230);
     expect(parseFare('0.01'), 1);

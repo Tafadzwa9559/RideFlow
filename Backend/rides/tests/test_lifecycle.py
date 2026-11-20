@@ -62,6 +62,30 @@ class LifecycleTests(RideFixtures, TestCase):
         self.assertEqual(self.client.post(f'/api/v1/rides/{self.ride.pk}/ratings/', {'score': 4}).status_code, 200)
         self.assertEqual(self.client.post(f'/api/v1/rides/{self.ride.pk}/start/').status_code, 403)
 
+    def test_accept_fare_and_reopen_assignment_from_either_account(self):
+        path = f'/api/v1/rides/{self.ride.pk}/'
+        driver = self.as_user(self.driver_user)
+        response = driver.post(f'{path}offers/', {'decision': 'accept'})
+        self.assertEqual(response.status_code, 201, response.data)
+        offer_id = response.data['id']
+        self.assertEqual(driver.post(f'{path}offers/', {'decision': 'accept'}).data['id'], offer_id)
+        old_fare = int(self.ride.offered_fare * 100)
+        response = driver.patch(f'/api/v1/offers/{offer_id}/', {'fare_cents': old_fare + 100})
+        self.assertEqual(response.status_code, 200, response.data)
+
+        passenger = self.as_user(self.passenger)
+        response = passenger.post(f'{path}accept/', {'offer_id': offer_id, 'fare_cents': old_fare})
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertFalse(ActiveAssignment.objects.exists())
+        response = passenger.post(f'{path}accept/', {'offer_id': offer_id, 'fare_cents': old_fare + 100})
+        self.assertEqual(response.status_code, 200, response.data)
+        for user, role in ((self.passenger, 'passenger'), (self.driver_user, 'driver')):
+            active = self.as_user(user).get('/api/v1/rides/active/').data['ride']
+            self.assertEqual(active['viewer_role'], role)
+            self.assertEqual(active['driver']['id'], offer_id)
+            self.assertEqual(active['driver']['registration'], 'TEST-1')
+            self.assertEqual(active['driver']['fare_cents'], old_fare + 100)
+
     def test_unauthorized_or_stale_driver_cannot_offer(self):
         self.assertEqual(self.as_user(self.passenger).post(f'/api/v1/rides/{self.ride.pk}/offers/', {'fare_cents': 600}).status_code, 403)
         for change in [{'status': 'submitted'}, {'status': 'suspended'}, {'last_seen': timezone.now()-timedelta(minutes=10)}, {'latitude': '-19.000000'}]:

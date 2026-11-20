@@ -56,6 +56,7 @@ class ReviewSerializer(ReasonSerializer):
 
 class SelectionSerializer(s.Serializer):
     offer_id = ObjectIdSerializerField()
+    fare_cents = s.IntegerField(min_value=1, max_value=999999999999, required=False)
 
 
 class LogoutSerializer(s.Serializer):
@@ -149,8 +150,16 @@ class OfferCreatedSerializer(s.Serializer):
     status = s.CharField()
 
 
+class ActiveRideDetailSerializer(RideSerializer):
+    viewer_role = s.ChoiceField(choices=['passenger', 'driver'])
+    driver = OfferSerializer(required=False)
+
+    class Meta(RideSerializer.Meta):
+        fields = [*RideSerializer.Meta.fields, 'viewer_role', 'driver']
+
+
 class ActiveRideSerializer(s.Serializer):
-    ride = RideSerializer(allow_null=True)
+    ride = ActiveRideDetailSerializer(allow_null=True)
 
 
 class RideStatusSerializer(s.Serializer):

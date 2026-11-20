@@ -66,7 +66,8 @@ void main() {
       );
       expect(routeLayer.polylines.single.points, road);
       await tester.tapAt(tester.getCenter(find.byType(FlutterMap)));
-      await tester.pumpAndSettle();
+      // flutter_map waits for a possible second tap before selecting a pin.
+      await tester.pump(const Duration(milliseconds: 350));
       expect(selection?.name, 'Selected map pin');
     },
   );

@@ -96,7 +96,7 @@ def update_offer(user, offer_id, changes):
 
 
 @transaction.atomic
-def select_offer(user, ride_id, offer_id):
+def select_offer(user, ride_id, offer_id, *, expected_fare=None):
     transaction.guard(Ride, ride_id)
     ride = Ride.objects.get(pk=ride_id)
     if ride.passenger_id != user.pk:
@@ -107,6 +107,8 @@ def select_offer(user, ride_id, offer_id):
     transaction.guard(DriverApplication, initial.driver_id)
     app = DriverApplication.objects.get(pk=initial.driver_id)
     offer = RideOffer.objects.all().get(pk=initial.pk)
+    if expected_fare is not None and int(offer.amount * 100) != expected_fare:
+        raise ValidationError('This fare has changed. Review the current offer before confirming.', code='OFFER_CHANGED')
     if offer.status == 'accepted' and ride.assigned_driver_id == app.pk and ride.status not in ['cancelled', 'expired']:
         return ride
     now = timezone.now()

@@ -38,6 +38,25 @@ ResponseBody jsonBody(Object data, [int status = 200]) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+  test('Driver accepts the passenger fare or sends a distinct counteroffer', () async {
+    final dio = Dio();
+    final adapter = ContractAdapter((_) async => jsonBody({'status': 'pending'}, 201));
+    dio.httpClientAdapter = adapter;
+    final repo = ApiRepository(client: dio);
+    addTearDown(repo.dispose);
+
+    await repo.acceptFare('ride-id');
+    await repo.counteroffer('ride-id', 725);
+    expect(adapter.calls.map((request) => request.path), [
+      'rides/ride-id/offers/',
+      'rides/ride-id/offers/',
+    ]);
+    expect(adapter.calls.map((request) => request.data), [
+      {'decision': 'accept'},
+      {'decision': 'counteroffer', 'fare_cents': 725},
+    ]);
+  });
+
   test('Location search uses the canonical path and accepts both place shapes', () async {
     final dio = Dio();
     final adapter = ContractAdapter((options) async => jsonBody({

@@ -3,7 +3,8 @@ from channels.testing import WebsocketCommunicator
 from django.test import TransactionTestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 from rideflow.asgi import application
-from rides.services.lifecycle import make_offer, select_offer
+from rides.services.lifecycle import make_offer, publish_location, select_offer
+from rides.tasks import dispatch_request
 from notifications.tasks import deliver_outbox
 from .helpers import RideFixtures
 
@@ -12,9 +13,43 @@ class WebsocketTests(RideFixtures, TransactionTestCase):
     def setUp(self):
         self.setup_ride()
 
+    def test_nearby_online_driver_receives_one_request_on_dispatch_retry(self):
+        self.other_driver.availability = 'offline'
+        self.other_driver.save(update_fields=['availability'])
+        tokens = [
+            str(RefreshToken.for_user(user).access_token)
+            for user in (self.driver_user, self.other_user)
+        ]
+
+        async def scenario():
+            from channels.db import database_sync_to_async
+            clients = []
+            try:
+                for token in tokens:
+                    client = WebsocketCommunicator(
+                        application, '/ws/v1/notifications/', headers=[(b'origin', b'http://localhost')]
+                    )
+                    self.assertTrue((await client.connect(timeout=10))[0])
+                    clients.append(client)
+                    await client.send_json_to({'token': token})
+                    self.assertEqual((await client.receive_json_from(timeout=10))['type'], 'connection.ready')
+                for _ in range(2):
+                    await database_sync_to_async(dispatch_request)(str(self.ride.pk))
+                await database_sync_to_async(deliver_outbox)()
+                event = await clients[0].receive_json_from(timeout=10)
+                self.assertEqual((event['type'], event['resource_id']), ('ride.request', str(self.ride.pk)))
+                for client in clients:
+                    self.assertTrue(await client.receive_nothing(timeout=.1))
+            finally:
+                for client in clients:
+                    await client.disconnect()
+
+        asyncio.run(scenario())
+
     def test_authentication_delivery_reconnect_and_room_authorization(self):
         offer = make_offer(self.driver_user, self.ride.pk, 600)
         select_offer(self.passenger, self.ride.pk, offer.pk)
+        publish_location(self.driver)
         tokens = {u.pk: str(RefreshToken.for_user(u).access_token) for u in [self.passenger, self.other_user]}
 
         async def scenario():
@@ -40,6 +75,9 @@ class WebsocketTests(RideFixtures, TransactionTestCase):
             while not await client.receive_nothing(timeout=.05):
                 received.append(await client.receive_json_from(timeout=10))
             self.assertIn('driver.assigned', [e['type'] for e in received])
+            location = next(e for e in received if e['type'] == 'driver.location')
+            self.assertEqual(location['payload']['latitude'], str(self.driver.latitude))
+            self.assertEqual(location['payload']['longitude'], str(self.driver.longitude))
             self.assertEqual(len({e['event_id'] for e in received}), len(received))
             await client.disconnect()
             again = WebsocketCommunicator(application, path, headers=headers)

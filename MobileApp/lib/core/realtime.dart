@@ -38,19 +38,21 @@ class Realtime extends ChangeNotifier {
         return;
       }
       final uri = Uri.parse(url);
-      final channel = IOWebSocketChannel.connect(
-        uri,
-        headers: {
-          'Origin': uri
-              .replace(
-                scheme: uri.scheme == 'ws' ? 'http' : 'https',
-                path: '',
-                query: '',
-                fragment: '',
-              )
-              .toString(),
-        },
-      );
+      final channel = kIsWeb
+          ? WebSocketChannel.connect(uri)
+          : IOWebSocketChannel.connect(
+              uri,
+              headers: {
+                'Origin': uri
+                    .replace(
+                      scheme: uri.scheme == 'ws' ? 'http' : 'https',
+                      path: '',
+                      query: '',
+                      fragment: '',
+                    )
+                    .toString(),
+              },
+            );
       _channel = channel;
       await channel.ready.timeout(const Duration(seconds: 15));
       if (_closed) {

@@ -65,7 +65,7 @@ abstract class TriviaRepository {
     String? passengerNote,
   });
   Future<List<DriverOffer>> offers(String rideId);
-  Future<Ride> accept(String rideId, String offerId);
+  Future<Ride> accept(String rideId, String offerId, {int? expectedFare});
   Future<Ride> transition(String rideId, RideStatus status);
   Future<DriverStatus> applyDriver(
     Map<String, dynamic> fields,
@@ -74,6 +74,7 @@ abstract class TriviaRepository {
   Future<void> availability(bool online);
   Future<List<Ride>> requests();
   Future<void> counteroffer(String rideId, int cents);
+  Future<void> acceptFare(String rideId);
   Future<Map<String, dynamic>> read(String resource);
   Future<void> write(String resource, Map<String, dynamic> data);
 }
@@ -450,9 +451,11 @@ class ApiRepository implements TriviaRepository {
           .map((j) => DriverOffer.fromJson(j as Map<String, dynamic>))
           .toList();
   @override
-  Future<Ride> accept(String rideId, String offerId) async => Ride.fromJson(
-    await _post('rides/$rideId/accept/', {'offer_id': offerId}),
-  );
+  Future<Ride> accept(String rideId, String offerId, {int? expectedFare}) async =>
+      Ride.fromJson(await _post('rides/$rideId/accept/', {
+        'offer_id': offerId,
+        'fare_cents': ?expectedFare,
+      }));
   @override
   Future<Ride> transition(String rideId, RideStatus status) async =>
       Ride.fromJson(
@@ -525,7 +528,15 @@ class ApiRepository implements TriviaRepository {
           .toList();
   @override
   Future<void> counteroffer(String rideId, int cents) async {
-    await _post('rides/$rideId/offers/', {'fare_cents': cents});
+    await _post('rides/$rideId/offers/', {
+      'decision': 'counteroffer',
+      'fare_cents': cents,
+    });
+  }
+
+  @override
+  Future<void> acceptFare(String rideId) async {
+    await _post('rides/$rideId/offers/', {'decision': 'accept'});
   }
 
   Future<Map<String, dynamic>> _patch(
