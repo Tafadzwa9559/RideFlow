@@ -376,8 +376,10 @@ Technology • Innovation • Mobility
 # ------------------------------------------------------------
 # Routing, location and ride operational configuration
 # ------------------------------------------------------------
-TRIVIA_ROUTING_URL = os.environ.get("TRIVIA_ROUTING_URL", "")
-TRIVIA_GEOCODING_URL = os.environ.get("TRIVIA_GEOCODING_URL", "")
+TRIVIA_GEOAPIFY_API_KEY = os.environ.get("TRIVIA_GEOAPIFY_API_KEY", "").strip()
+TRIVIA_GEOAPIFY_DAILY_REQUEST_LIMIT = int(os.environ.get("TRIVIA_GEOAPIFY_DAILY_REQUEST_LIMIT", "2500"))
+TRIVIA_ROUTING_URL = os.environ.get("TRIVIA_ROUTING_URL", "").strip()
+TRIVIA_GEOCODING_URL = os.environ.get("TRIVIA_GEOCODING_URL", "").strip()
 TRIVIA_MAX_SNAP_METRES = int(os.environ.get("TRIVIA_MAX_SNAP_METRES", "250"))
 TRIVIA_QUOTE_TTL_SECONDS = int(os.environ.get("TRIVIA_QUOTE_TTL_SECONDS", "300"))
 TRIVIA_EXCHANGE_MAX_AGE_SECONDS = int(

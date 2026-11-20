@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../core/map_view.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
 import 'booking_controller.dart';
@@ -60,6 +61,7 @@ class BookingFields extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
+          if (q?.routingProvider == 'Geoapify') const GeoapifyAttribution(),
           if (booking.notice != null)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),

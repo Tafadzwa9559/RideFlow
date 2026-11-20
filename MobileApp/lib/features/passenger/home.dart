@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -53,6 +55,8 @@ class _PassengerHomeState extends State<PassengerHome> {
         builder: (_) => PlacePicker(
           app: widget.app,
           title: origin ? 'Choose pickup' : 'Where to?',
+          isPickup: origin,
+          initialPlace: origin ? pickup : destination,
         ),
       ),
     );
@@ -102,6 +106,7 @@ class _PassengerHomeState extends State<PassengerHome> {
                     pickup: ride?.pickup ?? pickup,
                     destination: ride?.destination ?? destination,
                     route: ride?.route ?? booking.quote?.points ?? const [],
+                    bottomInset: constraints.maxHeight * .52,
                     driver: ride?.freshLocation == true
                         ? ride!.driverLocation
                         : null,
@@ -246,7 +251,15 @@ class _LocationTile extends StatelessWidget {
 }
 
 class PlacePicker extends StatefulWidget {
-  const PlacePicker({super.key, required this.app, required this.title});
+  const PlacePicker({
+    super.key,
+    required this.app,
+    required this.title,
+    this.isPickup = true,
+    this.initialPlace,
+  });
+  final bool isPickup;
+  final Place? initialPlace;
   final AppController app;
   final String title;
   @override
@@ -258,13 +271,13 @@ class _PlacePickerState extends State<PlacePicker> {
   Timer? debounce;
   List<Place> results = [];
   String? error;
-  bool busy = false, map = false;
-  Place? pin;
+  bool busy = false, locating = false, map = false;
+  Place? selected, currentLocation;
   int generation = 0;
   @override
   void initState() {
     super.initState();
-    search('');
+    selected = widget.initialPlace;
   }
 
   @override
@@ -274,22 +287,41 @@ class _PlacePickerState extends State<PlacePicker> {
     super.dispose();
   }
 
-  Future<void> search(String q) async {
+  void scheduleSearch(String input) {
+    debounce?.cancel();
     final version = ++generation;
+    final q = input.trim();
     setState(() {
-      busy = true;
+      busy = q.length >= 2;
+      map = false;
       error = null;
+      results = [];
     });
+    if (!busy) return;
+    debounce = Timer(
+      const Duration(milliseconds: 350),
+      () => search(q, version),
+    );
+  }
+
+  Future<void> search(String q, int version) async {
     try {
       final found = await widget.app.repository.search(q);
       if (mounted && version == generation) {
         setState(() => results = found);
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted && version == generation) {
+        final status = e is DioException ? e.response?.statusCode : null;
         setState(
-          () =>
-              error = 'Location search unavailable. Retry or choose a map pin.',
+          () => error = switch (status) {
+            401 || 403 => 'Sign in again to search for locations.',
+            429 => 'Too many searches. Wait a moment and retry.',
+            503 => 'Location search is temporarily unavailable. Retry or choose a map pin.',
+            null when e is DioException && e.response == null =>
+              'Could not reach Trivia. Check your connection and retry.',
+            _ => 'Location search failed. Retry or choose a map pin.',
+          },
         );
       }
     } finally {
@@ -300,15 +332,20 @@ class _PlacePickerState extends State<PlacePicker> {
   }
 
   Future<void> locate() async {
+    debounce?.cancel();
+    ++generation;
     setState(() {
-      busy = true;
+      busy = false;
+      locating = true;
       error = null;
     });
     try {
-      if (!await Geolocator.isLocationServiceEnabled()) {
+      if (!kIsWeb && !await Geolocator.isLocationServiceEnabled()) {
         throw StateError('Turn on device location services.');
       }
-      var permission = await Geolocator.checkPermission();
+      var permission = kIsWeb
+          ? LocationPermission.whileInUse
+          : await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
@@ -329,10 +366,12 @@ class _PlacePickerState extends State<PlacePicker> {
         ),
       );
       if (mounted) {
-        Navigator.pop(
-          context,
-          Place('Current location', p.latitude, p.longitude),
-        );
+        FocusScope.of(context).unfocus();
+        setState(() {
+          currentLocation = Place('Current location', p.latitude, p.longitude);
+          selected = currentLocation;
+          map = true;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -344,7 +383,7 @@ class _PlacePickerState extends State<PlacePicker> {
       }
     } finally {
       if (mounted) {
-        setState(() => busy = false);
+        setState(() => locating = false);
       }
     }
   }
@@ -362,21 +401,19 @@ class _PlacePickerState extends State<PlacePicker> {
             decoration: const InputDecoration(
               hintText: 'Search a landmark or neighbourhood',
               prefixIcon: Icon(Icons.search),
+              counterText: '',
             ),
-            onChanged: (q) {
-              debounce?.cancel();
-              debounce = Timer(
-                const Duration(milliseconds: 350),
-                () => search(q),
-              );
-            },
+            maxLength: 200,
+            onChanged: scheduleSearch,
+            enabled: !locating,
+            onSubmitted: scheduleSearch,
           ),
         ),
         Wrap(
           spacing: 12,
           children: [
             TextButton.icon(
-              onPressed: busy ? null : locate,
+              onPressed: locating ? null : locate,
               icon: const Icon(Icons.my_location),
               label: const Text('Use my location'),
             ),
@@ -390,31 +427,28 @@ class _PlacePickerState extends State<PlacePicker> {
             ),
           ],
         ),
-        if (busy) const LinearProgressIndicator(),
+        if (busy || locating) const LinearProgressIndicator(),
         if (error != null)
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(error!, style: const TextStyle(color: Colors.red)),
+            child: Column(
+              children: [
+                Text(error!, style: const TextStyle(color: Colors.red)),
+                if (query.text.trim().length >= 2)
+                  TextButton(
+                    onPressed: () => scheduleSearch(query.text),
+                    child: const Text('Retry search'),
+                  ),
+              ],
+            ),
           ),
         Expanded(
           child: map
-              ? Stack(
-                  children: [
-                    TriviaMap(
-                      pickup: pin,
-                      onTap: (p) => setState(() => pin = p),
-                    ),
-                    if (pin != null)
-                      Positioned(
-                        bottom: 30,
-                        left: 20,
-                        right: 20,
-                        child: ActionButton(
-                          'Use selected pin',
-                          () => Navigator.pop(context, pin),
-                        ),
-                      ),
-                  ],
+              ? TriviaMap(
+                  pickup: widget.isPickup ? selected : null,
+                  destination: widget.isPickup ? null : selected,
+                  currentLocation: currentLocation,
+                  onTap: locating ? null : selectPlace,
                 )
               : ListView(
                   children: [
@@ -425,7 +459,13 @@ class _PlacePickerState extends State<PlacePicker> {
                       const ListTile(title: Text('Recent places')),
                     ...widget.app.recent.map(tile),
                     ...results.map(tile),
-                    if (results.isEmpty && !busy)
+                    if (results.any((place) => place.provider == 'Geoapify'))
+                      const GeoapifyAttribution(),
+                    if (results.isEmpty &&
+                        !busy &&
+                        !locating &&
+                        error == null &&
+                        query.text.trim().length >= 2)
                       const EmptyState(
                         'No places found',
                         'Try another landmark or select a point on the map.',
@@ -434,19 +474,39 @@ class _PlacePickerState extends State<PlacePicker> {
                   ],
                 ),
         ),
+        if (selected != null)
+          SafeArea(
+            top: false,
+            minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: Column(
+              children: [
+                Text(selected!.name),
+                ActionButton(
+                  widget.isPickup ? 'Confirm pickup' : 'Confirm destination',
+                  locating ? null : () => Navigator.pop(context, selected),
+                ),
+              ],
+            ),
+          ),
       ],
     ),
   );
+  void selectPlace(Place place) {
+    FocusScope.of(context).unfocus();
+    setState(() => selected = place);
+  }
+
   Widget tile(Place p) => ListTile(
     leading: const Icon(Icons.place_outlined),
     title: Text(p.name),
     subtitle: Text(
-      '${p.lat.toStringAsFixed(4)}, ${p.lng.toStringAsFixed(4)}',
+      p.formattedAddress ??
+          '${p.lat.toStringAsFixed(4)}, ${p.lng.toStringAsFixed(4)}',
       style: const TextStyle(fontSize: 11),
     ),
-    onTap: () => Navigator.pop(context, p),
+    onTap: locating ? null : () => selectPlace(p),
     trailing: IconButton(
-      tooltip: 'Save place for this session',
+      tooltip: 'Save place',
       icon: Icon(
         widget.app.saved.any((v) => v.name == p.name)
             ? Icons.bookmark

@@ -20,6 +20,11 @@ class PlaceSerializer(serializers.Serializer):
         return data
 
 
+class GeocodedPlaceSerializer(PlaceSerializer):
+    formatted_address = serializers.CharField(max_length=500)
+    provider = serializers.CharField(required=False)
+
+
 class QuoteRequestSerializer(serializers.Serializer):
     pickup = PlaceSerializer()
     destination = PlaceSerializer()

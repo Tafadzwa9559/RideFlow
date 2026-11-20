@@ -228,7 +228,7 @@ class BookingController extends ChangeNotifier {
           result.id == null ||
           result.currency != currency) {
         throw StateError(
-          'No valid road-route fare is available. Configure the backend routing and pricing service, then retry.',
+          'No driving route and fare are available. Check your pickup and destination, then retry.',
         );
       }
       quote = result;

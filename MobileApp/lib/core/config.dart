@@ -34,6 +34,12 @@ class AppConfig {
     'TRIVIA_MAP_TILES',
     defaultValue: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   );
+  static const mapTileAttribution = String.fromEnvironment(
+    'TRIVIA_MAP_TILE_ATTRIBUTION',
+  );
+  static const mapTileAttributionUrl = String.fromEnvironment(
+    'TRIVIA_MAP_TILE_ATTRIBUTION_URL',
+  );
   static const privacy = String.fromEnvironment('TRIVIA_PRIVACY_URL');
   static const terms = String.fromEnvironment('TRIVIA_TERMS_URL');
   static void validate() =>

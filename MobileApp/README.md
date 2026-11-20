@@ -158,3 +158,11 @@ Use [the isolated backend OTP setup](../Backend/docs/development-otp.md), then r
 `bash tool/run-development.sh` from `MobileApp`. Only opted-in debug builds can
 use a local HTTP origin. The login/OTP screens and real API workflow are unchanged;
 normal builds continue using the public HTTPS origin.
+
+The shared `TriviaMap` uses raster tiles across Flutter platforms. OpenFreeMap's
+[public styles](https://openfreemap.org/quick_start/) require a vector renderer.
+For a production raster service, set `TRIVIA_MAP_TILES` to a licensed HTTPS
+XYZ template and set `TRIVIA_MAP_TILE_ATTRIBUTION` and
+`TRIVIA_MAP_TILE_ATTRIBUTION_URL` to the provider’s required credit. The default follows the [OSM standard tile policy](https://operations.osmfoundation.org/policies/tiles/)
+and is subject to its capacity and availability. Flutter web GPS requires HTTPS
+(or localhost) and browser permission.

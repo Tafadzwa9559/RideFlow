@@ -21,8 +21,19 @@ Create an external Render environment group `trivia-production-secrets` and atta
 | PRIVATE_STORAGE_REGION | Provider region |
 | PRIVATE_STORAGE_ACCESS_KEY / PRIVATE_STORAGE_SECRET_KEY | Least-privilege object credentials, or workload identity where supported |
 | SMS_PROVIDER | Installed adapter class; empty means OTP returns 503, not delivered |
-| TRIVIA_ROUTING_URL / TRIVIA_GEOCODING_URL | Licensed HTTPS compatible services; no invented straight-line road distance |
+| TRIVIA_GEOAPIFY_API_KEY | Server-side Geoapify project key for autocomplete, reverse geocoding and driving routes |
+| TRIVIA_GEOAPIFY_DAILY_REQUEST_LIMIT | Optional shared daily upstream request limit, defaults to 2500 UTC. Long routes can consume multiple credits. Track credit usage in the Geoapify dashboard. |
+| TRIVIA_ROUTING_URL / TRIVIA_GEOCODING_URL | Optional HTTPS overrides for existing OSRM and Nominatim-compatible services respectively. Clear either override to use Geoapify for that service. |
 | PUSH_PROVIDER | Optional installed adapter; empty means no push delivery claim |
+
+Add the Geoapify key to `trivia-production-secrets` (locally use `Backend/.env`).
+Keep it out of Flutter builds. Search and reverse geocoding retain the shared
+30/min per-user limit, and route and fare endpoints retain their own shared
+30/min per-user limit. Valid geocodes are cached for 24 hours. Empty searches
+and driving routes are cached for five minutes. Geoapify cache misses share
+a Redis-backed five-per-second limit and a UTC daily request budget. Leave
+existing pricing zones and fare rules in place and verify coverage for each
+area where passengers can request rides.
 
 The Blueprint supplies production settings, private storage class and internal Redis connections. Production rejects local OTP, non-Atlas URIs, insecure browser origins, wildcard/local hosts and filesystem-only storage. Never supply test variables on production services. The environment group is intentionally not generated with secret values.
 

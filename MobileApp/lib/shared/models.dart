@@ -22,7 +22,8 @@ enum DriverStatus {
 }
 
 class Place {
-  const Place(this.name, this.lat, this.lng);
+  const Place(this.name, this.lat, this.lng, {this.formattedAddress, this.provider});
+  final String? formattedAddress, provider;
   final String name;
   final double lat, lng;
   LatLng get point => LatLng(lat, lng);
@@ -35,6 +36,8 @@ class Place {
     j['name'] as String,
     double.parse('${j['latitude']}'),
     double.parse('${j['longitude']}'),
+    formattedAddress: j['formatted_address'] as String?,
+    provider: j['provider'] as String?,
   );
 }
 
@@ -232,12 +235,13 @@ class RouteQuote {
     this.exchangeRate,
     this.exchangeRateTimestamp,
     this.pricing = const {},
+    this.routingProvider,
   });
   final List<LatLng> points;
   final int metres, seconds, minimumCents;
   final int? suggestedCents;
   final bool available;
-  final String? id, exchangeRate;
+  final String? id, exchangeRate, routingProvider;
   final String currency;
   final int? maximumCents;
   final DateTime? expiresAt, exchangeRateTimestamp;
@@ -258,6 +262,7 @@ class RouteQuote {
     minimumCents: j['minimum_fare_cents'] as int,
     suggestedCents: j['suggested_fare_cents'] as int?,
     id: j['id'] as String?,
+    routingProvider: j['routing_provider'] as String?,
     currency: j['currency'] as String? ?? 'USD',
     maximumCents: j['maximum_fare_cents'] as int?,
     expiresAt: j['expires_at'] == null

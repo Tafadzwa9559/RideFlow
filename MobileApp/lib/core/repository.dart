@@ -363,14 +363,19 @@ class ApiRepository implements TriviaRepository {
   }
 
   @override
-  Future<List<Place>> search(String query) async =>
-      ((await dio.get<Map<String, dynamic>>(
-                'places/',
-                queryParameters: {'q': query},
-              )).data!['results']
-              as List)
-          .map((j) => Place.fromJson(j as Map<String, dynamic>))
-          .toList();
+  Future<List<Place>> search(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return [];
+    final response = await dio.get<Map<String, dynamic>>(
+      'locations/search/',
+      queryParameters: {'q': q},
+    );
+    final results = response.data?['results'];
+    if (results is! List) {
+      throw const FormatException('Trivia returned an invalid location response.');
+    }
+    return results.map((j) => Place.fromJson(j as Map<String, dynamic>)).toList();
+  }
   @override
   Future<RouteQuote?> quote(
     Place pickup,

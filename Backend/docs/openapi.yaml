@@ -18380,7 +18380,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Place'
+                $ref: '#/components/schemas/GeocodedPlace'
               examples:
                 illustrative:
                   summary: Illustrative response; values are not live operational
@@ -18389,6 +18389,7 @@ paths:
                     name: Harare CBD
                     latitude: -90
                     longitude: -180
+                    formatted_address: Harare CBD, Harare, Zimbabwe
           description: ''
         '400':
           content:
@@ -18543,6 +18544,7 @@ paths:
                     - name: Harare CBD
                       latitude: -90
                       longitude: -180
+                      formatted_address: Harare CBD, Harare, Zimbabwe
           description: ''
         '400':
           content:
@@ -20142,6 +20144,7 @@ paths:
                     - name: Harare CBD
                       latitude: -90
                       longitude: -180
+                      formatted_address: Harare CBD, Harare, Zimbabwe
           description: ''
         '400':
           content:
@@ -31163,6 +31166,32 @@ components:
           maxLength: 40
       required:
       - phone
+    GeocodedPlace:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        latitude:
+          type: number
+          format: double
+          maximum: 90
+          minimum: -90
+        longitude:
+          type: number
+          format: double
+          maximum: 180
+          minimum: -180
+        formatted_address:
+          type: string
+          maxLength: 500
+        provider:
+          type: string
+      required:
+      - formatted_address
+      - latitude
+      - longitude
+      - name
     Place:
       type: object
       properties:
@@ -31210,7 +31239,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Place'
+            $ref: '#/components/schemas/GeocodedPlace'
       required:
       - results
     PlatformActivity:

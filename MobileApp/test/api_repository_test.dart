@@ -38,6 +38,33 @@ ResponseBody jsonBody(Object data, [int status = 200]) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+  test('Location search uses the canonical path and accepts both place shapes', () async {
+    final dio = Dio();
+    final adapter = ContractAdapter((options) async => jsonBody({
+      'results': [
+        {
+          'name': 'Avondale',
+          'formatted_address': 'Avondale, Harare, Zimbabwe',
+          'latitude': -17.8,
+          'longitude': 31.03,
+        },
+        {'name': 'Harare', 'latitude': '-17.82', 'longitude': '31.05'},
+      ],
+    }));
+    dio.httpClientAdapter = adapter;
+    final repo = ApiRepository(client: dio);
+    addTearDown(repo.dispose);
+
+    expect(await repo.search('  '), isEmpty);
+    expect(adapter.calls, isEmpty);
+    final places = await repo.search('  Avon ');
+    expect(adapter.calls.single.uri.path, '/api/v1/locations/search/');
+    expect(adapter.calls.single.queryParameters, {'q': 'Avon'});
+    expect(places.first.formattedAddress, 'Avondale, Harare, Zimbabwe');
+    expect(places.last.formattedAddress, isNull);
+    expect(places.last.lat, -17.82);
+  });
+
   test('Production origin and OTP use exact documented paths with real response tokens', () async {
     final dio = Dio();
     final adapter = ContractAdapter((o) async {

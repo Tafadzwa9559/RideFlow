@@ -162,6 +162,29 @@ class ResourceTests(RideFixtures, TestCase):
         self.assertEqual(self.client.post(f'/api/v1/rides/{self.ride.pk}/share/', {'recipient_id': self.other_user.pk}).status_code, 403)
         self.assertEqual(self.client.delete(f'/api/v1/users/me/emergency-contacts/{contact_id}/').status_code, 204)
 
+    @override_settings(TRIVIA_ROUTING_URL='', TRIVIA_GEOAPIFY_API_KEY='test-key')
+    def test_fare_estimate_uses_geoapify_route_and_pricing_minimum(self):
+        self.pricing.minimum_offer_usd = 10
+        self.pricing.save(update_fields=['minimum_offer_usd'])
+        geometry = [[31.05, -17.82], [31.04, -17.81], [31.03, -17.80]]
+        payload = {'features': [{
+            'properties': {'distance': 5800, 'time': 720},
+            'geometry': {'type': 'MultiLineString', 'coordinates': [geometry]},
+        }]}
+        with patch('rides.services.routing.provider_json', return_value=payload):
+            response = self.client.post('/api/v1/fares/estimate/', {
+                'pickup': self.pickup, 'destination': self.destination,
+                'category': 'Standard', 'currency': 'USD',
+            }, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['routing_provider'], 'Geoapify')
+        self.assertEqual(response.data['geometry'], geometry)
+        self.assertEqual(response.data['distance_km'], '5.8')
+        self.assertEqual(response.data['estimated_minutes'], '12')
+        self.assertEqual(response.data['currency'], 'USD')
+        self.assertEqual(response.data['suggested_fare_cents'], 1000)
+        self.assertEqual(response.data['minimum_fare_cents'], 1000)
+
     def test_maps_categories_and_request_detail(self):
         with patch('rides.services.routing.driving_route', return_value=ROAD):
             response = self.client.post('/api/v1/routes/estimate/', {'pickup': self.pickup, 'destination': self.destination, 'category': 'Standard'}, format='json')

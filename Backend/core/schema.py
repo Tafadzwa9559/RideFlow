@@ -40,7 +40,7 @@ def contract(view, method, path):
     from core import admin_api as ad, admin_resources as ar
     from accounts.api.resources import SavedPlaceSerializer, ContactSerializer, AvatarView, AvatarUploadSerializer
     from drivers.api.serializers import ApplicationSerializer, LocationSerializer
-    from rides.api.serializers import BookingRequestSerializer, QuoteRequestSerializer, RideSerializer, PlaceSerializer
+    from rides.api.serializers import BookingRequestSerializer, QuoteRequestSerializer, RideSerializer, GeocodedPlaceSerializer
     def result(response, request=None, status=200, alternatives=()):
         responses = {status: response}
         responses.update({code: response for code in alternatives})
@@ -79,7 +79,7 @@ def contract(view, method, path):
         r.OffersView: {'GET': result(c.collection('AvailableOffers', c.OfferSerializer)), 'POST': result(c.OfferCreatedSerializer, r.OfferSerializer, 201)},
         r.RideStatusView: {'GET': result(c.RideStatusSerializer), 'POST': result(RideSerializer, c.StateCommandSerializer if path.endswith('/status/') else c.OptionalReasonSerializer)},
         r.RideAcceptView: {'POST': result(RideSerializer, c.SelectionSerializer)}, r.WithdrawView: {'POST': result(c.StatusSerializer)},
-        r.PlacesView: {'GET': result(c.collection('Places', PlaceSerializer))},
+        r.PlacesView: {'GET': result(c.collection('Places', GeocodedPlaceSerializer))},
         r.DriverRequestsView: {'GET': result(c.collection('DriverRequestPage', RideSerializer, paginated=True))},
         r.DriverTripsView: {'GET': result(c.collection('DriverTripPage', RideSerializer, paginated=True))},
         r.EarningsView: {'GET': result(c.EarningsSerializer)}, r.EventsView: {'GET': result(c.EventsSerializer)},
@@ -94,7 +94,7 @@ def contract(view, method, path):
         rr.OfferDetailView: {'GET': result(c.OfferSerializer), 'PATCH': result(c.OfferUpdatedSerializer, r.OfferPatchSerializer)}, rr.ReportView: {'POST': result(rr.TicketSerializer, c.MessageSerializer, 201)},
         rr.EarningsSummaryView: {'GET': result(c.EarningsSummarySerializer)},
         rr.CategoriesView: {'GET': result(rr.CategorySerializer if '{' in path else c.collection('Categories', rr.CategorySerializer))},
-        rr.ReverseGeocodeView: {'GET': result(PlaceSerializer)}, rr.RouteEstimateView: {'POST': result(c.RouteSerializer, QuoteRequestSerializer)},
+        rr.ReverseGeocodeView: {'GET': result(GeocodedPlaceSerializer)}, rr.RouteEstimateView: {'POST': result(c.RouteSerializer, QuoteRequestSerializer)},
         dr.DriverProfileView: {'GET': result(ApplicationSerializer), 'PATCH': result(ApplicationSerializer, ApplicationSerializer)},
         dr.StatisticsView: {'GET': result(c.StatisticsSerializer)}, dr.AvailabilityDetailView: {'GET': result(c.AvailabilitySerializer)},
         dr.VehicleDocumentsView: {'GET': result(c.collection('VehicleDocumentPage', dr.VehicleDocumentSerializer, paginated=True)), 'POST': result(dr.VehicleDocumentSerializer, dr.VehicleDocumentUploadSerializer, 201)},
