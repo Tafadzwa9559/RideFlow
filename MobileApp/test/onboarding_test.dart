@@ -88,7 +88,7 @@ void main() {
                 .ancestor(of: imageFinder, matching: find.byType(ClipRRect))
                 .first,
           );
-          expect(clip.borderRadius, BorderRadius.circular(12));
+          expect(clip.borderRadius, BorderRadius.circular(18));
           final photo = tester.getRect(imageFinder);
           expect(photo.width / photo.height, closeTo(1.65, 0.001));
           expect(photo.left, 24);
@@ -103,13 +103,20 @@ void main() {
             ),
           );
           expect(photo.left, heading.left);
-          expect(photo.left, tester.getRect(find.text(descriptions[i])).left);
-          expect(photo.top - tester.getRect(find.byType(PageView)).top, 40);
+          final descriptionBeforeScroll = tester.getRect(
+            find.text(descriptions[i]),
+          );
+          expect(photo.left, descriptionBeforeScroll.left);
+          final viewport = tester.getRect(find.byType(PageView));
+          final contentHeight = descriptionBeforeScroll.bottom - photo.top;
+          final centering = ((viewport.height - contentHeight) / 2)
+              .clamp(0.0, double.infinity);
+          expect(photo.top - viewport.top, closeTo(20 + centering, 0.001));
           final label = tester.getRect(
             find.text('0${i + 1} / YOUR NEXT CHAPTER'),
           );
-          expect(label.top - photo.bottom, closeTo(24, 0.001));
-          expect(heading.top - label.bottom, closeTo(16, 0.001));
+          expect(label.top - photo.bottom, closeTo(22, 0.001));
+          expect(heading.top - label.bottom, closeTo(14, 0.001));
           photoSizes.add(tester.getSize(imageFinder));
           await tester.ensureVisible(find.text(descriptions[i]));
           await tester.pumpAndSettle();

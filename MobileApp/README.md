@@ -29,7 +29,8 @@ The client appends `/api/v1/` and derives the WSS notification URL from the orig
 |---|---|---|
 | `TRIVIA_API_BASE_URL` | Backend origin (HTTPS in normal builds) | Deployed Trivia origin above |
 | `TRIVIA_DEVELOPMENT_BUILD` | Opt in to local origins in debug mode | `false` |
-| `TRIVIA_MAP_TILES` | Tile URL template | OpenStreetMap standard tiles |
+| `TRIVIA_GEOAPIFY_MAP_KEY` | Client API key for Geoapify OSM Carto raster tiles | Unconfigured |
+| `TRIVIA_MAP_TILES` | Override with a licensed raster XYZ tile template | Unconfigured |
 | `TRIVIA_PRIVACY_URL` | HTTPS privacy policy URL | Unconfigured |
 | `TRIVIA_TERMS_URL` | HTTPS terms URL | Unconfigured |
 
@@ -159,10 +160,15 @@ Use [the isolated backend OTP setup](../Backend/docs/development-otp.md), then r
 use a local HTTP origin. The login/OTP screens and real API workflow are unchanged;
 normal builds continue using the public HTTPS origin.
 
-The shared `TriviaMap` uses raster tiles across Flutter platforms. OpenFreeMap's
-[public styles](https://openfreemap.org/quick_start/) require a vector renderer.
-For a production raster service, set `TRIVIA_MAP_TILES` to a licensed HTTPS
-XYZ template and set `TRIVIA_MAP_TILE_ATTRIBUTION` and
-`TRIVIA_MAP_TILE_ATTRIBUTION_URL` to the provider’s required credit. The default follows the [OSM standard tile policy](https://operations.osmfoundation.org/policies/tiles/)
-and is subject to its capacity and availability. Flutter web GPS requires HTTPS
-(or localhost) and browser permission.
+Build with `--dart-define=TRIVIA_GEOAPIFY_MAP_KEY=YOUR_CLIENT_KEY` to enable
+[Geoapify OSM Carto raster tiles](https://apidocs.geoapify.com/docs/maps/).
+Use a client key for this app and a plan that covers your traffic under
+[Geoapify's terms](https://www.geoapify.com/terms-and-conditions/).
+The map displays both Geoapify and OpenStreetMap attribution.
+
+To use another licensed provider, set `TRIVIA_MAP_TILES` to its HTTPS raster
+template containing `{z}`, `{x}`, and `{y}`. Set `TRIVIA_MAP_TILE_ATTRIBUTION`
+and `TRIVIA_MAP_TILE_ATTRIBUTION_URL` to the provider’s required credit.
+MapLibre style JSON requires a vector renderer. Builds without tile
+configuration show the map controls and overlays with a configuration notice.
+Flutter web GPS requires HTTPS (or localhost) and browser permission.

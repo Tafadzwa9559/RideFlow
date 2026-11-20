@@ -76,6 +76,9 @@ class _TriviaMapState extends State<TriviaMap> {
     WidgetsBinding.instance.ensureVisualUpdate();
   }
 
+  final tiles = AppConfig.mapTiles;
+  bool get hasTiles => tiles != null || widget.tileProvider != null;
+
   @override
   Widget build(BuildContext context) => Stack(
     children: [
@@ -97,22 +100,23 @@ class _TriviaMapState extends State<TriviaMap> {
           ),
         ),
         children: [
-          TileLayer(
-            urlTemplate: AppConfig.mapTiles,
-            tileProvider: widget.tileProvider,
-            reset: tileReset.stream,
-            userAgentPackageName: 'com.mordecsolutions.trivia',
-            errorTileCallback: (_, _, _) {
-              if (!failed && mounted) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted && !failed) {
-                    setState(() => failed = true);
-                  }
-                });
-                WidgetsBinding.instance.ensureVisualUpdate();
-              }
-            },
-          ),
+          if (hasTiles)
+            TileLayer(
+              urlTemplate: tiles,
+              tileProvider: widget.tileProvider,
+              reset: tileReset.stream,
+              userAgentPackageName: 'com.mordecsolutions.trivia',
+              errorTileCallback: (_, _, _) {
+                if (!failed && mounted) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && !failed) {
+                      setState(() => failed = true);
+                    }
+                  });
+                  WidgetsBinding.instance.ensureVisualUpdate();
+                }
+              },
+            ),
           if (widget.route.isNotEmpty)
             PolylineLayer(
               polylines: [
@@ -172,7 +176,7 @@ class _TriviaMapState extends State<TriviaMap> {
                   '© OpenStreetMap contributors',
                   'https://www.openstreetmap.org/copyright',
                 ),
-                if (AppConfig.mapTileAttribution.isNotEmpty)
+                if (tiles != null && AppConfig.mapTileAttribution.isNotEmpty)
                   const _AttributionLink(
                     AppConfig.mapTileAttribution,
                     AppConfig.mapTileAttributionUrl,
@@ -217,19 +221,24 @@ class _TriviaMapState extends State<TriviaMap> {
           ],
         ),
       ),
-      if (failed)
+      if (!hasTiles || failed)
         Positioned(
           top: 54,
           left: 12,
           right: 70,
           child: Card(
-            child: TextButton(
-              onPressed: () {
-                setState(() => failed = false);
-                tileReset.add(null);
-              },
-              child: const Text('Map tiles unavailable. Tap to retry.'),
-            ),
+            child: !hasTiles
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text('Map tiles are not configured.'),
+                  )
+                : TextButton(
+                    onPressed: () {
+                      setState(() => failed = false);
+                      tileReset.add(null);
+                    },
+                    child: const Text('Map tiles unavailable. Tap to retry.'),
+                  ),
           ),
         ),
     ],

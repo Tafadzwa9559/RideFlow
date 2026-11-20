@@ -30,16 +30,30 @@ class AppConfig {
         .toString();
   }
 
-  static const mapTiles = String.fromEnvironment(
-    'TRIVIA_MAP_TILES',
-    defaultValue: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  static const _customMapTiles = String.fromEnvironment('TRIVIA_MAP_TILES');
+  static const _geoapifyMapKey = String.fromEnvironment(
+    'TRIVIA_GEOAPIFY_MAP_KEY',
   );
-  static const mapTileAttribution = String.fromEnvironment(
+  static const _customMapTileAttribution = String.fromEnvironment(
     'TRIVIA_MAP_TILE_ATTRIBUTION',
   );
-  static const mapTileAttributionUrl = String.fromEnvironment(
+  static const _customMapTileAttributionUrl = String.fromEnvironment(
     'TRIVIA_MAP_TILE_ATTRIBUTION_URL',
   );
+
+  static String? get mapTiles {
+    if (_customMapTiles.isNotEmpty) return _customMapTiles;
+    if (_geoapifyMapKey.isEmpty) return null;
+    final key = Uri.encodeQueryComponent(_geoapifyMapKey);
+    return 'https://maps.geoapify.com/v1/tile/osm-carto/{z}/{x}/{y}.png?apiKey=$key';
+  }
+
+  static const mapTileAttribution = _customMapTiles != ''
+      ? _customMapTileAttribution
+      : 'Powered by Geoapify';
+  static const mapTileAttributionUrl = _customMapTiles != ''
+      ? _customMapTileAttributionUrl
+      : 'https://www.geoapify.com/';
   static const privacy = String.fromEnvironment('TRIVIA_PRIVACY_URL');
   static const terms = String.fromEnvironment('TRIVIA_TERMS_URL');
   static void validate() =>

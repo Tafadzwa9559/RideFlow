@@ -32,7 +32,7 @@ class _EmailSignupRepository extends TestRepository {
     required String password,
     required String confirmation,
   }) async {
-    submissions.add([firstName, lastName, email, password]);
+    submissions.add([firstName, lastName, email, password, confirmation]);
   }
 }
 
@@ -114,6 +114,16 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    Future<void> submit() async {
+      final button = find.widgetWithText(FilledButton, 'Create account');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      expect(button.hitTestable(), findsOneWidget);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+    }
+
     Future<void> enter(String label, String text) async {
       final field = find.widgetWithText(TextFormField, label);
       await tester.ensureVisible(field);
@@ -128,13 +138,19 @@ void main() {
     await enter('Email address', email);
     await enter('Password', password);
     await enter('Confirm password', 'a different password');
-    await tap('Create account');
+    await submit();
     expect(find.text('The passwords must match.'), findsOneWidget);
     expect(repository.submissions, isEmpty);
 
     await enter('Confirm password', password);
-    await tap('Create account');
-    expect(repository.submissions.single, ['Tariro', 'Moyo', email, password]);
+    await submit();
+    expect(repository.submissions.single, [
+      'Tariro',
+      'Moyo',
+      email,
+      password,
+      password,
+    ]);
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.text(email), findsOneWidget);
     expect(app.session, isNull);
