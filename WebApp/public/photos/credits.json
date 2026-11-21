@@ -1,92 +1,99 @@
 [
   {
     "name": "city-car",
-    "author": "Thang Nguyen",
-    "source": "https://www.pexels.com/photo/modern-electric-car-on-urban-street-37048022/",
-    "license": "https://www.pexels.com/license/",
-    "dimensions": [
-      1200,
-      799
-    ],
-    "bytes": 93282
+    "author": "User-provided image",
+    "source": "Trivia Car on Jacaranda Avenue.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1200, 675],
+    "bytes": 186488
   },
   {
     "name": "passenger",
-    "author": "Roberto Hund",
-    "source": "https://www.pexels.com/photo/confident-black-woman-opening-door-of-taxi-5356272/",
-    "license": "https://www.pexels.com/license/",
-    "dimensions": [
-      1200,
-      800
-    ],
-    "bytes": 82656
+    "author": "User-provided image",
+    "source": "City Ride Request in Progress.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1024, 768],
+    "bytes": 96502
+  },
+  {
+    "name": "passenger-car",
+    "author": "User-provided image",
+    "source": "ChatGPT Image Nov 16, 2026, 05_38_02 PM.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1024, 768],
+    "bytes": 111966
   },
   {
     "name": "driver",
-    "author": "Gustavo Fring",
-    "source": "https://www.pexels.com/photo/smiling-woman-at-steering-wheel-in-car-6817008/",
-    "license": "https://www.pexels.com/license/",
-    "dimensions": [
-      1200,
-      800
-    ],
-    "bytes": 48186
+    "author": "User-provided image",
+    "source": "Smiling Driver on First Street.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1152, 768],
+    "bytes": 105192
+  },
+  {
+    "name": "driver-portrait",
+    "author": "User-provided image",
+    "source": "Smiling by the City Fountain.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1152, 768],
+    "bytes": 167268
+  },
+  {
+    "name": "city-driver",
+    "author": "User-provided image",
+    "source": "Trivia Driver in a Bustling City Street-3.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1200, 675],
+    "bytes": 108666
   },
   {
     "name": "navigation",
-    "author": "RDNE Stock project",
-    "source": "https://www.pexels.com/photo/a-person-checking-the-gps-on-the-cellphone-7362886/",
-    "license": "https://www.pexels.com/license/",
-    "dimensions": [
-      1200,
-      800
-    ],
-    "bytes": 47572
+    "author": "User-provided image",
+    "source": "Navigating Busy City Streets.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1200, 675],
+    "bytes": 92786
   },
   {
     "name": "safety",
-    "author": "SALOMON BYUMA",
-    "source": "https://www.pexels.com/photo/photograph-of-a-man-in-a-car-6650892/",
-    "license": "https://www.pexels.com/license/",
-    "dimensions": [
-      1200,
-      1801
-    ],
-    "bytes": 89128
-  },
-  {
-    "name": "suv",
-    "author": "Taryn Elliott",
-    "source": "https://www.pexels.com/photo/aerial-view-of-an-suv-car-on-the-road-6552198/",
-    "license": "https://www.pexels.com/license/",
-    "dimensions": [
-      1200,
-      1734
-    ],
-    "bytes": 112616
-  },
-  {
-    "name": "interior",
-    "author": "Mario Amé",
-    "source": "https://www.pexels.com/photo/man-sitting-behind-the-wheel-of-a-car-15476320/",
-    "license": "https://www.pexels.com/license/",
-    "dimensions": [
-      1200,
-      1200
-    ],
-    "bytes": 72170
+    "author": "User-provided image",
+    "source": "Warm Smile on Harare's Busy Streets.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1152, 768],
+    "bytes": 159858
   },
   {
     "name": "harare",
-    "author": "Noah Denhe",
-    "source": "https://www.pexels.com/photo/high-rise-building-with-glass-panels-along-a-street-13408426/",
-    "license": "https://www.pexels.com/license/",
-    "location": "Harare, Zimbabwe",
-    "dimensions": [
-      1200,
-      1800
-    ],
-    "bytes": 179606,
+    "author": "User-provided image",
+    "source": "Trivia Ride in Downtown Harare-1.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1200, 675],
+    "bytes": 167122,
     "use": "Illustrative city photography; not a service-coverage announcement."
+  },
+  {
+    "name": "suv",
+    "author": "User-provided image",
+    "source": "Trivia Car Beneath Jacarandas-2.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1200, 675],
+    "bytes": 143882
+  },
+  {
+    "name": "interior",
+    "author": "User-provided image",
+    "source": "Bulawayo Morning Drive Portrait.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1152, 768],
+    "bytes": 148380
+  },
+  {
+    "name": "car-journey",
+    "author": "User-provided image",
+    "source": "Harare Golden Hour Trivia Car-4.webp",
+    "license": "Provided by the project owner",
+    "dimensions": [1200, 675],
+    "bytes": 110392
   }
 ]

@@ -7,25 +7,40 @@ import {
 } from "motion/react";
 import ScrollReveal, { type RevealDirection } from "../common/ScrollReveal";
 const dimensions = {
-  "city-car": [1200, 799],
-  passenger: [1200, 800],
-  driver: [1200, 800],
-  navigation: [1200, 800],
-  safety: [1200, 1801],
-  harare: [1200, 1800],
-  suv: [1200, 1734],
-  interior: [1200, 1200],
+  "city-car": [1200, 675],
+  passenger: [1200, 900],
+  "passenger-car": [1200, 900],
+  driver: [1200, 900],
+  "driver-portrait": [1200, 900],
+  "city-driver": [1200, 751],
+  navigation: [1200, 1200],
+  safety: [1200, 1200],
+  harare: [1200, 675],
+  suv: [1200, 900],
+  interior: [1200, 900],
+  "car-journey": [1200, 675],
 } as const;
 const descriptions = {
-  "city-car":
-    "A modern white car parked on a city street beside urban buildings",
-  passenger: "A woman opening the passenger door of a taxi on a city street",
-  driver: "A woman seated at the steering wheel of a car",
-  navigation: "Hands checking a navigation map on a smartphone inside a car",
-  safety: "A man seated inside a vehicle wearing a seat belt",
-  harare: "Cars and buildings on a city-centre street in Harare, Zimbabwe",
-  suv: "An SUV travelling along a coastal road in South Africa",
-  interior: "A driver seated in a clean, modern vehicle interior",
+  "city-car": "A Trivia-branded car on Jacaranda Avenue in Harare",
+  passenger:
+    "A woman smiling at the driver as she opens the door of a silver car under jacaranda trees",
+  "passenger-car":
+    "A passenger's hands holding a phone in the back seat of a car in central Harare",
+  driver:
+    "A smiling driver at the wheel of a white Toyota Aqua on a city street",
+  "driver-portrait":
+    "A smiling driver leaning on his silver Honda Fit on a tree-lined street",
+  "city-driver":
+    "A white Toyota Aqua driving along a busy Harare street lined with jacaranda trees",
+  navigation:
+    "A young man checking a route on his phone on a busy Harare pavement",
+  safety:
+    "A passenger checking her phone in the back seat at night while the driver smiles",
+  harare: "A Trivia-branded car in downtown Harare",
+  suv: "Two colleagues looking at a laptop together in a bright office with a view of the city",
+  interior:
+    "The inside of a Toyota Aqua with a phone mounted on the dashboard, looking down a Harare street",
+  "car-journey": "A Trivia-branded car driving through Harare at golden hour",
 } as const;
 export type PhotoName = keyof typeof descriptions;
 export default function Photo({

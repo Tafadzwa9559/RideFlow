@@ -91,7 +91,7 @@ export default function PublicPages({ pathname }: { pathname: string }) {
         </ScrollReveal>
         <ScrollReveal direction="none" className="site-section site-soft">
           <div className="site-container story-split">
-            <Photo name="navigation" direction="left" />
+            <Photo name="passenger-car" direction="left" />
             <ScrollReveal as="div" direction="left">
               <span className="site-eyebrow">MADE FOR YOUR PHONE</span>
               <h2>
@@ -123,7 +123,7 @@ export default function PublicPages({ pathname }: { pathname: string }) {
           className="site-section site-container faq-page-editorial"
         >
           <aside>
-            <Photo name="navigation" direction="left" />
+            <Photo name="driver-portrait" direction="left" />
             <h2>
               Good to know
               <br />
@@ -147,7 +147,7 @@ export default function PublicPages({ pathname }: { pathname: string }) {
           copy="Everything happens in the Trivia mobile app. Here’s a look at the planned passenger and driver journeys."
         />
         <ScrollReveal className="site-container process-photography">
-          <Photo name="navigation" direction="left" />
+          <Photo name="city-driver" direction="left" />
           <ScrollReveal as="div" direction="left">
             <span className="site-eyebrow">ONE APP. TWO WAYS TO MOVE.</span>
             <p>

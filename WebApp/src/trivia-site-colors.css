@@ -1,0 +1,333 @@
+/* Trivia public-site colours (green theme).
+   Import LAST in main.tsx (after `import App`) so it loads after marketing.css. */
+.marketing {
+  --tv-green: #10b981;
+  --tv-green-deep: #064e3b;
+  --tv-yellow: #ffc72c;
+  --tv-red: #e03a3e;
+  --tv-mint: #ecfdf5;
+  --tv-flag: linear-gradient(90deg, var(--tv-green) 0 33.3%, var(--tv-yellow) 33.3% 66.6%, var(--tv-red) 66.6% 100%);
+  /* soft green wash behind the top of every page */
+  background: linear-gradient(180deg, #d9f7e8 0, #ecfdf5 380px, #ffffff 760px);
+}
+
+/* Flag stripe across the very top and above the footer, and under the hero */
+.marketing::before {
+  content: "";
+  display: block;
+  height: 6px;
+  background: var(--tv-flag);
+}
+.marketing .introduction-editorial {
+  border-top: 4px solid transparent;
+  border-image: var(--tv-flag) 1;
+}
+.marketing .site-footer {
+  background: #ecfdf5;
+  border-top: 6px solid transparent;
+  border-image: var(--tv-flag) 1;
+}
+
+/* Logo text (top-left) in brand green */
+.marketing .nav-wordmark,
+.marketing .site-nav .nav-wordmark {
+  color: var(--tv-green) !important;
+}
+.marketing .nav-wordmark span {
+  color: var(--tv-green-deep) !important; /* the full stop: deep green so it still stands out */
+}
+
+/* Headlines in deep green, labels in brand green */
+.marketing.marketing :is(h1, h2) { color: var(--tv-green-deep); }
+.marketing.marketing.marketing :is(.site-eyebrow, .editorial-label) {
+  color: #047857;
+  font-weight: 600;
+}
+
+/* Every soft band is mint green */
+.marketing .site-soft { background: var(--tv-mint); }
+
+/* Step numbers: green circles in three shades */
+.marketing .concise-steps > li > span {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--tv-green-deep);
+}
+.marketing .concise-steps > li:nth-child(3n + 1) > span { background: #d1fae5; }
+.marketing .concise-steps > li:nth-child(3n + 2) > span { background: #a7f3d0; }
+.marketing .concise-steps > li:nth-child(3n) > span { background: #6ee7b7; }
+
+/* Value dots under "A little more freedom" */
+.marketing .intro-values > span::before { width: 9px; height: 9px; background: var(--tv-green); }
+.marketing .intro-values > span:nth-child(2)::before { background: #34d399; }
+.marketing .intro-values > span:nth-child(3)::before { background: #059669; }
+
+/* Ride categories: green accent lines */
+.marketing .category-editorial article strong { color: #047857; }
+.marketing .category-editorial article > div { border-top: 4px solid var(--tv-green); margin-top: 18px; padding-top: 18px; }
+.marketing .category-editorial article:nth-child(2) > div { border-top-color: #34d399; }
+.marketing .category-editorial article:nth-child(3) > div { border-top-color: #059669; }
+
+/* Phone backdrop and download band */
+.marketing .phone-scene::before { background: #d1fae5; }
+.marketing .site-download-section {
+  background: linear-gradient(135deg, #ecfdf5, #c9f4de);
+  border-block: 0;
+}
+
+/* Green glow on button hover */
+.marketing :is(.site-button, .download-button):hover { box-shadow: 0 8px 22px #10b98145; }
+
+/* Frosted strip across the very top of the screen, in the gap ABOVE the floating
+   navbar, so words scrolling past there are blurred instead of looking cut off.
+   It is fixed to the viewport (not inside the header) and appears once you scroll. */
+.marketing::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 26px;               /* the gap above the bar; raise it if you still see sharp words */
+  z-index: 45;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 70%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.marketing:has(.site-header.is-scrolled)::after {
+  opacity: 1;
+}
+
+/* ===== Inner pages: How It Works, Ride, Drive, Safety, About, Contact, Download, FAQ ===== */
+
+/* Page intro and dividers */
+.marketing .site-page-hero { border-bottom: 3px solid #a7f3d0; }
+.marketing .page-intro { border-bottom: 1px solid #d1fae5; }
+
+/* Feature rows (numbered points): green rule that darkens on hover, green numbers */
+.marketing .feature-rows > article { border-top: 3px solid #a7f3d0; transition: border-color 0.2s; }
+.marketing .feature-rows > article:hover { border-top-color: var(--tv-green); }
+.marketing.marketing .feature-rows > article > span { color: #047857; font-weight: 700; }
+
+/* Journey timeline */
+.marketing .journey-timeline li { border-top: 2px solid #a7f3d0; }
+.marketing.marketing .journey-timeline li > span { color: #047857; font-weight: 700; }
+
+/* Requirements and notes */
+.marketing .requirements-card { background: var(--tv-mint); border-color: #a7f3d0; }
+.marketing .plain-requirements li::marker { color: var(--tv-green); font-weight: 700; }
+.marketing .availability-note { background: var(--tv-mint); border-color: #a7f3d0; border-left: 4px solid var(--tv-green); }
+.marketing .support-boundary { border-top: 3px solid #a7f3d0; }
+
+/* About */
+.marketing .mission-editorial article { border-top: 3px solid var(--tv-green); }
+.marketing .mission-card { background: var(--tv-mint); }
+
+/* Contact form */
+.marketing .contact-form { border-color: #a7f3d0; border-top: 4px solid var(--tv-green); }
+.marketing .contact-form :is(input, select, textarea):focus { border-color: var(--tv-green); box-shadow: 0 0 0 3px #10b98122; }
+
+/* FAQ page */
+.marketing .site-faq-list .faq-item { border-bottom-color: #a7f3d0; }
+.marketing .faq-item h3 > button > span { color: var(--tv-green); }
+
+/* ===== Page-specific styling (written against PublicPages.tsx) ===== */
+
+/* Every inner-page header becomes a soft green panel */
+.marketing .page-intro {
+  background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 70%);
+  border: 1px solid #a7f3d0;
+  border-radius: 24px;
+  padding: 56px 48px;
+  margin-top: 24px;
+}
+.marketing .page-intro-split { padding-bottom: 56px; }
+
+/* Feature rows (Ride, Drive, Safety) become green cards with numbered badges */
+.marketing .feature-rows { gap: 20px; }
+.marketing .feature-rows > article {
+  background: var(--tv-mint);
+  border: 1px solid #a7f3d0;
+  border-top: 3px solid var(--tv-green);
+  border-radius: 14px;
+  padding: 26px 28px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.marketing .site-soft .feature-rows > article { background: #fff; }
+.marketing .feature-rows > article:hover { box-shadow: 0 10px 28px #10b98122; }
+.marketing.marketing .feature-rows > article > span {
+  align-self: start;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  background: #047857;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* How It Works: passengers = mint card, drivers = deep green card */
+.marketing .journey-grid { gap: 28px; }
+.marketing .journey-grid > article {
+  border-radius: 18px;
+  padding: 36px;
+}
+.marketing .journey-grid > article:nth-child(1) {
+  background: var(--tv-mint);
+  border: 1px solid #a7f3d0;
+}
+.marketing .journey-grid > article:nth-child(2) {
+  background: var(--tv-green-deep);
+  border: 1px solid var(--tv-green-deep);
+}
+.marketing.marketing .journey-grid > article:nth-child(2) :is(h2, h3) { color: #fff; }
+.marketing.marketing .journey-grid > article:nth-child(2) p { color: #c8eedd; }
+.marketing.marketing .journey-grid > article:nth-child(2) .journey-timeline li { border-top-color: #ffffff2e; }
+.marketing.marketing .journey-grid > article:nth-child(2) .journey-timeline li > span { color: #6ee7b7; }
+
+/* Safety: support note as a green callout */
+.marketing .support-boundary {
+  background: var(--tv-mint);
+  border: 1px solid #a7f3d0;
+  border-left: 5px solid var(--tv-green);
+  border-radius: 14px;
+  padding: 28px 32px;
+  margin-top: 40px;
+}
+
+/* Download page: green panel behind the app buttons and phone */
+.marketing .download-page {
+  background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 70%);
+  border: 1px solid #a7f3d0;
+  border-radius: 24px;
+  padding: 56px 48px;
+  margin-top: 24px;
+  margin-bottom: 40px;
+}
+
+/* About: mission and vision as green cards */
+.marketing .mission-editorial > div { gap: 28px; }
+.marketing .mission-editorial article {
+  background: var(--tv-mint);
+  border: 1px solid #a7f3d0;
+  border-top: 4px solid var(--tv-green);
+  border-radius: 14px;
+  padding: 28px 30px;
+}
+
+@media (max-width: 760px) {
+  .marketing .page-intro,
+  .marketing .download-page { padding: 32px 24px; border-radius: 18px; }
+  .marketing .journey-grid > article { padding: 26px; }
+  .marketing .feature-rows > article { padding: 22px; }
+  .marketing .support-boundary { padding: 22px; }
+}
+
+/* ===== Navbar "Download App" button: light sweep + arrow flick on hover ===== */
+.marketing .nav-download {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.marketing .nav-download::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .marketing .nav-download:hover {
+    background: #12c08b;
+    box-shadow: 0 10px 26px rgba(16, 185, 129, 0.45);
+  }
+  .marketing .nav-download:hover::after {
+    animation: tv-sweep 0.7s ease;
+  }
+  .marketing .nav-download:hover svg {
+    animation: tv-arrow-flick 0.55s ease;
+  }
+}
+@keyframes tv-sweep {
+  from { left: -60%; }
+  to { left: 125%; }
+}
+@keyframes tv-arrow-flick {
+  0% { transform: translate(0, 0); opacity: 1; }
+  45% { transform: translate(10px, -10px); opacity: 0; }
+  46% { transform: translate(-10px, 10px); opacity: 0; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+
+/* ===== Contact page ===== */
+
+/* Header becomes the same soft green panel as the other inner pages */
+.marketing .site-page-hero {
+  background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 70%);
+  border: 1px solid #a7f3d0;
+  border-radius: 24px;
+  padding: 56px 48px;
+  margin-top: 24px;
+}
+
+/* Left column: pill-style links, rounded photo */
+.marketing .contact-grid .site-text-link {
+  background: var(--tv-mint);
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  padding: 8px 18px;
+  margin: 4px 0;
+  font-weight: 600;
+}
+.marketing .contact-grid .site-text-link:hover { background: #d1fae5; text-decoration: none; }
+.marketing .contact-photo { box-shadow: 0 14px 34px #10b9812e; }
+
+/* Form card */
+.marketing .contact-form {
+  background: linear-gradient(180deg, #ecfdf5 0, #ffffff 200px);
+  border: 1px solid #a7f3d0;
+  border-top: 5px solid var(--tv-green);
+  border-radius: 20px;
+  padding: 36px;
+  box-shadow: 0 18px 44px #10b9811f;
+}
+.marketing.marketing .contact-form h2 { color: var(--tv-green-deep); }
+.marketing .contact-form .field { color: #064e3b; }
+.marketing .contact-form :is(input, select, textarea) {
+  background: #fff;
+  border: 1px solid #a7f3d0;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.marketing .contact-form :is(input, select, textarea):hover { border-color: #6ee7b7; }
+.marketing .contact-form :is(input, select, textarea):focus {
+  border-color: var(--tv-green);
+  box-shadow: 0 0 0 4px #10b98126;
+}
+.marketing .contact-form .site-button { width: 100%; margin-top: 10px; }
+.marketing .contact-form .site-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 760px) {
+  .marketing .site-page-hero { padding: 32px 24px; border-radius: 18px; }
+  .marketing .contact-form { padding: 24px; }
+}
+
+/* ===== New photography: keep faces in frame when images are cropped ===== */
+/* marketing.css pushed the old driver photo to the left; the new driver sits right of centre */
+.marketing .editorial-photo.photo-driver img { object-position: 62% center; }
+.marketing .editorial-photo.photo-passenger img { object-position: 60% center; }
