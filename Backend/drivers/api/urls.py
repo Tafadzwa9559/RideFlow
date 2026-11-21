@@ -1,7 +1,9 @@
 from django.urls import path
 from .views import ApplicationView, SubmitView, DocumentView, DocumentDownloadView, RequirementsView, AvailabilityView, LocationView, ReviewView
+from .views import DriverServicePreferencesView
 from rides.api.views import DriverRequestsView, EarningsView, DriverTripsView
 urlpatterns = [
+    path('drivers/me/service-preferences/', DriverServicePreferencesView.as_view()),
     path('driver/application/', ApplicationView.as_view()),
     path('driver/application/submit/', SubmitView.as_view()),
     path('driver/application/documents/', DocumentView.as_view()),

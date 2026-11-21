@@ -60,7 +60,7 @@ def cents(value, rounding=ROUND_HALF_UP):
     return int((value * 100).quantize(Decimal(1), rounding=rounding))
 
 
-def quote_route(user, pickup, destination, category, currency):
+def quote_route(user, pickup, destination, category, currency, stops=()):
     if currency != "USD":
         raise ValidationError({"currency": "Only USD fares are supported."})
     if (
@@ -74,7 +74,7 @@ def quote_route(user, pickup, destination, category, currency):
             for p in PricingConfiguration.objects.select_related("zone")
             .filter(enabled=True, zone__enabled=True, category=category)
             .order_by("-priority", "pk")
-            if p.zone.contains(pickup) and p.zone.contains(destination)
+            if all(p.zone.contains(point) for point in (pickup, *stops, destination))
         ),
         None,
     )
@@ -82,7 +82,7 @@ def quote_route(user, pickup, destination, category, currency):
         raise ValidationError(
             "No configured service coverage or pricing exists for this route and category.", code="OUTSIDE_SERVICE_AREA"
         )
-    route = driving_route(pickup, destination)
+    route = driving_route(pickup, destination, stops=stops) if stops else driving_route(pickup, destination)
     if not all(
         policy.zone.contains({"latitude": p[1], "longitude": p[0]})
         for p in route["geometry"]
@@ -123,6 +123,7 @@ def quote_route(user, pickup, destination, category, currency):
         passenger=user,
         pickup=pickup,
         destination=destination,
+        stops=list(stops),
         category=category,
         currency=currency,
         distance_metres=route["distance_metres"],
@@ -161,6 +162,8 @@ def _validate_route_quote(quote, data, now):
             raise ValidationError(
                 f"{field} does not match the route quote. Recalculate the fare."
             )
+    if quote.stops != data.get("stops", []):
+        raise ValidationError({"stops": "Stops changed. Recalculate the fare."})
     if not all(
         quote.pricing.zone.contains({"latitude": p[1], "longitude": p[0]})
         for p in quote.route_geometry
@@ -197,6 +200,10 @@ def book(user, data):
         raise ValidationError(
             "Complete or cancel your current ride before requesting another."
         )
+    from rides.services.scheduling import validate_departure
+    departure = data.get("departure_at")
+    if departure is not None:
+        validate_departure(departure)
     quote = (
         FareQuote.objects.all()
         .select_related("pricing__zone", "exchange_rate")
@@ -243,7 +250,12 @@ def book(user, data):
         request_fingerprint=digest,
         offered_fare=Decimal(amount) / 100,
         payment_preference={"cash-usd": "cash", "ecocash": "ecocash", "onemoney": "onemoney"}[method.pk],
-        expires_at=now + timedelta(seconds=settings.RIDE_REQUEST_TTL),
+        status="scheduled" if departure else "searching",
+        departure_at=departure,
+        expires_at=None if departure else now + timedelta(seconds=settings.RIDE_REQUEST_TTL),
+        passenger_count=data.get("passenger_count", 1),
+        luggage=data.get("luggage", "none"),
+        parcel=data.get("parcel", {}),
         passenger_note=data.get("passenger_note", "")[:250],
         pricing_version=quote.pricing_version,
     )
@@ -255,9 +267,10 @@ def book(user, data):
         status="unverified",
     )
     from rides.services.lifecycle import emit
-    emit(ride, "ride.created")
-    from rides.tasks import dispatch_request
-    transaction.on_commit(lambda: dispatch_request.delay(str(ride.pk)), robust=True)
+    emit(ride, "ride.scheduled" if departure else "ride.created")
+    if departure is None:
+        from rides.tasks import dispatch_request
+        transaction.on_commit(lambda: dispatch_request.delay(str(ride.pk)), robust=True)
     return ride, True
 
 

@@ -9,11 +9,22 @@ from drivers.models import DriverApplication
 from drivers.services.eligibility import driver_for, eligible
 from rides.models import Ride, RideOffer, ActiveAssignment, RideEvent, LocationUpdate
 
+from rides.services.intercity import CATEGORY
+from rides.services.courier import CATEGORY as COURIER
+
 TERMINAL = ['completed', 'cancelled', 'expired']
 
 
 def nearby(application, ride):
-    if application.user_id == ride.passenger_id or application.vehicle.category != ride.quote.category:
+    if application.user_id == ride.passenger_id:
+        return False
+    if ride.quote.category == CATEGORY:
+        if not application.accepts_intercity or application.vehicle.capacity < ride.passenger_count:
+            return False
+    elif ride.quote.category == COURIER:
+        if not application.accepts_courier:
+            return False
+    elif application.vehicle.category != ride.quote.category:
         return False
     if not ride.quote.pricing.zone.enabled:
         return False
@@ -29,7 +40,10 @@ def emit(ride, event_type, payload=None):
     ride.sequence += 1
     ride.save(update_fields=['sequence', 'updated_at'])
     from core.identifiers import json_safe
-    event = RideEvent.objects.create(ride=ride, sequence=ride.sequence, event_type=event_type, payload=json_safe(payload or {'status': ride.status}))
+    data = payload if payload is not None else {'status': ride.status}
+    if ride.quote.category in {CATEGORY, COURIER}:
+        data = {**data, 'service': ride.quote.category}
+    event = RideEvent.objects.create(ride=ride, sequence=ride.sequence, event_type=event_type, payload=json_safe(data))
     users = {ride.passenger_id}
     if ride.assigned_driver_id:
         users.add(ride.assigned_driver.user_id)
@@ -161,7 +175,7 @@ def withdraw(user, offer_id):
 
 
 @transaction.atomic
-def transition(user, ride_id, target, reason='', administrative=False):
+def transition(user, ride_id, target, reason='', administrative=False, *, delivery_proven=False):
     transaction.guard(Ride, ride_id)
     ride = Ride.objects.get(pk=ride_id)
     app = None
@@ -180,13 +194,17 @@ def transition(user, ride_id, target, reason='', administrative=False):
     if ride.status == target:
         return ride
     if target == 'cancelled':
-        if ride.status not in ['searching', 'assigned', 'arriving', 'arrived']:
+        if ride.status not in ['scheduled', 'searching', 'assigned', 'arriving', 'arrived']:
             raise ValidationError('Ride cannot be cancelled in this state.')
     else:
         eligible(app)
         transitions = {'assigned': 'arriving', 'arriving': 'arrived', 'arrived': 'inProgress', 'inProgress': 'completed'}
         if transitions.get(ride.status) != target:
             raise ValidationError('Invalid ride state transition.', code='INVALID_RIDE_STATUS')
+    if target == 'completed' and ride.quote.category == COURIER and not delivery_proven:
+        raise ValidationError('Enter the recipient confirmation code to complete this delivery.')
+    if target == 'inProgress' and ride.departure_at and timezone.now() < ride.departure_at:
+        raise ValidationError('Wait until the scheduled departure to start this trip.')
     ride.status = target
     now = timezone.now()
     timestamp = {'arrived': 'arrived_at', 'inProgress': 'started_at', 'completed': 'completed_at', 'cancelled': 'cancelled_at'}.get(target)

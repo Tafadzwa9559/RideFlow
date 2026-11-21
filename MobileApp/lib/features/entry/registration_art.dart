@@ -4,24 +4,7 @@ class _RegistrationBrand extends StatelessWidget {
   const _RegistrationBrand();
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: Image.asset(
-            'assets/trivia-icon.png',
-            width: 52,
-            height: 52,
-            cacheWidth: 156,
-            semanticLabel: 'Trivia',
-          ),
-        ),
-        const SizedBox(height: 7),
-        const Text('Your Journey. Your Choice.', textAlign: TextAlign.center),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) => const Brand();
 }
 
 class _RegistrationHero extends StatelessWidget {

@@ -34,13 +34,13 @@ def canonical_paths(endpoints):
 def contract(view, method, path):
     from accounts.api import passwords as password_api, views as a
     from drivers.api import views as d, resources as dr
-    from rides.api import views as r, resources as rr
+    from rides.api import views as r, resources as rr, courier as rc
     from notifications.api import views as n
     from payments.api import views as p
     from core import admin_api as ad, admin_resources as ar
     from accounts.api.resources import SavedPlaceSerializer, ContactSerializer, AvatarView, AvatarUploadSerializer
     from drivers.api.serializers import ApplicationSerializer, LocationSerializer
-    from rides.api.serializers import BookingRequestSerializer, QuoteRequestSerializer, RideSerializer, GeocodedPlaceSerializer
+    from rides.api.serializers import BookingRequestSerializer, QuoteRequestSerializer, RideSerializer, GeocodedPlaceSerializer, ScheduleSerializer
     def result(response, request=None, status=200, alternatives=()):
         responses = {status: response}
         responses.update({code: response for code in alternatives})
@@ -69,6 +69,7 @@ def contract(view, method, path):
         d.DocumentDownloadView: {'GET': (None, {(200, 'image/jpeg'): OpenApiTypes.BINARY, (200, 'image/png'): OpenApiTypes.BINARY})},
         dr.DocumentDeleteView: {'GET': (None, {(200, 'image/jpeg'): OpenApiTypes.BINARY, (200, 'image/png'): OpenApiTypes.BINARY}), 'DELETE': result(None, status=204)},
         d.RequirementsView: {'GET': result(c.collection('Requirements', c.RequirementSerializer))},
+        d.DriverServicePreferencesView: {'GET': result(d.DriverServicePreferencesSerializer), 'POST': result(d.DriverServicePreferencesSerializer, d.DriverServicePreferencesSerializer)},
         d.AvailabilityView: {'POST': result(c.StatusSerializer, c.OnlineSerializer if 'availability' in path else None)},
         d.LocationView: {'POST': result(c.LastSeenSerializer, LocationSerializer)},
         d.ReviewView: {'POST': result(ApplicationSerializer, c.ReviewSerializer)},
@@ -77,6 +78,10 @@ def contract(view, method, path):
         r.DriverRequestDeclineView: {'POST': result(c.DriverDeclineSerializer)},
         r.QuoteView: {'POST': result(c.QuoteSerializer, QuoteRequestSerializer, 201)},
         r.RideListCreateView: {'GET': result(c.collection('RidePage', RideSerializer, paginated=True)), 'POST': result(RideSerializer, BookingRequestSerializer, 201, (200,))},
+        rc.ParcelDetailsView: {'GET': result(rc.ParcelDetailsSerializer)},
+        rc.ParcelPhotoView: {'GET': (None, {(200, 'image/jpeg'): OpenApiTypes.BINARY, (200, 'image/png'): OpenApiTypes.BINARY}), 'POST': result(None, rc.ParcelPhotoSerializer, 204)},
+        rc.DeliveryProofView: {'POST': result(RideSerializer, rc.DeliveryProofSerializer)},
+        r.RideScheduleView: {'PATCH': result(RideSerializer, ScheduleSerializer)},
         r.RideDetailView: {'GET': result(RideSerializer)}, r.ActiveRideView: {'GET': result(c.ActiveRideSerializer)},
         r.OffersView: {'GET': result(c.collection('AvailableOffers', c.OfferSerializer)), 'POST': result(c.OfferCreatedSerializer, r.OfferSerializer, 201)},
         r.RideStatusView: {'GET': result(c.RideStatusSerializer), 'POST': result(RideSerializer, c.StateCommandSerializer if path.endswith('/status/') else c.OptionalReasonSerializer)},
@@ -238,6 +243,16 @@ class TriviaAutoSchema(AutoSchema):
             '/api/v1/auth/password/change/': 'Supply the current password and a matching new password and confirmation. Existing authentication sessions are revoked.',
             '/api/v1/auth/password/reset/': 'Set a validated new password using the reset token. Include matching password confirmation. Existing authentication sessions are revoked.',
         }
+        transport_descriptions = {
+            'RideScheduleView': 'Reschedule an owned booking before matching opens. Supply an ISO 8601 departure more than 15 minutes and at most 30 days ahead.',
+            'DriverServicePreferencesView': 'Approved drivers can read or update their own City-to-City and Courier dispatch preferences.',
+            'ParcelDetailsView': 'Read handover details as the booking owner or assigned courier during an active delivery. The confirmation code is only returned to the owner while the parcel is in transit.',
+            'ParcelPhotoView': 'The booking owner can upload one JPEG or PNG of at most 5 MiB. The owner and assigned courier during an active delivery can retrieve it through this authenticated endpoint.',
+            'DeliveryProofView': 'The assigned courier confirms an in-transit delivery with the eight-digit recipient code. Five failed attempts block verification for 15 minutes.',
+        }
+        text = transport_descriptions.get(type(self.view).__name__)
+        if text:
+            return text
         permission = descriptions.get(self.path)
         if permission is None:
             if '/admin/' in self.path:
@@ -320,6 +335,8 @@ def examples_hook(result, generator, request, public):
             return {'name': 'Harare CBD', 'latitude': -17.8292, 'longitude': 31.0522}
         if name == 'destination':
             return {'name': 'Borrowdale', 'latitude': -17.765, 'longitude': 31.08}
+        if name == 'stops':
+            return [{'name': 'Avondale', 'latitude': -17.802, 'longitude': 31.037}]
         if depth > 12:
             return None
         if '$ref' in schema:
@@ -378,6 +395,11 @@ def examples_hook(result, generator, request, public):
                 value = auth_examples[path] if path in auth_examples else sample(media.get('schema', {}))
                 if path == '/api/v1/rides/' and method == 'post' and isinstance(value, dict):
                     value['payment_method_id'] = 'cash-usd'
+                    value['payment_preference'] = 'cash'
+                    for key in ('departure_at', 'passenger_count', 'luggage', 'parcel', 'stops'):
+                        value.pop(key, None)
+                if path.endswith('/parcel/confirm/') and isinstance(value, dict):
+                    value['code'] = '00000000'
                 media.setdefault('examples', {'illustrative': {'summary': 'Illustrative input. Replace placeholders before sending.', 'value': value}})
             for status, response in operation.get('responses', {}).items():
                 for media_type, media in response.get('content', {}).items():

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../app/controller.dart';
 import '../../core/api_error.dart';
 import '../../shared/models.dart';
+import '../../shared/widgets.dart';
 import '../legal/legal_page.dart';
 
 class DriverRegistration extends StatefulWidget {
@@ -27,6 +28,34 @@ class _DriverRegistrationState extends State<DriverRegistration> {
     ['licenceNumber', 'licenceClass', 'licenceExpiry'],
     ['make', 'model', 'year', 'colour', 'registration', 'seats', 'category'],
   ];
+  static const fieldLabels = {
+    'firstName': 'First name',
+    'lastName': 'Last name',
+    'phone': 'Phone number',
+    'email': 'Email address',
+    'licenceNumber': 'Licence number',
+    'licenceClass': 'Licence class',
+    'licenceExpiry': 'Licence expiry date',
+    'make': 'Vehicle make',
+    'model': 'Vehicle model',
+    'year': 'Model year',
+    'colour': 'Colour',
+    'registration': 'Registration number',
+    'seats': 'Passenger seats',
+    'category': 'Ride category',
+  };
+
+  String documentLabel(String code) {
+    for (final requirement in requirements) {
+      if (requirement
+          case {'code': final String id, 'label': final String label}
+          when id == code && label.isNotEmpty) {
+        return label;
+      }
+    }
+    return code;
+  }
+
   List<String> requiredDocuments = [];
   List<Map<String, dynamic>> requirements = [];
   bool loadingRequirements = true;
@@ -193,8 +222,11 @@ class _DriverRegistrationState extends State<DriverRegistration> {
     ].contains(status);
     return Scaffold(
       appBar: AppBar(title: const Text('Drive with Trivia')),
-      body: SafeArea(
+      body: ContentFrame(
+        maxWidth: 560,
         child: SingleChildScrollView(
+          key: ValueKey(step),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -202,7 +234,7 @@ class _DriverRegistrationState extends State<DriverRegistration> {
               if (loadingRequirements)
                 const Center(child: CircularProgressIndicator())
               else if (requirementError != null) ...[
-                Text(requirementError!),
+                InlineNotice(requirementError!, isError: true),
                 OutlinedButton(
                   onPressed: loadRequirements,
                   child: const Text('Retry'),
@@ -239,12 +271,12 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                   children: [
                     for (final f in fields.entries)
                       ListTile(
-                        title: Text(f.key),
+                        title: Text(fieldLabels[f.key] ?? f.key),
                         subtitle: Text(f.value.text),
                       ),
                     for (final d in documents.keys)
                       ListTile(
-                        title: Text(d),
+                        title: Text(documentLabel(d)),
                         subtitle: const Text('Selected document'),
                       ),
                   ],
@@ -255,7 +287,11 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                   '${fields['make']!.text} ${fields['model']!.text} • ${fields['registration']!.text}',
                 ),
               ] else if (step < 0) ...[
-                const Icon(Icons.local_taxi_outlined, size: 80),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Brand(large: true),
+                ),
+                const SizedBox(height: 24),
                 Text(
                   'Drive with Trivia',
                   style: Theme.of(context).textTheme.headlineMedium,
@@ -263,9 +299,13 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                 const Text(
                   'Join Trivia as a driver and connect with passengers looking for convenient rides around Zimbabwe.',
                 ),
-                const Text(
-                  '1. Enter personal information.\n2. Add driver and vehicle details.\n3. Submit required documents.\n4. Wait for verification.\n5. Start driving once approved.',
+                const SizedBox(height: 16),
+                const InfoCard(
+                  child: Text(
+                    '1. Enter personal information.\n2. Add driver and vehicle details.\n3. Submit required documents.\n4. Wait for verification.\n5. Start driving once approved.',
+                  ),
                 ),
+                const SizedBox(height: 20),
                 FilledButton(
                   onPressed: () => setState(() => step = 0),
                   child: const Text('Get Started'),
@@ -275,7 +315,11 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                   Text(
                     'Application rejected. Review the server verification result and resubmit your details.',
                   ),
-                LinearProgressIndicator(value: (step + 1) / 5),
+                LinearProgressIndicator(
+                  value: (step + 1) / 5,
+                  semanticsLabel: 'Step ${step + 1} of 5',
+                ),
+                const SizedBox(height: 12),
                 Text(
                   'Step ${step + 1} of 5 — ${['Personal information', 'Driver information', 'Vehicle information', 'Documents', 'Review application'][step]}',
                   style: Theme.of(context).textTheme.titleLarge,
@@ -311,7 +355,7 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                                     }
                                   : null,
                               decoration: InputDecoration(
-                                labelText: key,
+                                labelText: fieldLabels[key] ?? key,
                                 hintText: key == 'licenceExpiry'
                                     ? 'YYYY-MM-DD'
                                     : null,
@@ -332,7 +376,7 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                             child: Column(
                               children: [
                                 ListTile(
-                                  title: Text(key),
+                                  title: Text(documentLabel(key)),
                                   subtitle: Text(
                                     documents[key] == null
                                         ? 'Required document'
@@ -398,7 +442,7 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                             children: [
                               for (final key in sections[i])
                                 ListTile(
-                                  title: Text(key),
+                                  title: Text(fieldLabels[key] ?? key),
                                   subtitle: Text(fields[key]!.text),
                                 ),
                               TextButton(
@@ -409,7 +453,7 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                           ),
                         for (final key in documents.keys)
                           ListTile(
-                            title: Text(key),
+                            title: Text(documentLabel(key)),
                             subtitle: const Text('Selected document'),
                           ),
                         TextButton(
@@ -427,8 +471,7 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                     ],
                   ),
                 ),
-                if (error != null)
-                  Text(error!, style: const TextStyle(color: Colors.red)),
+                if (error != null) InlineNotice(error!, isError: true),
                 FilledButton(
                   onPressed: saving
                       ? null
@@ -481,7 +524,15 @@ class _DriverRegistrationState extends State<DriverRegistration> {
                           }
                           if (mounted) setState(() => saving = false);
                         },
-                  child: Text(step == 4 ? 'Submit Application' : 'Continue'),
+                  child: saving
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            semanticsLabel: 'Saving application',
+                          ),
+                        )
+                      : Text(step == 4 ? 'Submit Application' : 'Continue'),
                 ),
                 TextButton(
                   onPressed: step == 0 ? null : () => setState(() => step--),

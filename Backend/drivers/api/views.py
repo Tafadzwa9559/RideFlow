@@ -87,6 +87,30 @@ class RequirementsView(APIView):
         return Response({'results': list(DocumentRequirement.objects.filter(enabled=True).values('code', 'label', 'required', 'expiry_required', 'scope'))})
 
 
+class DriverServicePreferencesSerializer(serializers.Serializer):
+    accepts_intercity = serializers.BooleanField(required=False)
+    accepts_courier = serializers.BooleanField(required=False)
+
+
+class DriverServicePreferencesView(APIView):
+    def get(self, request):
+        app = driver_for(request.user)
+        eligible(app)
+        return Response(DriverServicePreferencesSerializer(app).data)
+
+    @transaction.atomic
+    def post(self, request):
+        app = driver_for(request.user, lock=True)
+        eligible(app)
+        serializer = DriverServicePreferencesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        for field, value in serializer.validated_data.items():
+            setattr(app, field, value)
+        if serializer.validated_data:
+            app.save(update_fields=[*serializer.validated_data, "updated_at"])
+        return Response(DriverServicePreferencesSerializer(app).data)
+
+
 class AvailabilityView(APIView):
     @transaction.atomic
     def post(self, request, action=None):

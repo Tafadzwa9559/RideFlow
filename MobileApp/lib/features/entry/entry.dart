@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -70,7 +71,7 @@ class _OnboardingState extends State<Onboarding> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Brand(),
+                const Flexible(child: Brand()),
                 TextButton(
                   onPressed: widget.app.finishOnboarding,
                   child: const Text('Skip'),
@@ -107,17 +108,7 @@ class _OnboardingState extends State<Onboarding> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 22),
-                        Text(
-                          '0${i + 1} / YOUR NEXT CHAPTER',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            letterSpacing: 2,
-                            color: darkGreen,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 24),
                         Text(
                           titles[i],
                           style: Theme.of(context).textTheme.headlineLarge,
@@ -138,20 +129,25 @@ class _OnboardingState extends State<Onboarding> {
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    3,
-                    (i) => AnimatedContainer(
-                      duration: MediaQuery.disableAnimationsOf(context)
-                          ? Duration.zero
-                          : const Duration(milliseconds: 250),
-                      width: i == index ? 28 : 7,
-                      height: 7,
-                      margin: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: i == index ? darkGreen : const Color(0xFFE5E7EB),
-                        borderRadius: BorderRadius.circular(8),
+                Semantics(
+                  label: 'Page ${index + 1} of 3',
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      3,
+                      (i) => AnimatedContainer(
+                        duration: MediaQuery.disableAnimationsOf(context)
+                            ? Duration.zero
+                            : const Duration(milliseconds: 250),
+                        width: i == index ? 28 : 7,
+                        height: 7,
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: i == index
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                   ),
@@ -295,14 +291,14 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       const SizedBox(height: 16),
                       Text(
-                        otp ? 'Check your phone' : "Let's get you moving.",
+                        otp ? 'Check your phone' : 'Get started with Trivia',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         otp
                             ? 'Enter the 6-digit code sent to $submittedPhone.'
-                            : 'A faster, safer and more convenient way to get around Zimbabwe.',
+                            : 'Create an account to request rides or apply to drive in Zimbabwe.',
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 14),
@@ -566,62 +562,69 @@ class _ProfileSetupState extends State<ProfileSetup> {
     appBar: AppBar(title: const Text('Your profile')),
     body: ListenableBuilder(
       listenable: widget.app,
-      builder: (context, _) => SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: form,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Nice to meet you.',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 8),
-              const Text('Let your driver know who to look for.'),
-              const SizedBox(height: 24),
-              for (final entry in [(first, 'First name'), (last, 'Last name')])
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: TextFormField(
-                    controller: entry.$1,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(labelText: entry.$2),
-                    validator: (v) => (v ?? '').trim().isEmpty
-                        ? 'This field is required.'
-                        : null,
+      builder: (context, _) => ContentFrame(
+        maxWidth: 480,
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: form,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nice to meet you.',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                const Text('Let your driver know who to look for.'),
+                const SizedBox(height: 24),
+                for (final entry in [
+                  (first, 'First name'),
+                  (last, 'Last name'),
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: TextFormField(
+                      controller: entry.$1,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: InputDecoration(labelText: entry.$2),
+                      validator: (v) => (v ?? '').trim().isEmpty
+                          ? 'This field is required.'
+                          : null,
+                    ),
                   ),
+                TextFormField(
+                  controller: email,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email (optional)',
+                  ),
+                  validator: (v) =>
+                      v!.isEmpty ||
+                          RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v)
+                      ? null
+                      : 'Enter a valid email.',
                 ),
-              TextFormField(
-                controller: email,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email (optional)',
-                ),
-                validator: (v) =>
-                    v!.isEmpty ||
-                        RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v)
-                    ? null
-                    : 'Enter a valid email.',
-              ),
-              const SizedBox(height: 12),
-              Text(widget.app.session!.phone),
-              const LegalLinks(),
-              ErrorNotice(widget.app),
-              const SizedBox(height: 20),
-              ActionButton('Save profile', () async {
-                if (form.currentState!.validate()) {
-                  final ok = await widget.app.updateProfile(
-                    first.text.trim(),
-                    last.text.trim(),
-                    email.text.trim(),
-                  );
-                  if (ok && context.mounted && Navigator.canPop(context)) {
-                    Navigator.pop(context);
+                const SizedBox(height: 12),
+                Text(widget.app.session!.phone),
+                const LegalLinks(),
+                ErrorNotice(widget.app),
+                const SizedBox(height: 20),
+                ActionButton('Save profile', () async {
+                  if (form.currentState!.validate()) {
+                    final ok = await widget.app.updateProfile(
+                      first.text.trim(),
+                      last.text.trim(),
+                      email.text.trim(),
+                    );
+                    if (ok && context.mounted && Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
                   }
-                }
-              }, busy: widget.app.busy),
-            ],
+                }, busy: widget.app.busy),
+              ],
+            ),
           ),
         ),
       ),

@@ -38,51 +38,61 @@ ResponseBody jsonBody(Object data, [int status = 200]) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
-  test('Driver accepts the passenger fare or sends a distinct counteroffer', () async {
-    final dio = Dio();
-    final adapter = ContractAdapter((_) async => jsonBody({'status': 'pending'}, 201));
-    dio.httpClientAdapter = adapter;
-    final repo = ApiRepository(client: dio);
-    addTearDown(repo.dispose);
+  test(
+    'Driver accepts the passenger fare or sends a distinct counteroffer',
+    () async {
+      final dio = Dio();
+      final adapter = ContractAdapter(
+        (_) async => jsonBody({'status': 'pending'}, 201),
+      );
+      dio.httpClientAdapter = adapter;
+      final repo = ApiRepository(client: dio);
+      addTearDown(repo.dispose);
 
-    await repo.acceptFare('ride-id');
-    await repo.counteroffer('ride-id', 725);
-    expect(adapter.calls.map((request) => request.path), [
-      'rides/ride-id/offers/',
-      'rides/ride-id/offers/',
-    ]);
-    expect(adapter.calls.map((request) => request.data), [
-      {'decision': 'accept'},
-      {'decision': 'counteroffer', 'fare_cents': 725},
-    ]);
-  });
+      await repo.acceptFare('ride-id');
+      await repo.counteroffer('ride-id', 725);
+      expect(adapter.calls.map((request) => request.path), [
+        'rides/ride-id/offers/',
+        'rides/ride-id/offers/',
+      ]);
+      expect(adapter.calls.map((request) => request.data), [
+        {'decision': 'accept'},
+        {'decision': 'counteroffer', 'fare_cents': 725},
+      ]);
+    },
+  );
 
-  test('Location search uses the canonical path and accepts both place shapes', () async {
-    final dio = Dio();
-    final adapter = ContractAdapter((options) async => jsonBody({
-      'results': [
-        {
-          'name': 'Avondale',
-          'formatted_address': 'Avondale, Harare, Zimbabwe',
-          'latitude': -17.8,
-          'longitude': 31.03,
-        },
-        {'name': 'Harare', 'latitude': '-17.82', 'longitude': '31.05'},
-      ],
-    }));
-    dio.httpClientAdapter = adapter;
-    final repo = ApiRepository(client: dio);
-    addTearDown(repo.dispose);
+  test(
+    'Location search uses the canonical path and accepts both place shapes',
+    () async {
+      final dio = Dio();
+      final adapter = ContractAdapter(
+        (options) async => jsonBody({
+          'results': [
+            {
+              'name': 'Avondale',
+              'formatted_address': 'Avondale, Harare, Zimbabwe',
+              'latitude': -17.8,
+              'longitude': 31.03,
+            },
+            {'name': 'Harare', 'latitude': '-17.82', 'longitude': '31.05'},
+          ],
+        }),
+      );
+      dio.httpClientAdapter = adapter;
+      final repo = ApiRepository(client: dio);
+      addTearDown(repo.dispose);
 
-    expect(await repo.search('  '), isEmpty);
-    expect(adapter.calls, isEmpty);
-    final places = await repo.search('  Avon ');
-    expect(adapter.calls.single.uri.path, '/api/v1/locations/search/');
-    expect(adapter.calls.single.queryParameters, {'q': 'Avon'});
-    expect(places.first.formattedAddress, 'Avondale, Harare, Zimbabwe');
-    expect(places.last.formattedAddress, isNull);
-    expect(places.last.lat, -17.82);
-  });
+      expect(await repo.search('  '), isEmpty);
+      expect(adapter.calls, isEmpty);
+      final places = await repo.search('  Avon ');
+      expect(adapter.calls.single.uri.path, '/api/v1/locations/search/');
+      expect(adapter.calls.single.queryParameters, {'q': 'Avon'});
+      expect(places.first.formattedAddress, 'Avondale, Harare, Zimbabwe');
+      expect(places.last.formattedAddress, isNull);
+      expect(places.last.lat, -17.82);
+    },
+  );
 
   test('Production origin and OTP use exact documented paths with real response tokens', () async {
     final dio = Dio();
@@ -112,105 +122,193 @@ void main() {
     expect(await repo.storage.read(key: 'access'), 'server-access');
     expect(adapter.calls.last.data['code'], '654321');
   });
-  test('Email registration submits passenger fields before secure login', () async {
-    const email = 'tariro@example.net';
-    const password = 'Horizon-Teak-Glass-187';
-    final dio = Dio();
-    final adapter = ContractAdapter((options) async {
-      expect(options.headers['Authorization'], isNull);
-      switch (options.path) {
-        case 'auth/register/':
-          expect(options.method, 'POST');
-          expect(options.data, {
-            'first_name': 'Tariro',
-            'last_name': 'Moyo',
-            'email': email,
-            'password': password,
-            'password_confirmation': password,
-          });
-          return jsonBody({'email': email, 'email_verified': false}, 201);
-        case 'auth/login/':
+  test(
+    'Email registration submits passenger fields before secure login',
+    () async {
+      const email = 'tariro@example.net';
+      const password = 'Horizon-Teak-Glass-187';
+      final dio = Dio();
+      final adapter = ContractAdapter((options) async {
+        expect(options.headers['Authorization'], isNull);
+        switch (options.path) {
+          case 'auth/register/':
+            expect(options.method, 'POST');
+            expect(options.data, {
+              'first_name': 'Tariro',
+              'last_name': 'Moyo',
+              'email': email,
+              'password': password,
+              'password_confirmation': password,
+            });
+            return jsonBody({'email': email, 'email_verified': false}, 201);
+          case 'auth/login/':
+            expect(options.data, {
+              'channel': 'email',
+              'identifier': email,
+              'password': password,
+            });
+            return jsonBody({
+              'access': 'passenger-access',
+              'refresh': 'passenger-refresh',
+              'user': {'phone': '', 'email': email, 'first_name': 'Tariro'},
+            });
+        }
+        fail('Unexpected path: ${options.path}');
+      });
+      dio.httpClientAdapter = adapter;
+      final repository = ApiRepository(client: dio);
+      addTearDown(repository.dispose);
+      await repository.register(
+        firstName: 'Tariro',
+        lastName: 'Moyo',
+        email: email,
+        password: password,
+        confirmation: password,
+      );
+      expect(await repository.storage.read(key: 'access'), isNull);
+      final session = await repository.login(
+        const LoginContact(LoginChannel.email, email),
+        password,
+      );
+      expect(session.driverStatus, DriverStatus.notRegistered);
+      expect(session.email, email);
+      expect(await repository.storage.read(key: 'access'), 'passenger-access');
+      expect(
+        await repository.storage.read(key: 'refresh'),
+        'passenger-refresh',
+      );
+      expect(adapter.calls.map((call) => call.path), [
+        'auth/register/',
+        'auth/login/',
+      ]);
+    },
+  );
+
+  test(
+    'Signup verifies and signs in with the documented public API contracts',
+    () async {
+      const email = 'user@example.net';
+      const password = 'Signup-Horizon-187';
+      final dio = Dio();
+      final adapter = ContractAdapter((options) async {
+        expect(options.headers.containsKey('Authorization'), isFalse);
+        expect(options.followRedirects, isFalse);
+        if (options.path == 'auth/register/') {
+          return jsonBody({'verification_required': true}, 201);
+        }
+        if (options.path == 'auth/login/') {
           expect(options.data, {
             'channel': 'email',
             'identifier': email,
             'password': password,
           });
           return jsonBody({
-            'access': 'passenger-access',
-            'refresh': 'passenger-refresh',
-            'user': {'phone': '', 'email': email, 'first_name': 'Tariro'},
+            'access': 'verified-access-token',
+            'refresh': 'verified-refresh-token',
+            'user': {'first_name': 'Tariro', 'phone': '', 'email': email},
           });
-      }
-      fail('Unexpected path: ${options.path}');
-    });
-    dio.httpClientAdapter = adapter;
-    final repository = ApiRepository(client: dio);
-    addTearDown(repository.dispose);
-    await repository.register(
-      firstName: 'Tariro',
-      lastName: 'Moyo',
-      email: email,
-      password: password,
-      confirmation: password,
-    );
-    expect(await repository.storage.read(key: 'access'), isNull);
-    final session = await repository.login(
-      const LoginContact(LoginChannel.email, email),
-      password,
-    );
-    expect(session.driverStatus, DriverStatus.notRegistered);
-    expect(session.email, email);
-    expect(await repository.storage.read(key: 'access'), 'passenger-access');
-    expect(await repository.storage.read(key: 'refresh'), 'passenger-refresh');
-    expect(adapter.calls.map((call) => call.path), [
-      'auth/register/',
-      'auth/login/',
-    ]);
-  });
+        }
+        expect(options.data, {
+          'email': email,
+          'password': password,
+          if (options.path == 'auth/email/verify/') 'code': '001234',
+        });
+        return ResponseBody.fromString('', 204);
+      });
+      dio.httpClientAdapter = adapter;
+      final repository = ApiRepository(client: dio);
+      addTearDown(repository.dispose);
+      expect(
+        await repository.register(
+          firstName: 'Tariro',
+          lastName: 'Moyo',
+          email: email,
+          password: password,
+          confirmation: password,
+        ),
+        isTrue,
+      );
+      await repository.resendSignupCode(email, password);
+      await repository.verifySignupCode(email, password, '001234');
+      expect(await repository.storage.read(key: 'access'), isNull);
+      final session = await repository.login(
+        const LoginContact(LoginChannel.email, email),
+        password,
+      );
+      expect(session.email, email);
+      expect(adapter.calls.map((call) => call.path), [
+        'auth/register/',
+        'auth/email/resend/',
+        'auth/email/verify/',
+        'auth/login/',
+      ]);
+      expect(
+        await repository.storage.read(key: 'access'),
+        'verified-access-token',
+      );
+      expect(
+        await repository.storage.read(key: 'refresh'),
+        'verified-refresh-token',
+      );
+    },
+  );
 
-  test('Password login stores backend tokens and recovery stays public', () async {
-    const contact = LoginContact(LoginChannel.email, 'user@example.net');
-    final dio = Dio();
-    final adapter = ContractAdapter((options) async {
-      switch (options.path) {
-        case 'auth/login/':
-          expect(options.data, {...contact.toJson(), 'password': 'test-password'});
-          return jsonBody({
-            'access': 'access',
-            'refresh': 'refresh',
-            'user': {
-              'phone': '+263771234567',
-              'first_name': 'Rudo',
-              'driver_status': 'approved',
-            },
-          });
-        case 'auth/password/request/':
-          expect(options.data, contact.toJson());
-          return jsonBody({}, 202);
-        case 'auth/password/verify/':
-          expect(options.data, {...contact.toJson(), 'code': 'test-code'});
-          return jsonBody({'token': 'reset-token'});
-        case 'auth/password/reset/':
-          expect(options.data, {'token': 'reset-token', 'password': 'new-password', 'password_confirmation': 'new-password'});
-          return ResponseBody.fromString('', 204);
-      }
-      fail('Unexpected path: ${options.path}');
-    });
-    dio.httpClientAdapter = adapter;
-    final repository = ApiRepository(client: dio);
-    addTearDown(repository.dispose);
+  test(
+    'Password login stores backend tokens and recovery stays public',
+    () async {
+      const contact = LoginContact(LoginChannel.email, 'user@example.net');
+      final dio = Dio();
+      final adapter = ContractAdapter((options) async {
+        switch (options.path) {
+          case 'auth/login/':
+            expect(options.data, {
+              ...contact.toJson(),
+              'password': 'test-password',
+            });
+            return jsonBody({
+              'access': 'access',
+              'refresh': 'refresh',
+              'user': {
+                'phone': '+263771234567',
+                'first_name': 'Rudo',
+                'driver_status': 'approved',
+              },
+            });
+          case 'auth/password/request/':
+            expect(options.data, contact.toJson());
+            return jsonBody({}, 202);
+          case 'auth/password/verify/':
+            expect(options.data, {...contact.toJson(), 'code': 'test-code'});
+            return jsonBody({'token': 'reset-token'});
+          case 'auth/password/reset/':
+            expect(options.data, {
+              'token': 'reset-token',
+              'password': 'new-password',
+              'password_confirmation': 'new-password',
+            });
+            return ResponseBody.fromString('', 204);
+        }
+        fail('Unexpected path: ${options.path}');
+      });
+      dio.httpClientAdapter = adapter;
+      final repository = ApiRepository(client: dio);
+      addTearDown(repository.dispose);
 
-    final session = await repository.login(contact, 'test-password');
-    expect(session.driverStatus, DriverStatus.approved);
-    expect(await repository.storage.read(key: 'access'), 'access');
-    expect(await repository.storage.read(key: 'refresh'), 'refresh');
-    await repository.requestPasswordRecovery(contact);
-    final proof = await repository.verifyPasswordRecovery(contact, 'test-code');
-    await repository.resetPassword(proof, 'new-password', 'new-password');
-    for (final call in adapter.calls) {
-      expect(call.headers['Authorization'], isNull);
-    }
-  });
+      final session = await repository.login(contact, 'test-password');
+      expect(session.driverStatus, DriverStatus.approved);
+      expect(await repository.storage.read(key: 'access'), 'access');
+      expect(await repository.storage.read(key: 'refresh'), 'refresh');
+      await repository.requestPasswordRecovery(contact);
+      final proof = await repository.verifyPasswordRecovery(
+        contact,
+        'test-code',
+      );
+      await repository.resetPassword(proof, 'new-password', 'new-password');
+      for (final call in adapter.calls) {
+        expect(call.headers['Authorization'], isNull);
+      }
+    },
+  );
 
   test('Invalid credentials and timeouts never trigger auth retries', () async {
     const contact = LoginContact(LoginChannel.phone, '+263771234567');
@@ -229,10 +327,16 @@ void main() {
     final repository = ApiRepository(client: dio);
     addTearDown(repository.dispose);
 
-    await expectLater(repository.login(contact, 'bad-password'), throwsA(isA<DioException>()));
+    await expectLater(
+      repository.login(contact, 'bad-password'),
+      throwsA(isA<DioException>()),
+    );
     expect(adapter.calls.single.path, 'auth/login/');
     offline = true;
-    await expectLater(repository.requestPasswordRecovery(contact), throwsA(isA<DioException>()));
+    await expectLater(
+      repository.requestPasswordRecovery(contact),
+      throwsA(isA<DioException>()),
+    );
     expect(adapter.calls.length, 2);
     expect(await repository.storage.read(key: 'access'), isNull);
   });

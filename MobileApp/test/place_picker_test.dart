@@ -57,4 +57,29 @@ void main() {
     await tester.pump();
     expect(find.text('Confirm pickup'), findsOneWidget);
   });
+
+  testWidgets(
+    'Place search scrolls on a compact screen with the keyboard open',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 380);
+      tester.view.devicePixelRatio = 1;
+      tester.view.viewInsets = const FakeViewPadding(bottom: 230);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+      final app = AppController(SearchRepository());
+      addTearDown(app.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlacePicker(app: app, title: 'Choose pickup'),
+        ),
+      );
+      await tester.pump();
+      final mapButton = find.text('Choose on map');
+      await tester.ensureVisible(mapButton);
+      expect(mapButton.hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

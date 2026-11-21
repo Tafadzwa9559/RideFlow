@@ -16,6 +16,90 @@ class BookingController extends ChangeNotifier {
   Place? pickup, destination;
   String category = 'Standard', currency;
   RouteQuote? quote;
+  bool get intercity => category == 'Intercity';
+  int passengerCount = 1;
+  String luggage = 'none';
+  DateTime? departureAt;
+  List<Place> stops = const [];
+  bool get courier => category == 'Courier';
+  final Map<String, dynamic> parcel = {
+    'size': 'small',
+    'permitted_goods': false,
+  };
+
+  void setParcelValue(String key, Object? value) {
+    if (submitting) return;
+    parcel[key] = value;
+    notifyListeners();
+  }
+
+  bool get canSendParcel {
+    final weight = parcel['weight_kg'];
+    return [
+          'sender_name',
+          'sender_phone',
+          'recipient_name',
+          'recipient_phone',
+          'description',
+        ].every((key) => (parcel[key] as String? ?? '').trim().isNotEmpty) &&
+        weight is num &&
+        weight.isFinite &&
+        weight >= 0.1 &&
+        weight <= 20 &&
+        parcel['permitted_goods'] == true;
+  }
+
+  Future<void> rebook(Ride previous) async {
+    if (submitting) return;
+    category = previous.category;
+    pickup = previous.pickup;
+    destination = previous.destination;
+    departureCity = previous.pickup.city;
+    arrivalCity = previous.destination.city;
+    stops = List.unmodifiable(previous.stops);
+    passengerCount = previous.passengerCount;
+    luggage = previous.luggage;
+    departureAt = null;
+    note.clear();
+    parcel
+      ..clear()
+      ..addAll({'size': 'small', 'permitted_goods': false});
+    await refreshQuote(changed: true);
+  }
+
+  Future<void> setStops(List<Place> value) async {
+    if (submitting) return;
+    stops = List.unmodifiable(value);
+    await refreshQuote(changed: true);
+  }
+
+  void setDeparture(DateTime? value) {
+    if (submitting) return;
+    departureAt = value;
+    notifyListeners();
+  }
+
+  String? departureCity, arrivalCity;
+
+  void setCity(bool origin, String city) {
+    if (submitting) return;
+    if (origin) {
+      departureCity = city;
+      pickup = null;
+    } else {
+      arrivalCity = city;
+      destination = null;
+    }
+    unawaited(refreshQuote(changed: true));
+  }
+
+  void setIntercityDetails({int? count, String? bags}) {
+    if (submitting) return;
+    passengerCount = count ?? passengerCount;
+    luggage = bags ?? luggage;
+    notifyListeners();
+  }
+
   List<BookingPaymentMethod> methods = [];
   List<String> currencies = [];
   bool quoting = false,
@@ -108,6 +192,7 @@ class BookingController extends ChangeNotifier {
 
   bool get canSubmit =>
       !submitting &&
+      (!courier || canSendParcel) &&
       app.ride?.active != true &&
       !app.busy &&
       !quoting &&
@@ -161,6 +246,13 @@ class BookingController extends ChangeNotifier {
   Future<void> setCategory(String value) async {
     if (category == value || submitting) {
       return;
+    }
+    if (intercity != (value == 'Intercity') ||
+        courier != (value == 'Courier')) {
+      pickup = null;
+      destination = null;
+      stops = const [];
+      if (value == 'Courier') departureAt = null;
     }
     category = value;
     await refreshQuote(changed: true);
@@ -219,6 +311,7 @@ class BookingController extends ChangeNotifier {
         destination!,
         category,
         currency: currency,
+        stops: stops,
       );
       if (_disposed || generation != _generation) {
         return;
@@ -265,7 +358,7 @@ class BookingController extends ChangeNotifier {
     error = null;
     notifyListeners();
     final signature =
-        '${quote!.id}|${method!.id}|$currency|${fare.text}|${note.text}';
+        '${quote!.id}|${method!.id}|$currency|${fare.text}|${note.text}|$passengerCount|$luggage|$departureAt|${courier ? parcel : ''}';
     if (signature != _lastSubmission) {
       _requestKey = _uuid();
       _lastSubmission = signature;
@@ -287,10 +380,21 @@ class BookingController extends ChangeNotifier {
       methodId: method!.id,
       paymentPreference: paymentPreference,
       passengerNote: note.text,
+      passengerCount: intercity ? passengerCount : null,
+      luggage: intercity ? luggage : null,
+      departureAt: departureAt,
+      parcel: courier ? Map.of(parcel) : null,
+      stops: stops,
     );
     if (ok) {
       _expiry?.cancel();
       quote = null;
+      if (courier) {
+        parcel
+          ..clear()
+          ..addAll({'size': 'small', 'permitted_goods': false});
+        note.clear();
+      }
     }
     if (!ok) {
       error =

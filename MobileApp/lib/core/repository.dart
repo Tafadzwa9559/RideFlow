@@ -10,7 +10,11 @@ import 'config.dart';
 enum LoginChannel { phone, email }
 
 class LoginContact {
-  const LoginContact(this.channel, this.identifier, {this.passengerTesting = false});
+  const LoginContact(
+    this.channel,
+    this.identifier, {
+    this.passengerTesting = false,
+  });
   final LoginChannel channel;
   final String identifier;
   final bool passengerTesting;
@@ -22,18 +26,28 @@ class LoginContact {
 }
 
 abstract class TriviaRepository {
-  Future<void> register({
+  Future<bool> register({
     required String firstName,
     required String lastName,
     required String email,
     required String password,
     required String confirmation,
   });
+  Future<void> resendSignupCode(String email, String password);
+  Future<void> verifySignupCode(String email, String password, String code);
   Future<Session> login(LoginContact contact, String password);
   Future<void> requestPasswordRecovery(LoginContact contact);
   Future<String> verifyPasswordRecovery(LoginContact contact, String code);
-  Future<void> resetPassword(String token, String password, String confirmation);
-  Future<void> changePassword(String current, String password, String confirmation);
+  Future<void> resetPassword(
+    String token,
+    String password,
+    String confirmation,
+  );
+  Future<void> changePassword(
+    String current,
+    String password,
+    String confirmation,
+  );
   Future<Session?> restore();
   Future<void> requestOtp(String phone);
   Future<Session> verifyOtp(
@@ -49,6 +63,7 @@ abstract class TriviaRepository {
     Place destination,
     String category, {
     String currency = 'USD',
+    List<Place> stops = const [],
   });
   Future<List<Ride>> history();
   Future<Ride?> activeRide();
@@ -63,6 +78,11 @@ abstract class TriviaRepository {
     String? requestKey,
     String? paymentPreference,
     String? passengerNote,
+    int? passengerCount,
+    String? luggage,
+    DateTime? departureAt,
+    Map<String, dynamic>? parcel,
+    List<Place> stops = const [],
   });
   Future<List<DriverOffer>> offers(String rideId);
   Future<Ride> accept(String rideId, String offerId, {int? expectedFare});
@@ -77,6 +97,9 @@ abstract class TriviaRepository {
   Future<void> acceptFare(String rideId);
   Future<Map<String, dynamic>> read(String resource);
   Future<void> write(String resource, Map<String, dynamic> data);
+  Future<void> delete(String resource);
+  Future<void> uploadParcelPhoto(String rideId, String filePath);
+  Future<List<int>> parcelPhoto(String rideId);
 }
 
 /// Backend API access with secure token storage and rotating access tokens.
@@ -152,6 +175,7 @@ class ApiRepository implements TriviaRepository {
   }
   static bool _isPublicAuth(String path) =>
       path.startsWith('auth/otp/') ||
+      path.startsWith('auth/email/') ||
       path == 'auth/password/request/' ||
       path == 'auth/password/verify/' ||
       path == 'auth/password/reset/' ||
@@ -226,7 +250,13 @@ class ApiRepository implements TriviaRepository {
     String path,
     Map<String, dynamic> body,
   ) async =>
-      (await dio.post<Map<String, dynamic>>(path, data: body)).data ??
+      (await dio.post<Map<String, dynamic>>(
+        path,
+        data: body,
+        options: path == 'auth/register/' || path == 'auth/login/'
+            ? Options(followRedirects: false)
+            : null,
+      )).data ??
       <String, dynamic>{};
   @override
   Future<Session?> restore() async {
@@ -243,31 +273,65 @@ class ApiRepository implements TriviaRepository {
   }
 
   @override
-  Future<void> register({
+  Future<bool> register({
     required String firstName,
     required String lastName,
     required String email,
     required String password,
     required String confirmation,
   }) async {
-    await _post('auth/register/', {
+    final result = await _post('auth/register/', {
       'first_name': firstName,
       'last_name': lastName,
       'email': email,
       'password': password,
       'password_confirmation': confirmation,
     });
+    return result['verification_required'] == true;
+  }
+
+  @override
+  Future<void> resendSignupCode(String email, String password) =>
+      _postSignupChallenge('auth/email/resend/', {
+        'email': email,
+        'password': password,
+      });
+
+  @override
+  Future<void> verifySignupCode(String email, String password, String code) =>
+      _postSignupChallenge('auth/email/verify/', {
+        'email': email,
+        'password': password,
+        'code': code,
+      });
+
+  Future<void> _postSignupChallenge(
+    String path,
+    Map<String, String> data,
+  ) async {
+    final response = await dio.post<Map<String, dynamic>>(
+      path,
+      data: data,
+      options: Options(followRedirects: false),
+    );
+    if (response.statusCode != 204) {
+      throw const FormatException(
+        'Trivia returned an unexpected email verification response. Try again.',
+      );
+    }
   }
 
   @override
   Future<Session> login(LoginContact contact, String password) async {
     if (contact.passengerTesting && !passengerTestingEnabled) {
-      throw StateError('Passenger testing requires the configured staging origin.');
+      throw StateError(
+        'Passenger testing requires the configured staging origin.',
+      );
     }
-    final data = await _post(contact.passengerTesting ? 'auth/passenger-testing/' : 'auth/login/', {
-      ...contact.toJson(),
-      'password': password,
-    });
+    final data = await _post(
+      contact.passengerTesting ? 'auth/passenger-testing/' : 'auth/login/',
+      {...contact.toJson(), 'password': password},
+    );
     final session = Session.fromJson(data['user'] as Map<String, dynamic>);
     await storage.write(key: 'refresh', value: data['refresh'] as String);
     try {
@@ -297,7 +361,11 @@ class ApiRepository implements TriviaRepository {
   }
 
   @override
-  Future<void> resetPassword(String token, String password, String confirmation) async {
+  Future<void> resetPassword(
+    String token,
+    String password,
+    String confirmation,
+  ) async {
     await _post('auth/password/reset/', {
       'token': token,
       'password': password,
@@ -306,7 +374,11 @@ class ApiRepository implements TriviaRepository {
   }
 
   @override
-  Future<void> changePassword(String current, String password, String confirmation) async {
+  Future<void> changePassword(
+    String current,
+    String password,
+    String confirmation,
+  ) async {
     await _post('auth/password/change/', {
       'current_password': current,
       'password': password,
@@ -373,21 +445,29 @@ class ApiRepository implements TriviaRepository {
     );
     final results = response.data?['results'];
     if (results is! List) {
-      throw const FormatException('Trivia returned an invalid location response.');
+      throw const FormatException(
+        'Trivia returned an invalid location response.',
+      );
     }
-    return results.map((j) => Place.fromJson(j as Map<String, dynamic>)).toList();
+    return results
+        .map((j) => Place.fromJson(j as Map<String, dynamic>))
+        .toList();
   }
+
   @override
   Future<RouteQuote?> quote(
     Place pickup,
     Place destination,
     String category, {
     String currency = 'USD',
+    List<Place> stops = const [],
   }) async => RouteQuote.fromJson(
     await _post('fares/estimate/', {
       'pickup': pickup.toJson(),
       'destination': destination.toJson(),
       'category': category,
+      if (stops.isNotEmpty)
+        'stops': stops.map((stop) => stop.toJson()).toList(),
       'currency': currency,
     }),
   );
@@ -431,11 +511,18 @@ class ApiRepository implements TriviaRepository {
     String? requestKey,
     String? paymentPreference,
     String? passengerNote,
+    int? passengerCount,
+    String? luggage,
+    DateTime? departureAt,
+    Map<String, dynamic>? parcel,
+    List<Place> stops = const [],
   }) async => Ride.fromJson(
     await _post('rides/', {
       'pickup': pickup.toJson(),
       'destination': destination.toJson(),
       'category': category,
+      if (stops.isNotEmpty)
+        'stops': stops.map((stop) => stop.toJson()).toList(),
       'fare_cents': cents,
       'payment_method_id': paymentMethod,
       'currency': currency,
@@ -443,6 +530,10 @@ class ApiRepository implements TriviaRepository {
       'idempotency_key': requestKey,
       'payment_preference': paymentPreference,
       'passenger_note': passengerNote,
+      'passenger_count': ?passengerCount,
+      'luggage': ?luggage,
+      'departure_at': ?departureAt?.toUtc().toIso8601String(),
+      'parcel': ?parcel,
     }),
   );
   @override
@@ -451,11 +542,16 @@ class ApiRepository implements TriviaRepository {
           .map((j) => DriverOffer.fromJson(j as Map<String, dynamic>))
           .toList();
   @override
-  Future<Ride> accept(String rideId, String offerId, {int? expectedFare}) async =>
-      Ride.fromJson(await _post('rides/$rideId/accept/', {
-        'offer_id': offerId,
-        'fare_cents': ?expectedFare,
-      }));
+  Future<Ride> accept(
+    String rideId,
+    String offerId, {
+    int? expectedFare,
+  }) async => Ride.fromJson(
+    await _post('rides/$rideId/accept/', {
+      'offer_id': offerId,
+      'fare_cents': ?expectedFare,
+    }),
+  );
   @override
   Future<Ride> transition(String rideId, RideStatus status) async =>
       Ride.fromJson(
@@ -575,7 +671,34 @@ class ApiRepository implements TriviaRepository {
   }
 
   @override
+  Future<void> uploadParcelPhoto(String rideId, String filePath) async {
+    await dio.post<void>(
+      'rides/$rideId/parcel/photo/',
+      data: FormData.fromMap({'file': await MultipartFile.fromFile(filePath)}),
+    );
+  }
+
+  @override
+  Future<List<int>> parcelPhoto(String rideId) async {
+    final response = await dio.get<List<int>>(
+      'rides/$rideId/parcel/photo/',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return response.data!;
+  }
+
+  @override
+  Future<void> delete(String resource) async {
+    await dio.delete<void>('${resourcePath(resource)}/');
+  }
+
+  @override
   Future<void> write(String resource, Map<String, dynamic> data) async {
+    if (resource.endsWith('/schedule') ||
+        resource.startsWith('users/me/saved-places/')) {
+      await _patch('$resource/', data);
+      return;
+    }
     if (resource == 'me/preferences') {
       await _patch('users/me/preferences/', {
         'push_notifications': data['trip_notifications'],

@@ -6,6 +6,7 @@ from .views import (
     RideDetailView,
     ActiveRideView,
     RideStatusView,
+    RideScheduleView,
     OffersView,
     PlacesView,
     RideSyncView,
@@ -22,12 +23,18 @@ from .views import (
     SharedTripView,
 )
 
+from .courier import DeliveryProofView, ParcelDetailsView, ParcelPhotoView
+
 urlpatterns = [
+    path("rides/<uuid:pk>/parcel/", ParcelDetailsView.as_view()),
+    path("rides/<uuid:pk>/parcel/photo/", ParcelPhotoView.as_view()),
+    path("rides/<uuid:pk>/parcel/confirm/", DeliveryProofView.as_view()),
     path("routes/quote/", QuoteView.as_view()),
     path("places/", PlacesView.as_view()),
     path("rides/", RideListCreateView.as_view()),
     path("rides/active/", ActiveRideView.as_view()),
     path("rides/<uuid:pk>/", RideDetailView.as_view()),
+    path("rides/<uuid:pk>/schedule/", RideScheduleView.as_view()),
     path("rides/<uuid:pk>/status/", RideStatusView.as_view()),
     path("rides/<uuid:pk>/accept/", RideAcceptView.as_view()),
     path("rides/<uuid:pk>/sync/", RideSyncView.as_view()),

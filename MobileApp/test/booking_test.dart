@@ -33,6 +33,11 @@ class BookingRepositoryFixture extends TestRepository {
   final keys = <String?>[];
   final currencies = <String>[];
   Completer<void>? requestWait;
+  int? sentPassengerCount;
+  String? sentLuggage;
+  DateTime? sentDeparture;
+  List<Place> sentStops = const [];
+  List<Place> quotedStops = const [];
   Future<RouteQuote?> Function(String)? quoteHandler;
   @override
   Future<RouteQuote?> quote(
@@ -40,8 +45,10 @@ class BookingRepositoryFixture extends TestRepository {
     Place destination,
     String category, {
     String currency = 'USD',
+    List<Place> stops = const [],
   }) async {
     calls.add('$category:$currency');
+    quotedStops = List.of(stops);
     if (noExchange && currency == 'ZWG') {
       throw StateError('A current verified USD/ZiG rate is unavailable.');
     }
@@ -62,9 +69,18 @@ class BookingRepositoryFixture extends TestRepository {
     String? quoteId,
     String? requestKey,
     String? passengerNote,
+    int? passengerCount,
+    String? luggage,
+    DateTime? departureAt,
+    Map<String, dynamic>? parcel,
+    List<Place> stops = const [],
     String? paymentPreference,
   }) async {
     keys.add(requestKey);
+    sentPassengerCount = passengerCount;
+    sentLuggage = luggage;
+    sentDeparture = departureAt;
+    sentStops = List.of(stops);
     currencies.add(currency);
     if (requestWait != null) {
       await requestWait!.future;
@@ -106,6 +122,48 @@ void main() {
   });
   Future<void> route() =>
       draft.setPlaces(pickup: demoPlaces[0], destination: demoPlaces[1]);
+
+  test('Intercity draft submits scheduled departure, seats, bags and ordered stops', () async {
+    await draft.setCategory('Intercity');
+    draft.setCity(true, 'Harare');
+    draft.setCity(false, 'Bulawayo');
+    const pickup = Place('Harare pickup', -17.82, 31.05, city: 'Harare');
+    const destination = Place(
+      'Bulawayo dropoff',
+      -20.13,
+      28.63,
+      city: 'Bulawayo',
+    );
+    await draft.setPlaces(pickup: pickup, destination: destination);
+    final stops = [demoPlaces[2], demoPlaces[1]];
+    await draft.setStops(stops);
+    expect(repo.quotedStops, stops);
+    expect(repo.calls.last, 'Intercity:USD');
+    draft.setIntercityDetails(count: 3, bags: 'large');
+    final departure = DateTime.utc(2027, 1, 1, 8);
+    draft.setDeparture(departure);
+    expect(await draft.submit(), isTrue);
+    expect(repo.sentPassengerCount, 3);
+    expect(repo.sentLuggage, 'large');
+    expect(repo.sentDeparture, departure);
+    expect(repo.sentStops, stops);
+  });
+
+  testWidgets('Intercity booking shows passenger and luggage controls', (
+    tester,
+  ) async {
+    await draft.setCategory('Intercity');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(child: BookingFields(booking: draft)),
+        ),
+      ),
+    );
+    expect(find.text('Passengers (up to 6)'), findsOneWidget);
+    expect(find.text('Luggage'), findsOneWidget);
+    expect(find.text('Leave now'), findsOneWidget);
+  });
 
   test(
     'A road quote fills the fare and manual editing survives unrelated changes',
@@ -221,7 +279,12 @@ void main() {
       '4.25',
     );
     expect(find.textContaining('ZiG'), findsNothing);
-    expect(find.textContaining(RegExp('pay (your |the )?driver directly', caseSensitive: false)), findsNothing);
+    expect(
+      find.textContaining(
+        RegExp('pay (your |the )?driver directly', caseSensitive: false),
+      ),
+      findsNothing,
+    );
     expect(find.widgetWithText(ChoiceChip, 'EcoCash'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'OneMoney'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'Cash'), findsOneWidget);

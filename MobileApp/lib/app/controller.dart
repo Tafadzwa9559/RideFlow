@@ -26,6 +26,7 @@ class AppController extends ChangeNotifier {
       driverMode = false,
       online = false;
   String? error;
+  String? errorCode;
   String? paymentMethod = 'cash-usd';
   String? paymentLabel = 'Cash';
   String currency = 'USD';
@@ -35,7 +36,22 @@ class AppController extends ChangeNotifier {
   String? historyNext;
   List<DriverOffer> offers = [];
   List<Ride> history = [];
-  List<Place> saved = [], recent = [];
+  List<SavedAddress> savedAddresses = [];
+  List<Place> recent = [];
+  Ride? rebookDraft;
+
+  void rebook(Ride previous) {
+    if (driverMode || ride?.active == true) return;
+    ride = null;
+    rebookDraft = previous;
+    notifyListeners();
+  }
+
+  String distanceLabel(int metres) {
+    final miles = distanceUnit == 'mi';
+    return '${(metres / (miles ? 1609.344 : 1000)).toStringAsFixed(1)} ${miles ? 'mi' : 'km'}';
+  }
+
   Realtime? realtime;
   StreamSubscription<void>? _expiration;
   Timer? _poll, _gpsHeartbeat;
@@ -78,12 +94,14 @@ class AppController extends ChangeNotifier {
     }
     busy = true;
     error = null;
+    errorCode = null;
     notifyListeners();
     try {
       await action();
       return true;
     } catch (e) {
       error = apiErrorMessage(e);
+      errorCode = apiErrorCode(e);
       return false;
     } finally {
       busy = false;
@@ -111,8 +129,9 @@ class AppController extends ChangeNotifier {
           driverMode = false;
           _stopSync();
           unawaited(_stopLocationUpdates());
-          saved = [];
+          savedAddresses = [];
           recent = [];
+          rebookDraft = null;
           offers = [];
           history = [];
           notifyListeners();
@@ -249,9 +268,10 @@ class AppController extends ChangeNotifier {
     if (repository is ApiRepository) {
       historyNext = (repository as ApiRepository).historyNext;
     }
-    saved = ((places['results'] as List?) ?? [])
+    savedAddresses = ((places['results'] as List?) ?? [])
         .map(
-          (p) => Place.fromJson(Map<String, dynamic>.from(p['place'] as Map)),
+          (item) =>
+              SavedAddress.fromJson(Map<String, dynamic>.from(item as Map)),
         )
         .toList();
     dataRevision++;
@@ -297,6 +317,11 @@ class AppController extends ChangeNotifier {
     String? methodId,
     String? paymentPreference,
     String? passengerNote,
+    int? passengerCount,
+    String? luggage,
+    DateTime? departureAt,
+    Map<String, dynamic>? parcel,
+    List<Place> stops = const [],
   }) => perform(() async {
     if ((methodId ?? paymentMethod) == null) {
       throw StateError('Choose an enabled payment method before booking.');
@@ -312,8 +337,15 @@ class AppController extends ChangeNotifier {
       requestKey: requestKey,
       paymentPreference: paymentPreference,
       passengerNote: passengerNote,
+      passengerCount: passengerCount,
+      luggage: luggage,
+      departureAt: departureAt,
+      parcel: parcel,
+      stops: stops,
     );
-    recent = [b, ...recent.where((p) => p.name != b.name)].take(8).toList();
+    if (category != 'Courier') {
+      recent = [b, ...recent.where((p) => p.name != b.name)].take(8).toList();
+    }
     await _refreshAfterRideChange();
   });
   Future<bool> accept(DriverOffer offer) => perform(() async {
@@ -497,8 +529,9 @@ class AppController extends ChangeNotifier {
     ride = null;
     history = [];
     offers = [];
-    saved = [];
+    savedAddresses = [];
     recent = [];
+    rebookDraft = null;
     paymentMethod = 'cash-usd';
     paymentLabel = 'Cash';
     driverMode = false;
@@ -517,15 +550,19 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> savePlace(Place p) async {
-    await perform(() async {
-      await repository.write('users/me/saved-places', {
-        'label': p.name,
-        'place': p.toJson(),
+  Future<bool> savePlace(Place place, {String? label, String? id}) =>
+      perform(() async {
+        await repository.write(
+          id == null ? 'users/me/saved-places' : 'users/me/saved-places/$id',
+          {'label': label ?? place.name, 'place': place.toJson()},
+        );
+        await sync();
       });
-      await sync();
-    });
-  }
+
+  Future<bool> removeSavedPlace(String id) => perform(() async {
+    await repository.delete('users/me/saved-places/$id');
+    await sync();
+  });
 
   Future<void> moreHistory() async {
     if (historyNext == null) return;

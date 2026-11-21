@@ -358,6 +358,8 @@ Technology • Innovation • Mobility
             ("Standard", "Trivia Standard"),
             ("Comfort", "Trivia Comfort"),
             ("XL", "Trivia XL"),
+            ("Intercity", "City-to-City"),
+            ("Courier", "Courier delivery"),
         ],
         "VehicleCategoryEnum": ["Standard", "Comfort", "XL"],
         "TicketCategoryEnum": ["support", "safety"],

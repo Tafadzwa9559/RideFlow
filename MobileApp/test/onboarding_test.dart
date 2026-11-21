@@ -109,14 +109,12 @@ void main() {
           expect(photo.left, descriptionBeforeScroll.left);
           final viewport = tester.getRect(find.byType(PageView));
           final contentHeight = descriptionBeforeScroll.bottom - photo.top;
-          final centering = ((viewport.height - contentHeight) / 2)
-              .clamp(0.0, double.infinity);
-          expect(photo.top - viewport.top, closeTo(20 + centering, 0.001));
-          final label = tester.getRect(
-            find.text('0${i + 1} / YOUR NEXT CHAPTER'),
+          final centering = ((viewport.height - contentHeight) / 2).clamp(
+            0.0,
+            double.infinity,
           );
-          expect(label.top - photo.bottom, closeTo(22, 0.001));
-          expect(heading.top - label.bottom, closeTo(14, 0.001));
+          expect(photo.top - viewport.top, closeTo(20 + centering, 0.001));
+          expect(heading.top - photo.bottom, closeTo(24, 0.001));
           photoSizes.add(tester.getSize(imageFinder));
           await tester.ensureVisible(find.text(descriptions[i]));
           await tester.pumpAndSettle();

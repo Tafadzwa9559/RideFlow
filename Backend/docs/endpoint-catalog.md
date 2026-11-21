@@ -1,6 +1,6 @@
 # Trivia API endpoint catalog
 
-**157 distinct documented REST operations** (HTTP method + canonical path), plus 10 explicitly marked semantic aliases. Mobile/legacy compatibility aliases, documentation, health, HEAD and OPTIONS routes are excluded from the distinct total.
+**171 distinct documented REST operations** (HTTP method + canonical path), plus 10 explicitly marked semantic aliases. Mobile/legacy compatibility aliases, documentation, health, HEAD and OPTIONS routes are excluded from the distinct total.
 
 All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI identifies exact semantic aliases so totals do not count the same behavior twice.
 
@@ -13,9 +13,9 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Admin Rides | 4 |
 | Admin Verification | 5 |
 | Administration | 14 |
-| Authentication | 5 |
+| Authentication | 12 |
 | Driver Applications | 9 |
-| Drivers | 11 |
+| Drivers | 13 |
 | Earnings | 3 |
 | Locations | 9 |
 | Notifications | 6 |
@@ -23,7 +23,7 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Platform Configuration | 5 |
 | Pricing | 3 |
 | Ratings | 3 |
-| Rides | 13 |
+| Rides | 18 |
 | Routes | 1 |
 | Safety | 9 |
 | Support | 6 |
@@ -32,7 +32,7 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Users | 9 |
 | Vehicles | 10 |
 | Verification | 4 |
-| **Total** | **157** |
+| **Total** | **171** |
 
 | Group | Method | Path | Alias of |
 |---|---|---|---|
@@ -78,11 +78,18 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Administration | POST | `/api/v1/admin/passengers/{id}/reactivate/` | — |
 | Administration | POST | `/api/v1/admin/passengers/{id}/suspend/` | — |
 | Authentication | GET | `/api/v1/auth/me/` | — |
+| Authentication | POST | `/api/v1/auth/email/resend/` | — |
+| Authentication | POST | `/api/v1/auth/email/verify/` | — |
+| Authentication | POST | `/api/v1/auth/login/` | — |
 | Authentication | POST | `/api/v1/auth/logout-all/` | POST /api/v1/auth/logout/ |
 | Authentication | POST | `/api/v1/auth/logout/` | — |
 | Authentication | POST | `/api/v1/auth/otp/request/` | — |
 | Authentication | POST | `/api/v1/auth/otp/resend/` | POST /api/v1/auth/otp/request/ |
 | Authentication | POST | `/api/v1/auth/otp/verify/` | — |
+| Authentication | POST | `/api/v1/auth/password/request/` | — |
+| Authentication | POST | `/api/v1/auth/password/reset/` | — |
+| Authentication | POST | `/api/v1/auth/password/verify/` | — |
+| Authentication | POST | `/api/v1/auth/register/` | — |
 | Authentication | POST | `/api/v1/auth/token/refresh/` | — |
 | Driver Applications | DELETE | `/api/v1/drivers/applications/me/documents/{id}/` | — |
 | Driver Applications | GET | `/api/v1/drivers/applications/me/` | — |
@@ -101,12 +108,14 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Drivers | GET | `/api/v1/drivers/me/profile/` | — |
 | Drivers | GET | `/api/v1/drivers/me/requests/` | — |
 | Drivers | GET | `/api/v1/drivers/me/requests/{id}/` | — |
+| Drivers | GET | `/api/v1/drivers/me/service-preferences/` | — |
 | Drivers | GET | `/api/v1/drivers/me/statistics/` | — |
 | Drivers | GET | `/api/v1/drivers/me/status/` | GET /api/v1/drivers/applications/me/ |
 | Drivers | PATCH | `/api/v1/drivers/me/profile/` | — |
 | Drivers | POST | `/api/v1/drivers/me/go-offline/` | — |
 | Drivers | POST | `/api/v1/drivers/me/go-online/` | — |
 | Drivers | POST | `/api/v1/drivers/me/location/` | — |
+| Drivers | POST | `/api/v1/drivers/me/service-preferences/` | — |
 | Earnings | GET | `/api/v1/drivers/me/earnings/` | — |
 | Earnings | GET | `/api/v1/drivers/me/earnings/history/` | — |
 | Earnings | GET | `/api/v1/drivers/me/earnings/summary/` | — |
@@ -146,14 +155,19 @@ All entries below are connected to implemented handlers. `x-alias-of` in OpenAPI
 | Rides | GET | `/api/v1/rides/` | — |
 | Rides | GET | `/api/v1/rides/active/` | — |
 | Rides | GET | `/api/v1/rides/{id}/` | — |
+| Rides | GET | `/api/v1/rides/{id}/parcel/` | — |
+| Rides | GET | `/api/v1/rides/{id}/parcel/photo/` | — |
 | Rides | GET | `/api/v1/rides/{id}/status/` | — |
 | Rides | GET | `/api/v1/rides/{id}/sync/` | — |
+| Rides | PATCH | `/api/v1/rides/{id}/schedule/` | — |
 | Rides | POST | `/api/v1/rides/` | — |
 | Rides | POST | `/api/v1/rides/{id}/arrived/` | — |
 | Rides | POST | `/api/v1/rides/{id}/cancel/` | — |
 | Rides | POST | `/api/v1/rides/{id}/complete/` | — |
 | Rides | POST | `/api/v1/rides/{id}/driver-en-route/` | — |
 | Rides | POST | `/api/v1/rides/{id}/driver-request-decline/` | — |
+| Rides | POST | `/api/v1/rides/{id}/parcel/confirm/` | — |
+| Rides | POST | `/api/v1/rides/{id}/parcel/photo/` | — |
 | Rides | POST | `/api/v1/rides/{id}/select-offer/` | — |
 | Rides | POST | `/api/v1/rides/{id}/start/` | — |
 | Routes | POST | `/api/v1/routes/estimate/` | — |

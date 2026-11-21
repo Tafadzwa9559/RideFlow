@@ -15,6 +15,7 @@ class TriviaMap extends StatefulWidget {
     super.key,
     this.pickup,
     this.destination,
+    this.stops = const [],
     this.onTap,
     this.route = const [],
     this.driver,
@@ -26,6 +27,7 @@ class TriviaMap extends StatefulWidget {
   final double bottomInset;
   final TileProvider? tileProvider;
   final List<LatLng> route;
+  final List<Place> stops;
   final ValueChanged<Place>? onTap;
   @override
   State<TriviaMap> createState() => _TriviaMapState();
@@ -49,6 +51,7 @@ class _TriviaMapState extends State<TriviaMap> {
         widget.destination?.point != oldWidget.destination?.point ||
         widget.currentLocation?.point != oldWidget.currentLocation?.point ||
         (widget.driver == null) != (oldWidget.driver == null) ||
+        !listEquals(widget.stops, oldWidget.stops) ||
         !listEquals(widget.route, oldWidget.route)) {
       scheduleFit();
     }
@@ -59,6 +62,7 @@ class _TriviaMapState extends State<TriviaMap> {
       if (!mounted || !ready) return;
       final points = {
         ...widget.route,
+        ...widget.stops.map((stop) => stop.point),
         if (widget.pickup != null) widget.pickup!.point,
         if (widget.destination != null) widget.destination!.point,
         if (widget.currentLocation != null) widget.currentLocation!.point,
@@ -149,6 +153,13 @@ class _TriviaMapState extends State<TriviaMap> {
                   width: 44,
                   height: 44,
                   child: const _Pin(icon: Icons.my_location),
+                ),
+              for (final (index, stop) in widget.stops.indexed)
+                Marker(
+                  point: stop.point,
+                  width: 36,
+                  height: 36,
+                  child: CircleAvatar(child: Text('${index + 1}')),
                 ),
               if (widget.destination != null)
                 Marker(

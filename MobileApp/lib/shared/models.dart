@@ -1,6 +1,13 @@
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+const harareOffset = Duration(hours: 2);
+
+String harareTime(DateTime stamp) =>
+    "${DateFormat('d MMM yyyy, HH:mm').format(stamp.toUtc().add(harareOffset))} CAT";
+
 enum RideStatus {
+  scheduled,
   searching,
   assigned,
   arriving,
@@ -28,8 +35,9 @@ class Place {
     this.lng, {
     this.formattedAddress,
     this.provider,
+    this.city,
   });
-  final String? formattedAddress, provider;
+  final String? formattedAddress, provider, city;
   final String name;
   final double lat, lng;
   LatLng get point => LatLng(lat, lng);
@@ -37,6 +45,7 @@ class Place {
     'name': name,
     'latitude': lat,
     'longitude': lng,
+    'city': ?city,
   };
   factory Place.fromJson(Map<String, dynamic> j) => Place(
     j['name'] as String,
@@ -44,6 +53,19 @@ class Place {
     double.parse('${j['longitude']}'),
     formattedAddress: j['formatted_address'] as String?,
     provider: j['provider'] as String?,
+    city: j['city'] as String?,
+  );
+}
+
+class SavedAddress {
+  const SavedAddress(this.id, this.label, this.place);
+  final String id, label;
+  final Place place;
+
+  factory SavedAddress.fromJson(Map<String, dynamic> json) => SavedAddress(
+    '${json['id']}',
+    json['label'] as String,
+    Place.fromJson(Map<String, dynamic>.from(json['place'] as Map)),
   );
 }
 
@@ -98,17 +120,37 @@ class Ride {
     this.locationUpdatedAt,
     this.distanceMetres,
     this.viewerRole,
+    this.departureAt,
+    this.parcelSize,
+    this.parcelWeightKg,
+    this.stops = const [],
+    this.passengerCount = 1,
+    this.luggage = 'none',
+    this.passengerNote = '',
     this.route = const [],
   });
   final String id, category, paymentStatus, currency;
   final int? offeredCents, agreedCents;
   final int? distanceMetres;
+  final int passengerCount;
+  final String luggage, passengerNote;
+  bool get intercity => category == 'Intercity';
+  bool get courier => category == 'Courier';
+  final String? parcelSize;
+  final double? parcelWeightKg;
+  String get serviceName => switch (category) {
+    'Intercity' => 'City-to-City',
+    'Courier' => 'Courier delivery',
+    _ => 'Trivia $category',
+  };
   final String? viewerRole;
   final String? paymentMethod, paymentMethodName;
   final Place pickup, destination;
+  final List<Place> stops;
   final int cents;
   final RideStatus status;
   final DateTime createdAt;
+  final DateTime? departureAt;
   final DriverOffer? driver;
   final Place? driverLocation;
   final DateTime? locationUpdatedAt;
@@ -151,6 +193,13 @@ class Ride {
     locationUpdatedAt: locationUpdatedAt,
     distanceMetres: distanceMetres,
     viewerRole: viewerRole,
+    departureAt: departureAt,
+    parcelSize: parcelSize,
+    parcelWeightKg: parcelWeightKg,
+    stops: stops,
+    passengerCount: passengerCount,
+    luggage: luggage,
+    passengerNote: passengerNote,
     route: route,
   );
   factory Ride.fromJson(Map<String, dynamic> j) => Ride(
@@ -182,6 +231,16 @@ class Ride {
         : DateTime.parse(j['location_updated_at'] as String),
     distanceMetres: j['distance_metres'] as int?,
     viewerRole: j['viewer_role'] as String?,
+    stops: [
+      for (final stop in j['stops'] as List? ?? [])
+        Place.fromJson(Map<String, dynamic>.from(stop as Map)),
+    ],
+    parcelSize: j['parcel_size'] as String?,
+    parcelWeightKg: (j['parcel_weight_kg'] as num?)?.toDouble(),
+    departureAt: DateTime.tryParse('${j['departure_at']}'),
+    passengerCount: j['passenger_count'] as int? ?? 1,
+    luggage: j['luggage'] as String? ?? 'none',
+    passengerNote: j['passenger_note'] as String? ?? '',
     route: _parseGeometry(j['route_geometry'] as List? ?? []),
   );
 }
@@ -227,6 +286,7 @@ int parseFare(String input) {
 }
 
 String statusLabel(RideStatus s) => switch (s) {
+  RideStatus.scheduled => 'Scheduled departure',
   RideStatus.searching => 'Finding your driver',
   RideStatus.assigned => 'Driver selected',
   RideStatus.arriving => 'Driver on the way',
@@ -367,3 +427,21 @@ List<LatLng> _parseGeometry(List<dynamic> coordinates) => coordinates
           LatLng((point[1] as num).toDouble(), (point[0] as num).toDouble()),
     )
     .toList();
+
+String luggageLabel(String value) => switch (value) {
+  'small' => 'Small bags',
+  'large' => 'Large bags',
+  _ => 'No luggage',
+};
+
+String deliveryStatusLabel(Ride ride) => !ride.courier
+    ? statusLabel(ride.status)
+    : switch (ride.status) {
+        RideStatus.searching => 'Finding a courier',
+        RideStatus.assigned => 'Courier selected',
+        RideStatus.arriving => 'Courier on the way',
+        RideStatus.arrived => 'Courier at pickup',
+        RideStatus.inProgress => 'Parcel in transit',
+        RideStatus.completed => 'Parcel delivered',
+        _ => statusLabel(ride.status),
+      };

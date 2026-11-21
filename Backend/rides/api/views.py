@@ -10,6 +10,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drivers.services.eligibility import driver_for, eligible
+from rides.services.intercity import CATEGORY
+from rides.services.courier import CATEGORY as COURIER
 from rides.models import Ride, RideOffer, Rating, SupportTicket, SavedPlace, PricingZone
 from rides.services.booking import book, quote_route
 from rides.services.lifecycle import make_offer, select_offer, transition, withdraw, nearby, emit, update_offer
@@ -156,6 +158,18 @@ class RideDetailView(APIView):
         return Response(RideSerializer(get_object_or_404(visible_rides(request.user), pk=pk)).data)
 
 
+class RideScheduleView(APIView):
+    def patch(self, request, pk):
+        from .serializers import ScheduleSerializer
+        from rides.services.scheduling import reschedule
+
+        get_object_or_404(passenger_rides(request.user), pk=pk)
+        serializer = ScheduleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ride = reschedule(request.user, pk, serializer.validated_data["departure_at"])
+        return Response(RideSerializer(ride).data)
+
+
 class ActiveRideView(APIView):
     def get(self, request):
         ride = visible_rides(request.user).exclude(status__in=['completed', 'cancelled', 'expired']).first()
@@ -193,6 +207,7 @@ class RideStatusView(APIView):
         ride = get_object_or_404(visible_rides(request.user), pk=pk)
         valid_offer_count = ride.counteroffers.filter(status='pending', expires_at__gt=timezone.now()).count()
         search_states = {
+            'scheduled': 'scheduled',
             'searching': 'searching',
             'assigned': 'driver_selected',
             'arriving': 'driver_assigned',
@@ -203,6 +218,7 @@ class RideStatusView(APIView):
             'expired': 'request_expired',
         }
         suggested_action = {
+            'scheduled': 'Matching opens 15 minutes before departure.',
             'searching': 'Waiting for eligible drivers to respond.',
             'assigned': 'Driver selected; finalise trip advance status.',
             'arriving': 'Driver is arriving. Track location.',
@@ -269,7 +285,13 @@ class DriverRequestsView(APIView):
         app = driver_for(request.user)
         eligible(app, online=True)
         qs = Ride.objects.select_related('quote__pricing__zone', 'payment__method').filter(status='searching', currency='USD', expires_at__gt=timezone.now()).exclude(passenger=request.user).order_by('-created_at')
-        qs = qs.filter(quote__category=app.vehicle.category, quote__pricing__zone__enabled=True).exclude(counteroffers__driver=app, counteroffers__status='declined')
+        categories = [app.vehicle.category]
+        if app.accepts_intercity:
+            categories.append(CATEGORY)
+        if app.accepts_courier:
+            categories.append(COURIER)
+        qs = qs.filter(quote__category__in=categories, quote__pricing__zone__enabled=True)
+        qs = qs.exclude(counteroffers__driver=app, counteroffers__status='declined')
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(qs, request)
         return paginator.get_paginated_response(RideSerializer([r for r in page if nearby(app, r)], many=True).data)

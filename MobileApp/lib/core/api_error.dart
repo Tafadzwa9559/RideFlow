@@ -1,5 +1,17 @@
 import 'package:dio/dio.dart';
 
+String? apiErrorCode(Object error) {
+  if (error is! DioException) return null;
+  if (error.response?.data case {'code': String code}) {
+    return code;
+  }
+  return null;
+}
+
+int? apiRetryAfter(Object error) => error is DioException
+    ? int.tryParse(error.response?.headers.value('retry-after') ?? '')
+    : null;
+
 /// User-facing API validation messages, without request headers or credentials.
 String apiErrorMessage(Object error) {
   if (error is FormatException) {

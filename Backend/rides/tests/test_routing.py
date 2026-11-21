@@ -135,6 +135,25 @@ class GeoapifyTests(SimpleTestCase):
         self.assertEqual(response.json()["formatted_address"], self.place["formatted"])
         self.assertIn("/v1/geocode/reverse?", provider.call_args.args[0])
 
+    def test_road_legs_must_connect_at_every_stop(self):
+        points = [[31.05, -17.82], [31.045, -17.815], [31.03, -17.80]]
+        stop = {"latitude": -17.815, "longitude": 31.045}
+        feature = {
+            "properties": {"distance": 5800.2, "time": 720.2},
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [points[:2], points[1:]],
+            },
+        }
+        with patch("rides.services.routing.geoapify_json", return_value={"features": [feature]}) as provider:
+            route = driving_route(RoutingTests.pickup, RoutingTests.destination, stops=[stop])
+            self.assertEqual(route["geometry"], points)
+            self.assertEqual(provider.call_args.kwargs["waypoints"], "-17.82,31.05|-17.815,31.045|-17.8,31.03")
+            cache.clear()
+            feature["geometry"]["coordinates"][1] = [[31.0449, -17.815], points[-1]]
+            with self.assertRaises(RouteUnavailable):
+                driving_route(RoutingTests.pickup, RoutingTests.destination, stops=[stop])
+
     def test_route_preserves_road_geometry_and_uses_cache(self):
         points = [[31.05, -17.82], [31.045, -17.815], [31.03, -17.80]]
         fixture = {"features": [{

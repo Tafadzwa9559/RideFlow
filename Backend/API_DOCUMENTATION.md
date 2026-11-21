@@ -1,6 +1,6 @@
 # Trivia API documentation
 
-The canonical REST API remains `/api/v1/`. Flutter and React contracts are described in the [integration guide](docs/api-integration-guide.md), [endpoint catalog](docs/endpoint-catalog.md) and [validated OpenAPI document](docs/openapi.yaml). There are 157 canonical operations and 10 marked compatibility aliases after documenting three already implemented operations; no endpoint has been removed by the operational enhancement.
+The canonical REST API remains `/api/v1/`. Flutter and React contracts are described in the [integration guide](docs/api-integration-guide.md), [endpoint catalog](docs/endpoint-catalog.md) and [validated OpenAPI document](docs/openapi.yaml). The catalog identifies canonical operations and marked compatibility aliases.
 
 - Swagger UI: `/api/docs/`
 - Schema: `/api/schema/`
@@ -51,3 +51,23 @@ Deployment and external verification requirements: [Render guide](docs/render.md
 Refresh-token rotation now runs under the same MongoDB user guard as logout, plus a guard for the refresh token ID. Simultaneous rotation of one token yields one successful rotation; replay is rejected. Logout invalidates access and refresh tokens even when a rotation races it. Request/response formats and endpoint URLs remain unchanged.
 
 Notification delivery retries explicitly cover Redis, broker and transient MongoDB failures, with at most five Celery retries and a maximum backoff of 300 seconds. Internal per-device push receipts contain token hashes and adapter-acceptance timestamps; they are never included in public notification responses. Successful devices are skipped on sequential retries. Concurrent workers or a crash before recording acceptance still require adapter deduplication by event ID **and destination device**. These records do not verify handset arrival or offline fare payment.
+
+## City-to-City, courier and scheduled bookings
+
+Use the existing quote and booking endpoints. The fare quote binds the service, endpoints and ordered stops. Pricing uses the enabled USD configuration and the configured road routing provider.
+
+| Operation | Contract |
+|---|---|
+| `POST /api/v1/fares/estimate/` | Accepts `Intercity` and `Courier` categories. Intercity requires a supported `city` on both endpoints and a point within 20 km of its city centre. Passenger rides can include up to three ordered `stops`. |
+| `POST /api/v1/rides/` | Submit the same quote inputs and the proposed fare. Intercity accepts `passenger_count` from 1 to 6 and `luggage` of `none`, `small` or `large`. Courier requires `parcel` handover data and a permitted-goods declaration. |
+| `PATCH /api/v1/rides/{id}/schedule/` | The passenger may edit `departure_at` while the ride is still scheduled and matching has yet to open. |
+| `GET`, `POST /api/v1/drivers/me/service-preferences/` | View or change `accepts_intercity` and `accepts_courier`. Both default to false. Drivers still need valid approval, vehicle, availability and location. City-to-City matching also checks seat capacity. |
+| `GET /api/v1/rides/{id}/parcel/` | Handover contacts and parcel details are available to the owner and assigned courier during an active delivery. The owner receives the handover code after pickup and shares it with the recipient. |
+| `GET`, `POST /api/v1/rides/{id}/parcel/photo/` | Optional authenticated JPEG or PNG, at most 5 MiB. Only the owner can upload. The assigned courier can read the photo during an active delivery. |
+| `POST /api/v1/rides/{id}/parcel/confirm/` | The assigned courier completes delivery with the eight-digit recipient code after confirming pickup. Five wrong attempts require a 15-minute wait. |
+
+Scheduled rides accept `departure_at` more than 15 minutes and up to 30 days in advance. The app displays Africa/Harare time. The existing maintenance worker opens matching approximately 15 minutes before departure and emits `ride.matching_open` as a reminder. `ride.scheduled` and `ride.rescheduled` also use the existing notification transport. Current booking rules allow one non-terminal booking per passenger. The passenger confirms a driver by selecting an offer.
+
+Before enabling the new service categories, apply the MongoDB migrations, configure an enabled pricing rule and covered zone for each service, and verify the actual routing provider across that coverage. Run Celery beat, the ride maintenance worker and the notification outbox. Parcel photos require the existing private storage configuration. Courier recipient handover is coordinated by the sender and courier. External recipient messaging requires a separate integration.
+
+The app's emergency action opens the phone dialler with 112 or 999. [Zimbabwe Ministry of Health and Child Care emergency contacts](https://impilo.mohcc.gov.zw/welcome/emergency)

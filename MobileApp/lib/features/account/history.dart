@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/controller.dart';
-import '../../app/theme.dart';
 import '../../shared/models.dart';
 import '../../shared/widgets.dart';
 import 'support.dart';
@@ -22,10 +22,15 @@ class _HistoryPageState extends State<HistoryPage> {
     final records = widget.app.history
         .where(
           (r) =>
-              (filter == 'All' ||
-                  (filter == 'Completed'
-                      ? r.status == RideStatus.completed
-                      : r.status == RideStatus.cancelled)) &&
+              (switch (filter) {
+                'Upcoming' => r.status == RideStatus.scheduled,
+                'Ongoing' => r.active && r.status != RideStatus.scheduled,
+                'Completed' => r.status == RideStatus.completed,
+                'Cancelled' =>
+                  r.status == RideStatus.cancelled ||
+                      r.status == RideStatus.expired,
+                _ => true,
+              }) &&
               (range == null ||
                   (!r.createdAt.isBefore(range!.start.toUtc()) &&
                       r.createdAt.isBefore(
@@ -53,60 +58,85 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await widget.app.perform(widget.app.sync);
-          if (mounted) setState(() {});
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Wrap(
-              spacing: 8,
-              children: ['All', 'Completed', 'Cancelled']
-                  .map(
-                    (v) => ChoiceChip(
-                      label: Text(v),
-                      selected: filter == v,
-                      onSelected: (_) => setState(() => filter = v),
+      body: ContentFrame(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await widget.app.perform(widget.app.sync);
+            if (mounted) setState(() {});
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            children: [
+              Wrap(
+                spacing: 8,
+                children:
+                    ['All', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled']
+                        .map(
+                          (v) => ChoiceChip(
+                            label: Text(v),
+                            selected: filter == v,
+                            onSelected: (_) => setState(() => filter = v),
+                          ),
+                        )
+                        .toList(),
+              ),
+              if (range != null)
+                TextButton(
+                  onPressed: () => setState(() => range = null),
+                  child: const Text('Clear date filter'),
+                ),
+              ErrorNotice(widget.app),
+              if (records.isEmpty && widget.app.error == null)
+                EmptyState(
+                  filter == 'All' && range == null
+                      ? 'No rides yet.'
+                      : 'No matching rides',
+                  filter == 'All' && range == null
+                      ? 'Your trips will appear here.'
+                      : 'Change the filters to see more trips.',
+                ),
+              for (final r in records)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Card(
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .primaryContainer,
+                        child: Icon(
+                          Icons.local_taxi_outlined,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onPrimaryContainer,
+                        ),
+                      ),
+                      title: Text(r.destination.name),
+                      subtitle: Text(
+                        '${DateFormat('d MMM, HH:mm').format((r.departureAt ?? r.createdAt).toUtc().add(harareOffset))} CAT\n${deliveryStatusLabel(r)} · ${money(r.cents, currency: r.currency)}',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      isThreeLine: true,
+                      onTap: () => openPage(
+                        context,
+                        ReceiptPage(app: widget.app, ride: r),
+                      ),
                     ),
-                  )
-                  .toList(),
-            ),
-            if (range != null)
-              TextButton(
-                onPressed: () => setState(() => range = null),
-                child: const Text('Clear date filter'),
-              ),
-            ErrorNotice(widget.app),
-            if (records.isEmpty)
-              const EmptyState('No rides yet.', 'Your trips will appear here.'),
-            for (final r in records)
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                leading: const CircleAvatar(
-                  backgroundColor: pale,
-                  child: Icon(Icons.local_taxi_outlined, color: darkGreen),
+                  ),
                 ),
-                title: Text(r.destination.name),
-                subtitle: Text(
-                  '${DateFormat('d MMM, HH:mm').format(r.createdAt.toUtc().add(const Duration(hours: 2)))} CAT\n${statusLabel(r.status)}',
+              if (widget.app.historyNext != null)
+                OutlinedButton(
+                  onPressed: widget.app.busy
+                      ? null
+                      : () async {
+                          await widget.app.moreHistory();
+                          if (mounted) setState(() {});
+                        },
+                  child: const Text('Load more'),
                 ),
-                trailing: Text(money(r.cents, currency: r.currency)),
-                onTap: () =>
-                    openPage(context, ReceiptPage(app: widget.app, ride: r)),
-              ),
-            if (widget.app.historyNext != null)
-              OutlinedButton(
-                onPressed: widget.app.busy
-                    ? null
-                    : () async {
-                        await widget.app.moreHistory();
-                        if (mounted) setState(() {});
-                      },
-                child: const Text('Load more'),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -120,64 +150,113 @@ class ReceiptPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Trip details')),
-    body: ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        const Brand(),
-        const SizedBox(height: 24),
-        Text(
-          statusLabel(ride.status),
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 16),
-        Text('${ride.pickup.name}\n↓\n${ride.destination.name}'),
-        const Divider(height: 40),
-        Text(
-          money(ride.cents, currency: ride.currency),
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-        const Text(
-          'Please pay your driver directly using your selected payment method.',
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Payment method: ${directPaymentLabel(ride.paymentMethod, ride.paymentMethodName)}',
-        ),
-        Text('Trip reference: ${ride.id}'),
-        if (ride.driver != null)
+    body: ContentFrame(
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
           Text(
-            '${ride.driver!.name}\n${ride.driver!.vehicle} · ${ride.driver!.plate}',
+            deliveryStatusLabel(ride),
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-        const SizedBox(height: 24),
-        const Text(
-          'This trip summary is not a payment confirmation. Trivia does not collect or verify payment.',
-        ),
-        if (ride.status == RideStatus.completed) ...[
-          const SizedBox(height: 20),
+          Text(ride.serviceName),
+          Text(harareTime(ride.departureAt ?? ride.createdAt)),
+          if (ride.distanceMetres case final distance?)
+            Text('${app.distanceLabel(distance)} by road'),
+          const SizedBox(height: 16),
+          InfoCard(
+            child: RouteStops(
+              pickup: ride.pickup.name,
+              stops: ride.stops.map((stop) => stop.name).toList(),
+              destination: ride.destination.name,
+            ),
+          ),
+          const Divider(height: 40),
+          Text(
+            money(ride.cents, currency: ride.currency),
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+          const Text(
+            'Please pay your driver directly using your selected payment method.',
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Payment preference: ${directPaymentLabel(ride.paymentMethod, ride.paymentMethodName)}',
+          ),
+          Text('Trip reference: ${ride.id}'),
+          if (ride.driver != null)
+            Text(
+              '${ride.driver!.name}\n${ride.driver!.vehicle} · ${ride.driver!.plate}',
+            ),
+          const SizedBox(height: 24),
+          const Text(
+            'This trip summary is not a payment confirmation. Trivia does not collect or verify payment.',
+          ),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.share_outlined),
+            label: const Text('Share trip summary'),
+            onPressed: () async {
+              final box = context.findRenderObject() as RenderBox?;
+              await SharePlus.instance.share(
+                ShareParams(
+                  subject: 'Trivia trip summary',
+                  text: [
+                    '${ride.serviceName} · ${harareTime(ride.departureAt ?? ride.createdAt)}',
+                    deliveryStatusLabel(ride),
+                    [
+                      ride.pickup,
+                      ...ride.stops,
+                      ride.destination,
+                    ].map((place) => place.name).join(' → '),
+                    if (ride.distanceMetres case final distance?)
+                      '${app.distanceLabel(distance)} by road',
+                    '${ride.agreedCents == null ? 'Offered fare' : 'Agreed fare'}: ${money(ride.cents, currency: ride.currency)}',
+                    'Payment preference: ${directPaymentLabel(ride.paymentMethod, ride.paymentMethodName)}',
+                    'Payment is arranged directly with the driver.',
+                    'Trip reference: ${ride.id}',
+                  ].join('\n'),
+                  sharePositionOrigin: box == null
+                      ? null
+                      : box.localToGlobal(Offset.zero) & box.size,
+                ),
+              );
+            },
+          ),
+          if (!app.driverMode && app.ride?.active != true && !ride.active)
+            OutlinedButton.icon(
+              icon: const Icon(Icons.repeat),
+              label: const Text('Rebook this route'),
+              onPressed: () {
+                app.rebook(ride);
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+            ),
+          if (ride.status == RideStatus.completed) ...[
+            const SizedBox(height: 20),
+            OutlinedButton(
+              onPressed: () => openPage(
+                context,
+                FeedbackPage(
+                  app: app,
+                  title: 'Rate your journey',
+                  resource: 'rides/${ride.id}/review',
+                ),
+              ),
+              child: const Text('Rating & review'),
+            ),
+          ],
           OutlinedButton(
             onPressed: () => openPage(
               context,
               FeedbackPage(
                 app: app,
-                title: 'Rate your journey',
-                resource: 'rides/${ride.id}/review',
+                title: 'Trip dispute',
+                resource: 'rides/${ride.id}/dispute',
               ),
             ),
-            child: const Text('Rating & review'),
+            child: const Text('Report a problem'),
           ),
         ],
-        OutlinedButton(
-          onPressed: () => openPage(
-            context,
-            FeedbackPage(
-              app: app,
-              title: 'Trip dispute',
-              resource: 'rides/${ride.id}/dispute',
-            ),
-          ),
-          child: const Text('Report a problem'),
-        ),
-      ],
+      ),
     ),
   );
 }

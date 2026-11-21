@@ -73,29 +73,30 @@ def cache_key(operation, *parts):
     return f"trivia:maps:v1:{operation}:{digest}"
 
 
-def driving_route(pickup, destination):
+def driving_route(pickup, destination, *, stops=()):
     provider = settings.TRIVIA_ROUTING_URL or "geoapify"
     coordinates = tuple(
-        point[field] for point in (pickup, destination)
+        point[field] for point in (pickup, *stops, destination)
         for field in ("latitude", "longitude")
     )
     key = cache_key("route", provider, settings.TRIVIA_MAX_SNAP_METRES, coordinates)
     result = cache.get(key)
     if result is None:
-        result = fetch_route(pickup, destination)
+        result = fetch_route(pickup, destination, stops=stops) if stops else fetch_route(pickup, destination)
         cache.set(key, result, 300)
     return result
 
 
-def fetch_route(pickup, destination):
+def fetch_route(pickup, destination, *, stops=()):
+    locations = (pickup, *stops, destination)
     base = settings.TRIVIA_ROUTING_URL.rstrip("/")
     if not base and settings.TRIVIA_GEOAPIFY_API_KEY:
-        return geoapify_route(pickup, destination)
+        return geoapify_route(pickup, destination, stops=stops) if stops else geoapify_route(pickup, destination)
     if not base:
         raise RouteUnavailable(
             "Driving routes are not configured. Please retry once the service is available."
         )
-    coordinates = f"{pickup['longitude']},{pickup['latitude']};{destination['longitude']},{destination['latitude']}"
+    coordinates = ";".join(f"{p['longitude']},{p['latitude']}" for p in locations)
     data = provider_json(
         f"{base}/route/v1/driving/{coordinates}?"
         + urlencode(
@@ -117,7 +118,7 @@ def fetch_route(pickup, destination):
         metres, seconds = float(route["distance"]), float(route["duration"])
         # Refuse routes snapped unreasonably far from the requested locations.
         waypoints = data["waypoints"]
-        if len(waypoints) != 2 or any(
+        if len(waypoints) != len(locations) or any(
             (
                 not math.isfinite(float(w["distance"]))
                 or not 0 <= float(w["distance"]) <= settings.TRIVIA_MAX_SNAP_METRES
@@ -172,9 +173,10 @@ def snap_distance(requested, coordinate):
     return 12_742_000 * math.asin(math.sqrt(min(1, a)))
 
 
-def geoapify_route(pickup, destination):
+def geoapify_route(pickup, destination, *, stops=()):
+    locations = (pickup, *stops, destination)
     waypoints = "|".join(
-        f"{p['latitude']},{p['longitude']}" for p in (pickup, destination)
+        f"{p['latitude']},{p['longitude']}" for p in locations
     )
     data = geoapify_json(
         "routing", waypoints=waypoints, mode="drive", units="metric", format="geojson"
@@ -182,23 +184,28 @@ def geoapify_route(pickup, destination):
     try:
         feature = data["features"][0]
         geometry, properties = feature["geometry"], feature["properties"]
-        points = geometry["coordinates"]
+        line = geometry["coordinates"]
         if geometry["type"] == "MultiLineString":
-            # Two waypoints produce one leg. Avoid joining disjoint geometries.
-            if not isinstance(points, list) or len(points) != 1:
-                raise ValueError("Expected one driving leg")
-            points = points[0]
-        elif geometry["type"] != "LineString":
+            legs = line
+        elif geometry["type"] == "LineString" and not stops:
+            legs = [line]
+        else:
             raise ValueError("Invalid road geometry")
-        result = validated_route(
+        if not isinstance(legs, list) or len(legs) != len(locations) - 1:
+            raise ValueError("Expected a driving leg between each pair of locations")
+        points = []
+        for index, leg in enumerate(legs):
+            if not isinstance(leg, list) or len(leg) < 2:
+                raise ValueError("Invalid driving leg")
+            if points and points[-1] != leg[0]:
+                raise ValueError("Driving legs are disjoint")
+            for requested, point in ((locations[index], leg[0]), (locations[index + 1], leg[-1])):
+                if snap_distance(requested, point) > settings.TRIVIA_MAX_SNAP_METRES:
+                    raise ValueError("Location too far from a drivable road")
+            points.extend(leg if not points else leg[1:])
+        return validated_route(
             points, float(properties["distance"]), float(properties["time"]), "Geoapify"
         )
-        if any(
-            snap_distance(requested, point) > settings.TRIVIA_MAX_SNAP_METRES
-            for requested, point in ((pickup, points[0]), (destination, points[-1]))
-        ):
-            raise ValueError("Location too far from a drivable road")
-        return result
     except (KeyError, IndexError, TypeError, ValueError, OverflowError) as exc:
         raise RouteUnavailable() from exc
 

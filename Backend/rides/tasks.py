@@ -24,7 +24,7 @@ def dispatch_request(ride_id):
                 # Stable dispatch identifier makes retries safe; no private notes in event.
                 import uuid
                 event_id = str(uuid.uuid5(ride.pk, f'dispatch:{app.pk}'))
-                notify(app.user_id, 'ride.request', str(ride.pk), {'ride_id': str(ride.pk)}, event_id=event_id)
+                notify(app.user_id, 'ride.request', str(ride.pk), {'ride_id': str(ride.pk), 'service': ride.quote.category}, event_id=event_id)
         except APIException:
             continue
 
@@ -32,7 +32,12 @@ def dispatch_request(ride_id):
 @shared_task
 @transaction.retry
 def maintenance():
+    from rides.services.scheduling import MATCHING_LEAD, open_matching
+
     now = timezone.now()
+    due = Ride.objects.filter(status='scheduled', departure_at__lte=now + MATCHING_LEAD)
+    for pk in due.order_by('departure_at').values_list('pk', flat=True)[:1000]:
+        open_matching(pk, now)
     for pk in Ride.objects.filter(status='searching', expires_at__lte=now).values_list('pk', flat=True)[:1000]:
         with transaction.atomic():
             transaction.guard(Ride, pk)

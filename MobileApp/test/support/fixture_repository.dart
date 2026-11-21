@@ -25,13 +25,24 @@ const demoPlaces = [
 
 class TestRepository implements TriviaRepository {
   @override
-  Future<void> register({
+  Future<bool> register({
     required String firstName,
     required String lastName,
     required String email,
     required String password,
     required String confirmation,
   }) async => throw UnimplementedError();
+
+  @override
+  Future<void> resendSignupCode(String email, String password) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> verifySignupCode(
+    String email,
+    String password,
+    String code,
+  ) async => throw UnimplementedError();
 
   @override
   Future<Session> login(LoginContact contact, String password) async =>
@@ -42,16 +53,24 @@ class TestRepository implements TriviaRepository {
       throw UnimplementedError();
 
   @override
-  Future<String> verifyPasswordRecovery(LoginContact contact, String code) async =>
-      throw UnimplementedError();
+  Future<String> verifyPasswordRecovery(
+    LoginContact contact,
+    String code,
+  ) async => throw UnimplementedError();
 
   @override
-  Future<void> resetPassword(String token, String password, String confirmation) async =>
-      throw UnimplementedError();
+  Future<void> resetPassword(
+    String token,
+    String password,
+    String confirmation,
+  ) async => throw UnimplementedError();
 
   @override
-  Future<void> changePassword(String current, String password, String confirmation) async =>
-      throw UnimplementedError();
+  Future<void> changePassword(
+    String current,
+    String password,
+    String confirmation,
+  ) async => throw UnimplementedError();
 
   Session? _session;
   final registrationStorage = const FlutterSecureStorage();
@@ -131,6 +150,7 @@ class TestRepository implements TriviaRepository {
     Place destination,
     String category, {
     String currency = 'USD',
+    List<Place> stops = const [],
   }) async => RouteQuote(
     id: 'demo-quote-${DateTime.now().microsecondsSinceEpoch}',
     currency: 'USD',
@@ -174,6 +194,11 @@ class TestRepository implements TriviaRepository {
     String? requestKey,
     String? paymentPreference,
     String? passengerNote,
+    int? passengerCount,
+    String? luggage,
+    DateTime? departureAt,
+    Map<String, dynamic>? parcel,
+    List<Place> stops = const [],
   }) async {
     if (_rides.any((r) => r.active)) {
       throw StateError('Finish or cancel your current demo ride first.');
@@ -230,7 +255,11 @@ class TestRepository implements TriviaRepository {
   }
 
   @override
-  Future<Ride> accept(String rideId, String offerId, {int? expectedFare}) async {
+  Future<Ride> accept(
+    String rideId,
+    String offerId, {
+    int? expectedFare,
+  }) async {
     final ride = _get(rideId);
     if (ride.status != RideStatus.searching) {
       throw StateError('This ride already has a driver.');
@@ -422,6 +451,12 @@ class TestRepository implements TriviaRepository {
         },
         _ => {'items': <dynamic>[]},
       };
+  @override
+  Future<void> uploadParcelPhoto(String rideId, String filePath) async {}
+  @override
+  Future<List<int>> parcelPhoto(String rideId) async => [];
+  @override
+  Future<void> delete(String resource) async {}
   @override
   Future<void> write(String resource, Map<String, dynamic> data) async {}
 }

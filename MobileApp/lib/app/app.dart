@@ -76,19 +76,24 @@ class _TriviaAppState extends ConsumerState<TriviaApp>
           if (app.initializationFailed) {
             return Scaffold(
               body: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Brand(large: true),
-                      ErrorNotice(app),
-                      ActionButton(
-                        'Retry initialization',
-                        app.initialize,
-                        busy: app.busy,
+                child: Center(
+                  child: ContentFrame(
+                    maxWidth: 460,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Brand(large: true),
+                          ErrorNotice(app),
+                          ActionButton(
+                            'Retry initialization',
+                            app.initialize,
+                            busy: app.busy,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -119,6 +124,32 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.app.addListener(selectBooking);
+  }
+
+  @override
+  void didUpdateWidget(MainShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.app != widget.app) {
+      oldWidget.app.removeListener(selectBooking);
+      widget.app.addListener(selectBooking);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.app.removeListener(selectBooking);
+    super.dispose();
+  }
+
+  void selectBooking() {
+    if (tab != 0 && widget.app.rebookDraft != null) setState(() => tab = 0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = widget.app;
@@ -141,13 +172,8 @@ class _MainShellState extends State<MainShell> {
     ];
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: IndexedStack(index: tab, children: pages),
-            ),
-          ],
-        ),
+        bottom: false,
+        child: IndexedStack(index: tab, children: pages),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: tab,

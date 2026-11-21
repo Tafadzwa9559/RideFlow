@@ -1,9 +1,15 @@
 part of 'entry.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.app, this.registeredEmail});
+  const LoginScreen({
+    super.key,
+    required this.app,
+    this.registeredEmail,
+    this.initialMessage,
+  });
   final AppController app;
   final String? registeredEmail;
+  final String? initialMessage;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -18,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
       : LoginChannel.email;
   bool busy = false;
   bool passengerTesting = false;
-  String? message;
+  late String? message = widget.initialMessage;
 
   @override
   void dispose() {
@@ -33,18 +39,44 @@ class _LoginScreenState extends State<LoginScreen> {
       busy = true;
       message = null;
     });
-    final success = await widget.app.login(
-      LoginContact(
-        channel,
-        passengerTesting ? identifier.text.trim() : _identifier(channel, identifier.text),
-        passengerTesting: passengerTesting,
-      ),
-      password.text,
+    final contact = LoginContact(
+      channel,
+      passengerTesting
+          ? identifier.text.trim()
+          : _identifier(channel, identifier.text),
+      passengerTesting: passengerTesting,
     );
+    final submittedPassword = password.text;
+    final success = await widget.app.login(contact, submittedPassword);
     if (!mounted) return;
     if (success) {
       final route = ModalRoute.of(context);
       if (route != null) Navigator.of(context).removeRoute(route);
+    } else if (widget.app.errorCode == 'EMAIL_VERIFICATION_REQUIRED') {
+      password.clear();
+      final credentials = _SignupCredentials(submittedPassword);
+      final result = await Navigator.of(context).push<_SignupResult>(
+        MaterialPageRoute(
+          builder: (_) => _SignupVerification(
+            app: widget.app,
+            email: contact.identifier,
+            credentials: credentials,
+            codeSent: false,
+            returnToLogin: true,
+          ),
+        ),
+      );
+      credentials.password = null;
+      if (!mounted) return;
+      if (result?.signedIn == true) {
+        final route = ModalRoute.of(context);
+        if (route != null) Navigator.of(context).removeRoute(route);
+        return;
+      }
+      setState(() {
+        busy = false;
+        message = result?.message;
+      });
     } else {
       setState(() {
         busy = false;
@@ -65,7 +97,9 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(
         builder: (_) => _PasswordRecovery(
           repository: widget.app.repository,
-          initialChannel: identifier.text.trim().isEmpty ? LoginChannel.email : channel,
+          initialChannel: identifier.text.trim().isEmpty
+              ? LoginChannel.email
+              : channel,
           initialIdentifier: identifier.text,
         ),
       ),
@@ -91,36 +125,44 @@ class _LoginScreenState extends State<LoginScreen> {
               SwitchListTile(
                 title: const Text('Passenger Testing Mode'),
                 value: passengerTesting,
-                onChanged: busy ? null : (value) => setState(() {
-                  passengerTesting = value;
-                  identifier.clear();
-                  password.clear();
-                  message = null;
-                }),
+                onChanged: busy
+                    ? null
+                    : (value) => setState(() {
+                        passengerTesting = value;
+                        identifier.clear();
+                        password.clear();
+                        message = null;
+                      }),
               ),
-            if (!passengerTesting) _ChannelSelector(
-              channel: channel,
-              onChanged: busy
-                  ? null
-                  : (value) => setState(() {
-                      channel = value;
-                      identifier.clear();
-                      message = null;
-                    }),
-            ),
+            if (!passengerTesting)
+              _ChannelSelector(
+                channel: channel,
+                onChanged: busy
+                    ? null
+                    : (value) => setState(() {
+                        channel = value;
+                        identifier.clear();
+                        message = null;
+                      }),
+              ),
             const SizedBox(height: 18),
             if (passengerTesting)
               TextFormField(
                 controller: identifier,
                 enabled: !busy,
-                decoration: const InputDecoration(labelText: 'Staging administrator username'),
-                validator: (value) => (value ?? '').trim().isEmpty ? 'Enter your username.' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Staging administrator username',
+                ),
+                validator: (value) => (value ?? '').trim().isEmpty
+                    ? 'Enter your username.'
+                    : null,
               )
-            else _ContactField(
-              channel: channel,
-              controller: identifier,
-              enabled: !busy,
-            ),
+            else
+              _ContactField(
+                channel: channel,
+                controller: identifier,
+                enabled: !busy,
+              ),
             const SizedBox(height: 14),
             _PasswordField(
               controller: password,
@@ -130,13 +172,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   (value ?? '').isEmpty ? 'Enter your password.' : null,
               onSubmitted: submit,
             ),
-            if (!passengerTesting) Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: busy ? null : recover,
-                child: const Text('Forgot Password?'),
+            if (!passengerTesting)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: busy ? null : recover,
+                  child: const Text('Forgot Password?'),
+                ),
               ),
-            ),
             _AccessMessage(message),
             ActionButton('Log In', submit, busy: busy),
             TextButton(
@@ -251,7 +294,11 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
         });
       case _RecoveryStep.password:
         await run(() async {
-          await widget.repository.resetPassword(token!, password.text, confirmation.text);
+          await widget.repository.resetPassword(
+            token!,
+            password.text,
+            confirmation.text,
+          );
           if (mounted) {
             setState(() {
               token = null;
@@ -294,7 +341,7 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
         _RecoveryStep.code =>
           phone
               ? 'If your account is eligible, look for a six-digit SMS code.'
-              : 'If your account is eligible, look for a six-digit code in your email.',
+              : 'If your account is eligible, look for a six-digit code in your email. It expires in five minutes.',
         _RecoveryStep.password => '',
         _RecoveryStep.success => 'Your password has been updated. You can now log in using your new password.',
       },
@@ -322,23 +369,18 @@ class _PasswordRecoveryState extends State<_PasswordRecovery> {
               ),
             ],
             if (step == _RecoveryStep.code) ...[
-              TextFormField(
+              _VerificationCodeField(
                 controller: code,
                 enabled: !busy,
-                keyboardType: TextInputType.number,
-                autofillHints: const [AutofillHints.oneTimeCode],
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                maxLength: 6,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: const InputDecoration(labelText: 'Verification code'),
-                validator: (value) => (value ?? '').length == 6
-                    ? null
-                    : 'Enter the six-digit code.',
+                onSubmitted: submit,
               ),
               TextButton(
                 onPressed: busy || remaining > 0 ? null : send,
-                child: Text(remaining > 0 ? 'Resend code in ${remaining}s' : 'Resend Code'),
+                child: Text(
+                  remaining > 0
+                      ? 'Resend code in ${remaining}s'
+                      : 'Resend Code',
+                ),
               ),
             ],
             if (step == _RecoveryStep.password) ...[
@@ -534,6 +576,34 @@ class _AccessMessage extends StatelessWidget {
         );
 }
 
+class _VerificationCodeField extends StatelessWidget {
+  const _VerificationCodeField({
+    required this.controller,
+    required this.enabled,
+    required this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final bool enabled;
+  final VoidCallback onSubmitted;
+
+  @override
+  Widget build(BuildContext context) => TextFormField(
+    controller: controller,
+    enabled: enabled,
+    keyboardType: TextInputType.number,
+    autofillHints: const [AutofillHints.oneTimeCode],
+    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    maxLength: 6,
+    autocorrect: false,
+    enableSuggestions: false,
+    decoration: const InputDecoration(labelText: 'Verification code'),
+    onFieldSubmitted: (_) => onSubmitted(),
+    validator: (value) =>
+        (value ?? '').length == 6 ? null : 'Enter the six-digit code.',
+  );
+}
+
 class _AccessPage extends StatelessWidget {
   const _AccessPage({
     required this.title,
@@ -557,39 +627,25 @@ class _AccessPage extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 470),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Image.asset(
-                          'assets/trivia-icon.png',
-                          width: 58,
-                          height: 58,
-                          semanticLabel: 'Trivia',
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        heading,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineMedium,
-                      ),
-                      if (subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(subtitle, textAlign: TextAlign.center),
-                      ],
-                      const SizedBox(height: 22),
-                      child,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: Brand(large: true)),
+                    const SizedBox(height: 14),
+                    Text(
+                      heading,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineMedium,
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(subtitle, textAlign: TextAlign.center),
                     ],
-                  ),
+                    const SizedBox(height: 22),
+                    child,
+                  ],
                 ),
               ),
             ),
@@ -629,21 +685,29 @@ class _PasswordRequirements extends StatelessWidget {
           children: [
             const Text('Password requirements'),
             for (final (label, check) in _passwordRequirements)
-              Builder(builder: (context) {
-                final satisfied = check(value.text);
-                final color = satisfied
-                    ? (colors.brightness == Brightness.dark ? Colors.greenAccent : darkGreen)
-                    : colors.onSurfaceVariant;
-                return Row(
-                  children: [
-                    Icon(satisfied ? Icons.check : Icons.circle_outlined, size: 14, color: color),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(label, style: TextStyle(color: color)),
-                    ),
-                  ],
-                );
-              }),
+              Builder(
+                builder: (context) {
+                  final satisfied = check(value.text);
+                  final color = satisfied
+                      ? (colors.brightness == Brightness.dark
+                            ? Colors.greenAccent
+                            : darkGreen)
+                      : colors.onSurfaceVariant;
+                  return Row(
+                    children: [
+                      Icon(
+                        satisfied ? Icons.check : Icons.circle_outlined,
+                        size: 14,
+                        color: color,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(label, style: TextStyle(color: color)),
+                      ),
+                    ],
+                  );
+                },
+              ),
           ],
         ),
       ),
@@ -682,11 +746,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       message = null;
     });
     final app = widget.app;
-    final changed = await app.changePassword(current.text, password.text, confirmation.text);
+    final changed = await app.changePassword(
+      current.text,
+      password.text,
+      confirmation.text,
+    );
     if (!mounted) return;
     if (changed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password updated. Sign in with your new password.')),
+        const SnackBar(
+          content: Text('Password updated. Sign in with your new password.'),
+        ),
       );
     } else {
       setState(() {
@@ -710,7 +780,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             controller: current,
             label: 'Current password',
             enabled: !busy,
-            validator: (value) => (value ?? '').isEmpty ? 'Enter your current password.' : null,
+            validator: (value) =>
+                (value ?? '').isEmpty ? 'Enter your current password.' : null,
           ),
           const SizedBox(height: 14),
           _PasswordField(
@@ -726,7 +797,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             label: 'Confirm new password',
             enabled: !busy,
             isNew: true,
-            validator: (value) => value == password.text ? null : 'The passwords must match.',
+            validator: (value) =>
+                value == password.text ? null : 'The passwords must match.',
             onSubmitted: submit,
           ),
           const SizedBox(height: 16),

@@ -1,5 +1,7 @@
 import 'support/fixture_repository.dart';
 
+import 'package:clock/clock.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:flutter/material.dart';
@@ -10,6 +12,7 @@ import 'package:rideflow_mobile/app/controller.dart';
 import 'package:rideflow_mobile/core/repository.dart';
 import 'package:rideflow_mobile/app/theme.dart';
 import 'package:rideflow_mobile/features/entry/entry.dart';
+import 'package:rideflow_mobile/shared/models.dart';
 
 class _UnavailableRecoveryRepository extends TestRepository {
   LoginContact? requestedContact;
@@ -22,10 +25,20 @@ class _UnavailableRecoveryRepository extends TestRepository {
 }
 
 class _EmailSignupRepository extends TestRepository {
+  _EmailSignupRepository({this.verificationRequired = false});
+
+  final bool verificationRequired;
   final submissions = <List<String>>[];
+  bool verified = false;
+  bool failLogin = false;
+  int loginAttempts = 0;
+  int resends = 0;
+  int verificationAttempts = 0;
+  Object? verifyError;
+  Object? resendError;
 
   @override
-  Future<void> register({
+  Future<bool> register({
     required String firstName,
     required String lastName,
     required String email,
@@ -33,7 +46,139 @@ class _EmailSignupRepository extends TestRepository {
     required String confirmation,
   }) async {
     submissions.add([firstName, lastName, email, password, confirmation]);
+    return verificationRequired;
   }
+
+  @override
+  Future<void> verifySignupCode(
+    String email,
+    String password,
+    String code,
+  ) async {
+    verificationAttempts++;
+    expect(email, submissions.single[2]);
+    expect(password, submissions.single[3]);
+    if (verifyError case final error?) throw error;
+    if (code != '004219') {
+      final request = RequestOptions();
+      throw DioException.badResponse(
+        statusCode: 400,
+        requestOptions: request,
+        response: Response(
+          requestOptions: request,
+          statusCode: 400,
+          data: {'code': 'INVALID'},
+        ),
+      );
+    }
+    verified = true;
+  }
+
+  @override
+  Future<void> resendSignupCode(String email, String password) async {
+    resends++;
+    expect(email, submissions.single[2]);
+    expect(password, submissions.single[3]);
+    if (resendError case final error?) throw error;
+  }
+
+  @override
+  Future<Session> login(LoginContact contact, String password) async {
+    loginAttempts++;
+    expect(contact.toJson(), {
+      'channel': 'email',
+      'identifier': submissions.single[2],
+    });
+    expect(password, submissions.single[3]);
+    if (!verified) {
+      final request = RequestOptions();
+      throw DioException.badResponse(
+        statusCode: 403,
+        requestOptions: request,
+        response: Response(
+          requestOptions: request,
+          statusCode: 403,
+          data: {'code': 'EMAIL_VERIFICATION_REQUIRED'},
+        ),
+      );
+    }
+    if (failLogin) throw StateError('Sign-in temporarily unavailable.');
+    return Session(
+      firstName: 'Tariro',
+      lastName: 'Moyo',
+      phone: '',
+      email: contact.identifier,
+    );
+  }
+}
+
+Future<void> _enterAuthField(
+  WidgetTester tester,
+  String label,
+  String value,
+) async {
+  final field = find.widgetWithText(TextFormField, label);
+  await tester.ensureVisible(field);
+  await tester.enterText(field, value);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _tapAuthButton(WidgetTester tester, Finder button) async {
+  await tester.ensureVisible(button);
+  await tester.pumpAndSettle();
+  expect(button.hitTestable(), findsOneWidget);
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openAuthScreen(WidgetTester tester, Widget screen) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: triviaTheme(),
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () =>
+                Navigator.of(context)
+                    .push<void>(MaterialPageRoute(builder: (_) => screen)),
+            child: const Text('Start signup'),
+          ),
+        ),
+      ),
+    ),
+  );
+  await _tapAuthButton(tester, find.text('Start signup'));
+}
+
+Future<void> _startEmailSignup(WidgetTester tester, AppController app) async {
+  await _openAuthScreen(tester, EmailRegistrationScreen(app: app));
+  await _enterAuthField(tester, 'First name', 'Tariro');
+  await _enterAuthField(tester, 'Last name', 'Moyo');
+  await _enterAuthField(tester, 'Email address', 'tariro@example.net');
+  await _enterAuthField(tester, 'Password', 'Horizon-Teak-Glass-187');
+  await _enterAuthField(tester, 'Confirm password', 'Horizon-Teak-Glass-187');
+  await _tapAuthButton(
+    tester,
+    find.widgetWithText(FilledButton, 'Create account'),
+  );
+}
+
+DioException _emailThrottle(String seconds) {
+  final request = RequestOptions();
+  return DioException.badResponse(
+    statusCode: 429,
+    requestOptions: request,
+    response: Response(
+      requestOptions: request,
+      statusCode: 429,
+      data: {
+        'errors': {'detail': 'Too many requests. Try again later.'},
+      },
+      headers: Headers.fromMap({
+        'retry-after': [seconds],
+      }),
+    ),
+  );
 }
 
 class _EmailRecoveryRepository extends TestRepository {
@@ -46,14 +191,25 @@ class _EmailRecoveryRepository extends TestRepository {
   }
 
   @override
-  Future<String> verifyPasswordRecovery(LoginContact contact, String code) async {
-    if (code != '184306') throw const FormatException('Invalid or expired verification.');
+  Future<String> verifyPasswordRecovery(
+    LoginContact contact,
+    String code,
+  ) async {
+    if (code != '184306') {
+      throw const FormatException('Invalid or expired verification.');
+    }
     return 'issued-reset-authorization';
   }
 
   @override
-  Future<void> resetPassword(String token, String password, String confirmation) async {
-    if (password != confirmation) throw const FormatException('The passwords must match.');
+  Future<void> resetPassword(
+    String token,
+    String password,
+    String confirmation,
+  ) async {
+    if (password != confirmation) {
+      throw const FormatException('The passwords must match.');
+    }
     usedAuthorization = token;
   }
 }
@@ -67,7 +223,10 @@ void main() {
     final repository = _UnavailableRecoveryRepository();
     final app = AppController(repository);
     await tester.pumpWidget(
-      MaterialApp(theme: triviaTheme(), home: LoginScreen(app: app)),
+      MaterialApp(
+        theme: triviaTheme(),
+        home: LoginScreen(app: app),
+      ),
     );
     Future<void> tapText(String label) async {
       final target = find.text(label).last;
@@ -92,7 +251,10 @@ void main() {
     await tapText('Forgot Password?');
     await tapText('Send Reset Code');
     expect(repository.requestedContact?.identifier, '+263771234567');
-    expect(find.text('SMS password recovery is currently unavailable.'), findsOneWidget);
+    expect(
+      find.text('SMS password recovery is currently unavailable.'),
+      findsOneWidget,
+    );
     expect(find.text('Enter your verification code'), findsNothing);
 
     await tester.pumpWidget(const SizedBox());
@@ -105,7 +267,10 @@ void main() {
     final repository = _EmailSignupRepository();
     final app = AppController(repository);
     await tester.pumpWidget(
-      MaterialApp(theme: triviaTheme(), home: AuthScreen(app: app)),
+      MaterialApp(
+        theme: triviaTheme(),
+        home: AuthScreen(app: app),
+      ),
     );
     Future<void> tap(String label) async {
       final target = find.text(label);
@@ -158,48 +323,200 @@ void main() {
     app.dispose();
   });
 
-  testWidgets('Email recovery verifies a code before resetting and returns to login', (
+  testWidgets(
+    'Email recovery verifies a code before resetting and returns to login',
+    (tester) async {
+      final repository = _EmailRecoveryRepository();
+      final app = AppController(repository);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: triviaTheme(),
+          home: LoginScreen(app: app),
+        ),
+      );
+
+      Future<void> tap(String label) async {
+        final target = find.text(label).last;
+        await tester.ensureVisible(target);
+        await tester.tap(target);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> enter(String label, String value) async {
+        final field = find.widgetWithText(TextFormField, label);
+        await tester.ensureVisible(field);
+        await tester.enterText(field, value);
+      }
+
+      await tap('Forgot Password?');
+      await enter('Email address', 'tariro@example.net');
+      await tap('Send Reset Code');
+      expect(repository.contact?.channel, LoginChannel.email);
+      expect(find.textContaining('Resend code in'), findsOneWidget);
+      await enter('Verification code', '123456');
+      await tap('Verify Code');
+      expect(find.text('Invalid or expired verification.'), findsOneWidget);
+      expect(find.text('Reset Password'), findsNothing);
+      await enter('Verification code', '184306');
+      await tap('Verify Code');
+      await enter('New password', 'A9!nest7');
+      await enter('Confirm New Password', 'A9!nest7');
+      await tap('Reset Password');
+      expect(repository.usedAuthorization, 'issued-reset-authorization');
+      expect(find.text('Password Reset Successful!'), findsOneWidget);
+      await tap('Back to Login');
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(app.session, isNull);
+      await tester.pumpWidget(const SizedBox());
+      app.dispose();
+    },
+  );
+
+  testWidgets('Verified signup signs in and dismisses authentication', (
     tester,
   ) async {
-    final repository = _EmailRecoveryRepository();
+    final repository = _EmailSignupRepository(verificationRequired: true);
     final app = AppController(repository);
-    await tester.pumpWidget(MaterialApp(theme: triviaTheme(), home: LoginScreen(app: app)));
-
-    Future<void> tap(String label) async {
-      final target = find.text(label).last;
-      await tester.ensureVisible(target);
-      await tester.tap(target);
-      await tester.pumpAndSettle();
-    }
-
-    Future<void> enter(String label, String value) async {
-      final field = find.widgetWithText(TextFormField, label);
-      await tester.ensureVisible(field);
-      await tester.enterText(field, value);
-    }
-
-    await tap('Forgot Password?');
-    await enter('Email address', 'tariro@example.net');
-    await tap('Send Reset Code');
-    expect(repository.contact?.channel, LoginChannel.email);
-    expect(find.textContaining('Resend code in'), findsOneWidget);
-    await enter('Verification code', '123456');
-    await tap('Verify Code');
-    expect(find.text('Invalid or expired verification.'), findsOneWidget);
-    expect(find.text('Reset Password'), findsNothing);
-    await enter('Verification code', '184306');
-    await tap('Verify Code');
-    await enter('New password', 'A9!nest7');
-    await enter('Confirm New Password', 'A9!nest7');
-    await tap('Reset Password');
-    expect(repository.usedAuthorization, 'issued-reset-authorization');
-    expect(find.text('Password Reset Successful!'), findsOneWidget);
-    await tap('Back to Login');
-    expect(find.byType(LoginScreen), findsOneWidget);
-    expect(app.session, isNull);
-    await tester.pumpWidget(const SizedBox());
-    app.dispose();
+    addTearDown(app.dispose);
+    await withClock(tester.binding.clock, () async {
+      await _startEmailSignup(tester, app);
+      expect(find.textContaining('tariro@example.net'), findsOneWidget);
+      expect(find.textContaining('expires in five minutes'), findsOneWidget);
+      expect(find.textContaining('Resend code in'), findsOneWidget);
+      final verify = find.widgetWithText(FilledButton, 'Verify email');
+      await _enterAuthField(tester, 'Verification code', '123456');
+      await _tapAuthButton(tester, verify);
+      expect(
+        find.textContaining('incorrect, expired, or out of attempts'),
+        findsOneWidget,
+      );
+      expect(repository.loginAttempts, 0);
+      await _enterAuthField(tester, 'Verification code', '004219');
+      await _tapAuthButton(tester, verify);
+      expect(repository.verified, isTrue);
+      expect(repository.loginAttempts, 1);
+      expect(app.session?.email, 'tariro@example.net');
+      expect(find.byType(LoginScreen), findsNothing);
+      expect(find.text('Start signup'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
   });
+
+  testWidgets(
+    'Email OTP expires and resend respects local and server cooldowns',
+    (tester) async {
+      final repository = _EmailSignupRepository(verificationRequired: true);
+      final app = AppController(repository);
+      addTearDown(app.dispose);
+      await withClock(tester.binding.clock, () async {
+        await _startEmailSignup(tester, app);
+        await _enterAuthField(tester, 'Verification code', '004219');
+        final countdown = find.widgetWithText(TextButton, 'Resend code in 60s');
+        expect(tester.widget<TextButton>(countdown).onPressed, isNull);
+        await tester.pump(const Duration(minutes: 5));
+        expect(
+          find.text('This code has expired. Request a new one.'),
+          findsOneWidget,
+        );
+        final verify = find.widgetWithText(FilledButton, 'Verify email');
+        expect(tester.widget<FilledButton>(verify).onPressed, isNull);
+        expect(repository.verificationAttempts, 0);
+
+        final resend = find.widgetWithText(TextButton, 'Resend Code');
+        repository.resendError = _emailThrottle('90');
+        await _tapAuthButton(tester, resend);
+        expect(repository.resends, 1);
+        expect(find.textContaining('Too many requests.'), findsOneWidget);
+        expect(find.text('Resend code in 90s'), findsOneWidget);
+        await tester.pump(const Duration(seconds: 90));
+
+        repository.resendError = null;
+        await _tapAuthButton(tester, resend);
+        expect(repository.resends, 2);
+        expect(
+          find.text('This code has expired. Request a new one.'),
+          findsNothing,
+        );
+        expect(find.text('004219'), findsNothing);
+        expect(find.text('Resend code in 60s'), findsOneWidget);
+        await _enterAuthField(tester, 'Verification code', '004219');
+        repository.verifyError = _emailThrottle('30');
+        await _tapAuthButton(tester, verify);
+        expect(repository.verificationAttempts, 1);
+        final limited = find.widgetWithText(FilledButton, 'Try again in 30s');
+        expect(tester.widget<FilledButton>(limited).onPressed, isNull);
+        await tester.pump(const Duration(seconds: 30));
+        expect(tester.widget<FilledButton>(verify).onPressed, isNotNull);
+        await tester.pumpWidget(const SizedBox());
+      });
+    },
+  );
+
+  testWidgets(
+    'Sign-in failure after email verification opens login without the password',
+    (tester) async {
+      final repository = _EmailSignupRepository(verificationRequired: true)
+        ..failLogin = true;
+      final app = AppController(repository);
+      addTearDown(app.dispose);
+      await _startEmailSignup(tester, app);
+      await _enterAuthField(tester, 'Verification code', '004219');
+      await _tapAuthButton(
+        tester,
+        find.widgetWithText(FilledButton, 'Verify email'),
+      );
+      expect(repository.verificationAttempts, 1);
+      expect(repository.loginAttempts, 1);
+      expect(app.session, isNull);
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(
+        find.textContaining('Email verified. Sign in to continue.'),
+        findsOneWidget,
+      );
+      expect(find.text('tariro@example.net'), findsOneWidget);
+      final password = tester.widget<TextFormField>(
+        find.widgetWithText(TextFormField, 'Password'),
+      );
+      expect(password.controller?.text, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'Pending email login resumes verification and dismisses both screens',
+    (tester) async {
+      final repository = _EmailSignupRepository(verificationRequired: true);
+      final app = AppController(repository);
+      addTearDown(app.dispose);
+      const email = 'tariro@example.net';
+      const password = 'Horizon-Teak-Glass-187';
+      await repository.register(
+        firstName: 'Tariro',
+        lastName: 'Moyo',
+        email: email,
+        password: password,
+        confirmation: password,
+      );
+      await _openAuthScreen(
+        tester,
+        LoginScreen(app: app, registeredEmail: email),
+      );
+      await _enterAuthField(tester, 'Password', password);
+      await _tapAuthButton(tester, find.widgetWithText(FilledButton, 'Log In'));
+      expect(repository.loginAttempts, 1);
+      expect(find.textContaining('Enter the code for $email'), findsOneWidget);
+      await _enterAuthField(tester, 'Verification code', '004219');
+      await _tapAuthButton(
+        tester,
+        find.widgetWithText(FilledButton, 'Verify email'),
+      );
+      expect(repository.loginAttempts, 2);
+      expect(app.session?.email, email);
+      expect(find.byType(LoginScreen), findsNothing);
+      expect(find.text('Start signup'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets('Onboarding swipes and persists completion', (tester) async {
     SharedPreferences.setMockInitialValues({});

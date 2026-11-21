@@ -15,12 +15,12 @@ ThemeData triviaDarkTheme() => _baseTheme(Brightness.dark);
 
 ThemeData _baseTheme(Brightness brightness) {
   final isDark = brightness == Brightness.dark;
-  final background = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAF9);
-  final surface = isDark ? const Color(0xFF111827) : Colors.white;
-  final surfaceAlt = isDark ? const Color(0xFF1F2937) : const Color(0xFFF8F9F7);
-  final border = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
-  final text = isDark ? const Color(0xFFF3F4F6) : ink;
-  final mutedText = isDark ? const Color(0xFFB7BDC8) : muted;
+  final background = isDark ? const Color(0xFF121412) : const Color(0xFFFFFFFF);
+  final surface = isDark ? const Color(0xFF181B18) : Colors.white;
+  final surfaceAlt = isDark ? const Color(0xFF222622) : const Color(0xFFF5F7F5);
+  final border = isDark ? const Color(0xFF414841) : const Color(0xFFE1E7E2);
+  final text = isDark ? const Color(0xFFF3F5F3) : ink;
+  final mutedText = isDark ? const Color(0xFFBCC5BC) : muted;
 
   final primary = isDark ? const Color(0xFF6EE7B7) : darkGreen;
   final scheme = ColorScheme.fromSeed(
@@ -41,6 +41,15 @@ ThemeData _baseTheme(Brightness brightness) {
     brightness: brightness,
     scaffoldBackgroundColor: background,
     colorScheme: scheme,
+    materialTapTargetSize: MaterialTapTargetSize.padded,
+    splashFactory: InkRipple.splashFactory,
+    chipTheme: ChipThemeData(
+      backgroundColor: surfaceAlt,
+      selectedColor: scheme.primaryContainer,
+      side: BorderSide(color: border),
+      shape: const RoundedRectangleBorder(borderRadius: controlRadius),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+    ),
     iconTheme: IconThemeData(color: scheme.onSurfaceVariant, size: 24),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: primary),
     textButtonTheme: TextButtonThemeData(
@@ -84,6 +93,8 @@ ThemeData _baseTheme(Brightness brightness) {
       foregroundColor: text,
       elevation: 0,
       centerTitle: false,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
@@ -148,7 +159,10 @@ ThemeData _baseTheme(Brightness brightness) {
       backgroundColor: surface,
       indicatorColor: isDark ? scheme.primaryContainer : pale,
       surfaceTintColor: Colors.transparent,
-      labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      labelTextStyle: WidgetStatePropertyAll(
+        TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: text),
+      ),
     ),
   );
 }

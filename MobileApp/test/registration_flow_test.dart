@@ -35,12 +35,12 @@ void main() {
     }
 
     await tap('Get Started');
-    await enter('firstName', 'Updated');
+    await enter('First name', 'Updated');
     await tap('Continue');
-    await enter('licenceNumber', 'TEST123');
-    await enter('licenceClass', '4');
+    await enter('Licence number', 'TEST123');
+    await enter('Licence class', '4');
     await enter(
-      'licenceExpiry',
+      'Licence expiry date',
       DateTime.now()
           .add(const Duration(days: 365))
           .toIso8601String()
@@ -48,12 +48,12 @@ void main() {
     );
     await tap('Continue');
     for (final entry in {
-      'make': 'Toyota',
-      'model': 'Corolla',
-      'year': '${DateTime.now().year}',
-      'colour': 'White',
-      'registration': 'TEST123',
-      'seats': '4',
+      'Vehicle make': 'Toyota',
+      'Vehicle model': 'Corolla',
+      'Model year': '${DateTime.now().year}',
+      'Colour': 'White',
+      'Registration number': 'TEST123',
+      'Passenger seats': '4',
     }.entries) {
       await enter(entry.key, entry.value);
     }

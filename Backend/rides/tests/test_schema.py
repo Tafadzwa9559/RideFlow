@@ -29,8 +29,21 @@ class SchemaTests(SimpleTestCase):
                     self.assertIn('examples', content, path)
                 for status, response in operation['responses'].items():
                     for content in response.get('content', {}).values():
-                        self.assertIn('examples', content, (path, status))
+                        if content.get('schema', {}).get('format') != 'binary':
+                            self.assertIn('examples', content, (path, status))
         self.assertEqual(len(operation_ids), len(set(operation_ids)))
+
+    def test_transport_service_contracts(self):
+        paths = self.schema['paths']
+        schedule = paths['/api/v1/rides/{id}/schedule/']['patch']
+        self.assertIn('200', schedule['responses'])
+        preferences = paths['/api/v1/drivers/me/service-preferences/']
+        self.assertIn('get', preferences)
+        self.assertIn('post', preferences)
+        photo = paths['/api/v1/rides/{id}/parcel/photo/']
+        self.assertIn('multipart/form-data', photo['post']['requestBody']['content'])
+        self.assertIn('image/jpeg', photo['get']['responses']['200']['content'])
+        self.assertIn('200', paths['/api/v1/rides/{id}/parcel/confirm/']['post']['responses'])
 
     def test_email_registration_contract(self):
         operation = self.schema['paths']['/api/v1/auth/register/']['post']

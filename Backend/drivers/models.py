@@ -59,6 +59,8 @@ class DriverApplication(models.Model):
     submitted_at = models.DateTimeField(null=True)
     reviewed_at = models.DateTimeField(null=True)
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT, related_name='driver_reviews')
+    accepts_intercity = models.BooleanField(default=False)
+    accepts_courier = models.BooleanField(default=False)
     availability = models.CharField(max_length=20, default='offline', db_index=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, validators=[MinValueValidator(-90), MaxValueValidator(90)])
     longitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, validators=[MinValueValidator(-180), MaxValueValidator(180)])

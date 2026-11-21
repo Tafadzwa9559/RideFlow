@@ -192,12 +192,13 @@ class CategorySerializer(serializers.Serializer):
 class CategoriesView(APIView):
     def get(self, request, pk=None):
         categories = sorted(set(PricingConfiguration.objects.filter(enabled=True, zone__enabled=True).values_list('category', flat=True)))
+        names = dict(PricingConfiguration._meta.get_field('category').choices)
         if pk:
             if pk not in categories:
                 from rest_framework.exceptions import NotFound
                 raise NotFound()
-            return Response({'id': pk, 'name': 'Trivia ' + pk})
-        return Response({'results': [{'id': c, 'name': 'Trivia ' + c} for c in categories]})
+            return Response({'id': pk, 'name': names.get(pk, pk)})
+        return Response({'results': [{'id': c, 'name': names.get(c, c)} for c in categories]})
 
 
 class ReverseGeocodeView(APIView):
@@ -221,8 +222,9 @@ class RouteEstimateView(APIView):
         if pickup['latitude'] == destination['latitude'] and pickup['longitude'] == destination['longitude']:
             raise ValidationError('Pickup and destination must differ.')
         zones = list(PricingZone.objects.filter(enabled=True))
-        route = driving_route(pickup, destination)
-        if not any(z.contains(pickup) and z.contains(destination) and all(z.contains({'latitude': p[1], 'longitude': p[0]}) for p in route['geometry']) for z in zones):
+        stops = data.validated_data.get('stops', [])
+        route = driving_route(pickup, destination, stops=stops) if stops else driving_route(pickup, destination)
+        if not any(all(z.contains(p) for p in (pickup, *stops, destination)) and all(z.contains({'latitude': p[1], 'longitude': p[0]}) for p in route['geometry']) for z in zones):
             raise ValidationError('Route is outside enabled coverage.', code='OUTSIDE_SERVICE_AREA')
         return Response(route)
 

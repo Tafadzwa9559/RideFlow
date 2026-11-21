@@ -61,6 +61,8 @@ class PricingConfiguration(models.Model):
             ("Standard", "Trivia Standard"),
             ("Comfort", "Trivia Comfort"),
             ("XL", "Trivia XL"),
+            ("Intercity", "City-to-City"),
+            ("Courier", "Courier delivery"),
         ],
     )
     enabled = models.BooleanField(default=False)
@@ -149,6 +151,7 @@ class FareQuote(models.Model):
     passenger = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     pickup = models.JSONField(encoder=StorageJSONEncoder, )
     destination = models.JSONField(encoder=StorageJSONEncoder, )
+    stops = models.JSONField(encoder=StorageJSONEncoder, default=list, blank=True)
     category = models.CharField(max_length=30)
     currency = models.CharField(max_length=3, choices=CURRENCIES)
     distance_metres = models.PositiveIntegerField()
@@ -204,6 +207,7 @@ class Ride(models.Model):
     assigned_driver = models.ForeignKey('drivers.DriverApplication', null=True, on_delete=models.PROTECT, related_name='trips')
     assigned_vehicle = models.ForeignKey('drivers.Vehicle', null=True, on_delete=models.PROTECT)
     expires_at = models.DateTimeField(null=True, db_index=True)
+    departure_at = models.DateTimeField(null=True, blank=True, db_index=True)
     accepted_at = models.DateTimeField(null=True)
     arrived_at = models.DateTimeField(null=True)
     started_at = models.DateTimeField(null=True)
@@ -235,6 +239,12 @@ class Ride(models.Model):
         ],
         default="cash",
     )
+    passenger_count = models.PositiveSmallIntegerField(default=1)
+    luggage = models.CharField(max_length=20, default="none")
+    parcel = models.JSONField(encoder=StorageJSONEncoder, default=dict, blank=True)
+    parcel_photo = models.CharField(max_length=255, blank=True, default="")
+    proof_attempts = models.PositiveSmallIntegerField(default=0)
+    proof_blocked_until = models.DateTimeField(null=True, blank=True)
     passenger_note = models.TextField(blank=True, default="")
     pricing_version = models.CharField(max_length=100, blank=True, default="")
     status = models.CharField(
@@ -243,6 +253,7 @@ class Ride(models.Model):
         choices=[
             (s, s)
             for s in [
+                "scheduled",
                 "searching",
                 "assigned",
                 "arriving",

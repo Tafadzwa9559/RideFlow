@@ -19038,10 +19038,10 @@ paths:
     post:
       operationId: api_v1_fares_estimate_post
       description: |-
-        Post fares · estimate.
+        Estimate a route and fare.
 
-        Requires Bearer JWT authentication and ownership of the requested private resource.
-      summary: Post fares · estimate
+        Requires Bearer JWT authentication and applicable ownership or role permissions.
+      summary: Estimate a route and fare
       tags:
       - Pricing
       requestBody:
@@ -19051,7 +19051,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -19061,6 +19061,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
           application/x-www-form-urlencoded:
@@ -19068,7 +19072,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -19078,6 +19082,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
           multipart/form-data:
@@ -19085,7 +19093,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -19095,6 +19103,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
         required: true
@@ -19109,8 +19121,7 @@ paths:
                 $ref: '#/components/schemas/Quote'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     id: 00000000-0000-4000-8000-000000000001
                     geometry:
@@ -19151,8 +19162,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -19168,8 +19178,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -19185,8 +19194,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -19202,8 +19210,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -19219,8 +19226,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -19236,8 +19242,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -19253,8 +19258,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21486,10 +21490,10 @@ paths:
     get:
       operationId: api_v1_rides_get
       description: |-
-        Get rides. Ride commands validate participant ownership, driver eligibility and authoritative state inside transactions. Direct-payment preferences are Cash, EcoCash and OneMoney in USD; Trivia does not collect or verify funds.
+        List rides visible to the account. Ride commands validate participant ownership, driver eligibility and authoritative state inside transactions. Direct-payment preferences are Cash, EcoCash and OneMoney in USD; Trivia does not collect or verify funds.
 
-        Requires Bearer JWT authentication and ownership of the requested private resource.
-      summary: Get rides
+        Requires Bearer JWT authentication and applicable ownership or role permissions.
+      summary: List rides visible to the account
       parameters:
       - in: query
         name: category
@@ -21534,8 +21538,7 @@ paths:
                 $ref: '#/components/schemas/RidePage'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     results:
                     - id: 00000000-0000-4000-8000-000000000001
@@ -21549,9 +21552,14 @@ paths:
                         name: Borrowdale
                         latitude: -17.765
                         longitude: 31.08
+                      stops:
+                      - name: Avondale
+                        latitude: -17.802
+                        longitude: 31.037
                       category: Standard
-                      status: searching
+                      status: scheduled
                       created_at: '2026-11-16T08:00:00Z'
+                      departure_at: null
                       currency: USD
                       offered_fare: '8.00'
                       agreed_fare: null
@@ -21560,8 +21568,12 @@ paths:
                       payment_method_id: ecocash
                       payment_method_name: example
                       payment_status: example
-                      payment_preference: ecocash
+                      payment_preference: cash
                       passenger_note: Please call at the entrance.
+                      passenger_count: 1
+                      luggage: example
+                      parcel_size: example
+                      parcel_weight_kg: 1
                       distance_metres: 1
                       duration_seconds: 1
                       route_geometry:
@@ -21579,8 +21591,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21596,8 +21607,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21613,8 +21623,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21630,8 +21639,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21647,8 +21655,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21664,8 +21671,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21681,8 +21687,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21694,10 +21699,10 @@ paths:
     post:
       operationId: api_v1_rides_post
       description: |-
-        Post rides. Ride commands validate participant ownership, driver eligibility and authoritative state inside transactions. Direct-payment preferences are Cash, EcoCash and OneMoney in USD; Trivia does not collect or verify funds.
+        Request a ride. Ride commands validate participant ownership, driver eligibility and authoritative state inside transactions. Direct-payment preferences are Cash, EcoCash and OneMoney in USD; Trivia does not collect or verify funds.
 
-        Requires Bearer JWT authentication and ownership of the requested private resource.
-      summary: Post rides
+        Requires Bearer JWT authentication and applicable ownership or role permissions.
+      summary: Request a ride
       tags:
       - Rides
       requestBody:
@@ -21707,7 +21712,7 @@ paths:
               $ref: '#/components/schemas/BookingRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -21723,14 +21728,14 @@ paths:
                   idempotency_key: 00000000-0000-4000-8000-000000000001
                   fare_cents: 1
                   payment_method_id: cash-usd
-                  payment_preference: ecocash
+                  payment_preference: cash
                   passenger_note: Please call at the entrance.
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/BookingRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -21746,14 +21751,14 @@ paths:
                   idempotency_key: 00000000-0000-4000-8000-000000000001
                   fare_cents: 1
                   payment_method_id: cash-usd
-                  payment_preference: ecocash
+                  payment_preference: cash
                   passenger_note: Please call at the entrance.
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/BookingRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -21769,7 +21774,7 @@ paths:
                   idempotency_key: 00000000-0000-4000-8000-000000000001
                   fare_cents: 1
                   payment_method_id: cash-usd
-                  payment_preference: ecocash
+                  payment_preference: cash
                   passenger_note: Please call at the entrance.
         required: true
       security:
@@ -21783,8 +21788,7 @@ paths:
                 $ref: '#/components/schemas/Ride'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     id: 00000000-0000-4000-8000-000000000001
                     assigned_driver_id: null
@@ -21797,9 +21801,14 @@ paths:
                       name: Borrowdale
                       latitude: -17.765
                       longitude: 31.08
+                    stops:
+                    - name: Avondale
+                      latitude: -17.802
+                      longitude: 31.037
                     category: Standard
-                    status: searching
+                    status: scheduled
                     created_at: '2026-11-16T08:00:00Z'
+                    departure_at: null
                     currency: USD
                     offered_fare: '8.00'
                     agreed_fare: null
@@ -21808,8 +21817,12 @@ paths:
                     payment_method_id: ecocash
                     payment_method_name: example
                     payment_status: example
-                    payment_preference: ecocash
+                    payment_preference: cash
                     passenger_note: Please call at the entrance.
+                    passenger_count: 1
+                    luggage: example
+                    parcel_size: example
+                    parcel_weight_kg: 1
                     distance_metres: 1
                     duration_seconds: 1
                     route_geometry:
@@ -21824,8 +21837,7 @@ paths:
                 $ref: '#/components/schemas/Ride'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     id: 00000000-0000-4000-8000-000000000001
                     assigned_driver_id: null
@@ -21838,9 +21850,14 @@ paths:
                       name: Borrowdale
                       latitude: -17.765
                       longitude: 31.08
+                    stops:
+                    - name: Avondale
+                      latitude: -17.802
+                      longitude: 31.037
                     category: Standard
-                    status: searching
+                    status: scheduled
                     created_at: '2026-11-16T08:00:00Z'
+                    departure_at: null
                     currency: USD
                     offered_fare: '8.00'
                     agreed_fare: null
@@ -21849,8 +21866,12 @@ paths:
                     payment_method_id: ecocash
                     payment_method_name: example
                     payment_status: example
-                    payment_preference: ecocash
+                    payment_preference: cash
                     passenger_note: Please call at the entrance.
+                    passenger_count: 1
+                    luggage: example
+                    parcel_size: example
+                    parcel_weight_kg: 1
                     distance_metres: 1
                     duration_seconds: 1
                     route_geometry:
@@ -21865,8 +21886,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21882,8 +21902,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21899,8 +21918,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21916,8 +21934,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21933,8 +21950,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21950,8 +21966,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -21967,8 +21982,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25475,7 +25489,7 @@ paths:
       description: |-
         Post routes · estimate.
 
-        Requires Bearer JWT authentication and ownership of the requested private resource.
+        Requires Bearer JWT authentication and applicable ownership or role permissions.
       summary: Post routes · estimate
       tags:
       - Routes
@@ -25486,7 +25500,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -25496,6 +25510,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
           application/x-www-form-urlencoded:
@@ -25503,7 +25521,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -25513,6 +25531,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
           multipart/form-data:
@@ -25520,7 +25542,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -25530,6 +25552,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
         required: true
@@ -25544,8 +25570,7 @@ paths:
                 $ref: '#/components/schemas/Route'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     distance_metres: 1
                     duration_seconds: 1
@@ -25560,8 +25585,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25577,8 +25601,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25594,8 +25617,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25611,8 +25633,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25628,8 +25649,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25645,8 +25665,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25662,8 +25681,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25678,7 +25696,7 @@ paths:
       description: |-
         Post routes · quote.
 
-        Requires Bearer JWT authentication and ownership of the requested private resource.
+        Requires Bearer JWT authentication and applicable ownership or role permissions.
 
         Alias of POST /api/v1/fares/estimate/; excluded from distinct-operation totals.
       summary: Post routes · quote
@@ -25691,7 +25709,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -25701,6 +25719,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
           application/x-www-form-urlencoded:
@@ -25708,7 +25730,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -25718,6 +25740,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
           multipart/form-data:
@@ -25725,7 +25751,7 @@ paths:
               $ref: '#/components/schemas/QuoteRequestRequest'
             examples:
               illustrative:
-                summary: Illustrative development input; replace IDs and values
+                summary: Illustrative input. Replace placeholders before sending.
                 value:
                   pickup:
                     name: Harare CBD
@@ -25735,6 +25761,10 @@ paths:
                     name: Borrowdale
                     latitude: -17.765
                     longitude: 31.08
+                  stops:
+                  - name: Avondale
+                    latitude: -17.802
+                    longitude: 31.037
                   category: Standard
                   currency: USD
         required: true
@@ -25749,8 +25779,7 @@ paths:
                 $ref: '#/components/schemas/Quote'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     id: 00000000-0000-4000-8000-000000000001
                     geometry:
@@ -25791,8 +25820,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25808,8 +25836,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25825,8 +25852,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25842,8 +25868,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25859,8 +25884,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25876,8 +25900,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -25893,8 +25916,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 illustrative:
-                  summary: Illustrative response; values are not live operational
-                    data
+                  summary: Illustrative response
                   value:
                     errors:
                       detail: Request could not be completed.
@@ -30233,6 +30255,1165 @@ paths:
                       detail: invalid
                     request_id: example-correlation-id
           description: Configured provider or infrastructure unavailable
+  /api/v1/drivers/me/service-preferences/:
+    get:
+      operationId: api_v1_drivers_me_service_preferences_get
+      description: Approved drivers can read or update their own City-to-City and
+        Courier dispatch preferences.
+      summary: Get drivers · me · service preferences
+      tags:
+      - Drivers
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverServicePreferences'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    accepts_intercity: false
+                    accepts_courier: false
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+    post:
+      operationId: api_v1_drivers_me_service_preferences_post
+      description: Approved drivers can read or update their own City-to-City and
+        Courier dispatch preferences.
+      summary: Post drivers · me · service preferences
+      tags:
+      - Drivers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverServicePreferencesRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  accepts_intercity: false
+                  accepts_courier: false
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DriverServicePreferencesRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  accepts_intercity: false
+                  accepts_courier: false
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DriverServicePreferencesRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  accepts_intercity: false
+                  accepts_courier: false
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverServicePreferences'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    accepts_intercity: false
+                    accepts_courier: false
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+  /api/v1/rides/{id}/schedule/:
+    patch:
+      operationId: api_v1_rides_id_schedule_patch
+      description: Reschedule an owned booking before matching opens. Supply an ISO
+        8601 departure more than 15 minutes and at most 30 days ahead.
+      summary: Patch rides · id · schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: Identifier of the resource; ownership and role restrictions apply.
+      tags:
+      - Rides
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  departure_at: '2026-11-16T08:00:00Z'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  departure_at: '2026-11-16T08:00:00Z'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  departure_at: '2026-11-16T08:00:00Z'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ride'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    id: 00000000-0000-4000-8000-000000000001
+                    assigned_driver_id: null
+                    sequence: 1
+                    pickup:
+                      name: Harare CBD
+                      latitude: -17.8292
+                      longitude: 31.0522
+                    destination:
+                      name: Borrowdale
+                      latitude: -17.765
+                      longitude: 31.08
+                    stops:
+                    - name: Avondale
+                      latitude: -17.802
+                      longitude: 31.037
+                    category: Standard
+                    status: scheduled
+                    created_at: '2026-11-16T08:00:00Z'
+                    departure_at: null
+                    currency: USD
+                    offered_fare: '8.00'
+                    agreed_fare: null
+                    fare_cents: 1
+                    suggested_fare_cents: 1
+                    payment_method_id: ecocash
+                    payment_method_name: example
+                    payment_status: example
+                    payment_preference: cash
+                    passenger_note: Please call at the entrance.
+                    passenger_count: 1
+                    luggage: example
+                    parcel_size: example
+                    parcel_weight_kg: 1
+                    distance_metres: 1
+                    duration_seconds: 1
+                    route_geometry:
+                    - - 1
+                    exchange_rate: null
+                    exchange_rate_timestamp: null
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+  /api/v1/rides/{id}/parcel/:
+    get:
+      operationId: api_v1_rides_id_parcel_get
+      description: Read handover details as the booking owner or assigned courier
+        during an active delivery. The confirmation code is only returned to the owner
+        while the parcel is in transit.
+      summary: Get rides · id · parcel
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: Identifier of the resource; ownership and role restrictions apply.
+      tags:
+      - Rides
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParcelDetails'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    parcel:
+                      sender_name: example
+                      sender_phone: example
+                      recipient_name: example
+                      recipient_phone: example
+                      description: example
+                      instructions: example
+                      size: small
+                      weight_kg: 0.1
+                      permitted_goods: false
+                    has_photo: false
+                    confirmation_code: example
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+  /api/v1/rides/{id}/parcel/photo/:
+    get:
+      operationId: api_v1_rides_id_parcel_photo_get
+      description: The booking owner can upload one JPEG or PNG of at most 5 MiB.
+        The owner and assigned courier during an active delivery can retrieve it through
+        this authenticated endpoint.
+      summary: Get rides · id · parcel · photo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: Identifier of the resource; ownership and role restrictions apply.
+      tags:
+      - Rides
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+    post:
+      operationId: api_v1_rides_id_parcel_photo_post
+      description: The booking owner can upload one JPEG or PNG of at most 5 MiB.
+        The owner and assigned courier during an active delivery can retrieve it through
+        this authenticated endpoint.
+      summary: Post rides · id · parcel · photo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: Identifier of the resource; ownership and role restrictions apply.
+      tags:
+      - Rides
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ParcelPhotoRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  file: <multipart file>
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+  /api/v1/rides/{id}/parcel/confirm/:
+    post:
+      operationId: api_v1_rides_id_parcel_confirm_post
+      description: The assigned courier confirms an in-transit delivery with the eight-digit
+        recipient code. Five failed attempts block verification for 15 minutes.
+      summary: Post rides · id · parcel · confirm
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: Identifier of the resource; ownership and role restrictions apply.
+      tags:
+      - Rides
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliveryProofRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  code: '00000000'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeliveryProofRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  code: '00000000'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeliveryProofRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  code: '00000000'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ride'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    id: 00000000-0000-4000-8000-000000000001
+                    assigned_driver_id: null
+                    sequence: 1
+                    pickup:
+                      name: Harare CBD
+                      latitude: -17.8292
+                      longitude: 31.0522
+                    destination:
+                      name: Borrowdale
+                      latitude: -17.765
+                      longitude: 31.08
+                    stops:
+                    - name: Avondale
+                      latitude: -17.802
+                      longitude: 31.037
+                    category: Standard
+                    status: scheduled
+                    created_at: '2026-11-16T08:00:00Z'
+                    departure_at: null
+                    currency: USD
+                    offered_fare: '8.00'
+                    agreed_fare: null
+                    fare_cents: 1
+                    suggested_fare_cents: 1
+                    payment_method_id: ecocash
+                    payment_method_name: example
+                    payment_status: example
+                    payment_preference: cash
+                    passenger_note: Please call at the entrance.
+                    passenger_count: 1
+                    luggage: example
+                    parcel_size: example
+                    parcel_weight_kg: 1
+                    distance_metres: 1
+                    duration_seconds: 1
+                    route_geometry:
+                    - - 1
+                    exchange_rate: null
+                    exchange_rate_timestamp: null
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
 components:
   schemas:
     RegistrationRequest:
@@ -30423,19 +31604,142 @@ components:
       required:
       - ride
     ActiveRideDetail:
-      allOf:
-      - $ref: '#/components/schemas/Ride'
-      - type: object
-        properties:
-          viewer_role:
-            type: string
-            enum:
-            - passenger
-            - driver
-          driver:
-            $ref: '#/components/schemas/Offer'
-        required:
-        - viewer_role
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        assigned_driver_id:
+          type: string
+          readOnly: true
+          nullable: true
+        sequence:
+          type: integer
+          readOnly: true
+        pickup:
+          $ref: '#/components/schemas/Place'
+        destination:
+          $ref: '#/components/schemas/Place'
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/Place'
+          readOnly: true
+        category:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status1d3Enum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        departure_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/Currency841Enum'
+          readOnly: true
+        offered_fare:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        agreed_fare:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        fare_cents:
+          type: integer
+          readOnly: true
+        suggested_fare_cents:
+          type: integer
+        payment_method_id:
+          type: string
+        payment_method_name:
+          type: string
+        payment_status:
+          type: string
+        payment_preference:
+          $ref: '#/components/schemas/PaymentPreferenceEnum'
+        passenger_note:
+          type: string
+        passenger_count:
+          type: integer
+          readOnly: true
+        luggage:
+          type: string
+          readOnly: true
+        parcel_size:
+          type: string
+          readOnly: true
+        parcel_weight_kg:
+          type: number
+          format: double
+          readOnly: true
+        distance_metres:
+          type: integer
+        duration_seconds:
+          type: integer
+        route_geometry:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            maxItems: 2
+            minItems: 2
+        exchange_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          nullable: true
+        exchange_rate_timestamp:
+          type: string
+          format: date-time
+          nullable: true
+        viewer_role:
+          $ref: '#/components/schemas/ViewerRoleEnum'
+        driver:
+          $ref: '#/components/schemas/Offer'
+      required:
+      - agreed_fare
+      - assigned_driver_id
+      - category
+      - created_at
+      - currency
+      - departure_at
+      - destination
+      - distance_metres
+      - duration_seconds
+      - exchange_rate
+      - exchange_rate_timestamp
+      - fare_cents
+      - id
+      - luggage
+      - offered_fare
+      - parcel_size
+      - parcel_weight_kg
+      - passenger_count
+      - payment_method_id
+      - payment_method_name
+      - payment_preference
+      - payment_status
+      - pickup
+      - route_geometry
+      - sequence
+      - status
+      - stops
+      - suggested_fare_cents
+      - viewer_role
     AdminTimelinePage:
       type: object
       properties:
@@ -30619,12 +31923,29 @@ components:
           $ref: '#/components/schemas/PlaceRequest'
         destination:
           $ref: '#/components/schemas/PlaceRequest'
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlaceRequest'
+          maxItems: 3
         category:
-          $ref: '#/components/schemas/VehicleCategoryEnum'
+          $ref: '#/components/schemas/RideCategoryEnum'
         currency:
           allOf:
           - $ref: '#/components/schemas/CurrencyEnum'
           default: USD
+        parcel:
+          $ref: '#/components/schemas/ParcelRequest'
+        passenger_count:
+          type: integer
+          maximum: 6
+          minimum: 1
+        luggage:
+          $ref: '#/components/schemas/LuggageEnum'
+        departure_at:
+          type: string
+          format: date-time
+          description: Pickup time as an ISO 8601 timestamp with offset.
         quote_id:
           type: string
           format: uuid
@@ -32266,6 +33587,8 @@ components:
         name:
           type: string
           maxLength: 200
+        city:
+          $ref: '#/components/schemas/CityEnum'
         latitude:
           type: number
           format: double
@@ -32287,6 +33610,8 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+        city:
+          $ref: '#/components/schemas/CityEnum'
         latitude:
           type: number
           format: double
@@ -32626,8 +33951,13 @@ components:
           $ref: '#/components/schemas/PlaceRequest'
         destination:
           $ref: '#/components/schemas/PlaceRequest'
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlaceRequest'
+          maxItems: 3
         category:
-          $ref: '#/components/schemas/VehicleCategoryEnum'
+          $ref: '#/components/schemas/RideCategoryEnum'
         currency:
           allOf:
           - $ref: '#/components/schemas/CurrencyEnum'
@@ -32914,19 +34244,29 @@ components:
           $ref: '#/components/schemas/Place'
         destination:
           $ref: '#/components/schemas/Place'
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/Place'
+          readOnly: true
         category:
           type: string
         status:
           allOf:
-          - $ref: '#/components/schemas/RideStatusEnum'
+          - $ref: '#/components/schemas/Status1d3Enum'
           readOnly: true
         created_at:
           type: string
           format: date-time
           readOnly: true
+        departure_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
         currency:
           allOf:
-          - $ref: '#/components/schemas/RideCurrencyEnum'
+          - $ref: '#/components/schemas/Currency841Enum'
           readOnly: true
         offered_fare:
           type: string
@@ -32954,6 +34294,19 @@ components:
           $ref: '#/components/schemas/PaymentPreferenceEnum'
         passenger_note:
           type: string
+        passenger_count:
+          type: integer
+          readOnly: true
+        luggage:
+          type: string
+          readOnly: true
+        parcel_size:
+          type: string
+          readOnly: true
+        parcel_weight_kg:
+          type: number
+          format: double
+          readOnly: true
         distance_metres:
           type: integer
         duration_seconds:
@@ -32982,6 +34335,7 @@ components:
       - category
       - created_at
       - currency
+      - departure_at
       - destination
       - distance_metres
       - duration_seconds
@@ -32989,7 +34343,11 @@ components:
       - exchange_rate_timestamp
       - fare_cents
       - id
+      - luggage
       - offered_fare
+      - parcel_size
+      - parcel_weight_kg
+      - passenger_count
       - payment_method_id
       - payment_method_name
       - payment_preference
@@ -32998,6 +34356,7 @@ components:
       - route_geometry
       - sequence
       - status
+      - stops
       - suggested_fare_cents
     RideAnalytics:
       type: object
@@ -33049,11 +34408,15 @@ components:
       - Standard
       - Comfort
       - XL
+      - Intercity
+      - Courier
       type: string
       description: |-
         * `Standard` - Trivia Standard
         * `Comfort` - Trivia Comfort
         * `XL` - Trivia XL
+        * `Intercity` - City-to-City
+        * `Courier` - Courier delivery
     RideCurrencyEnum:
       enum:
       - USD
@@ -33785,6 +35148,222 @@ components:
       - north
       - south
       - west
+    LuggageEnum:
+      enum:
+      - none
+      - small
+      - large
+      type: string
+      description: |-
+        * `none` - none
+        * `small` - small
+        * `large` - large
+    ParcelRequest:
+      type: object
+      properties:
+        sender_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        sender_phone:
+          type: string
+          minLength: 1
+          maxLength: 30
+        recipient_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        recipient_phone:
+          type: string
+          minLength: 1
+          maxLength: 30
+        description:
+          type: string
+          minLength: 1
+          maxLength: 250
+        instructions:
+          type: string
+          default: ''
+          maxLength: 250
+        size:
+          $ref: '#/components/schemas/SizeEnum'
+        weight_kg:
+          type: number
+          format: double
+          maximum: 20
+          minimum: 0.1
+        permitted_goods:
+          type: boolean
+      required:
+      - description
+      - permitted_goods
+      - recipient_name
+      - recipient_phone
+      - sender_name
+      - sender_phone
+      - size
+      - weight_kg
+    SizeEnum:
+      enum:
+      - small
+      - medium
+      - large
+      type: string
+      description: |-
+        * `small` - small
+        * `medium` - medium
+        * `large` - large
+    CityEnum:
+      enum:
+      - Harare
+      - Bulawayo
+      - Gweru
+      - Mutare
+      - Masvingo
+      - Kwekwe
+      - Chinhoyi
+      - Kadoma
+      - Marondera
+      - Bindura
+      - Victoria Falls
+      type: string
+      description: |-
+        * `Harare` - Harare
+        * `Bulawayo` - Bulawayo
+        * `Gweru` - Gweru
+        * `Mutare` - Mutare
+        * `Masvingo` - Masvingo
+        * `Kwekwe` - Kwekwe
+        * `Chinhoyi` - Chinhoyi
+        * `Kadoma` - Kadoma
+        * `Marondera` - Marondera
+        * `Bindura` - Bindura
+        * `Victoria Falls` - Victoria Falls
+    ViewerRoleEnum:
+      enum:
+      - passenger
+      - driver
+      type: string
+      description: |-
+        * `passenger` - passenger
+        * `driver` - driver
+    Currency841Enum:
+      enum:
+      - USD
+      type: string
+      description: '* `USD` - United States Dollar'
+    Status1d3Enum:
+      enum:
+      - scheduled
+      - searching
+      - assigned
+      - arriving
+      - arrived
+      - inProgress
+      - completed
+      - cancelled
+      - expired
+      type: string
+      description: |-
+        * `scheduled` - scheduled
+        * `searching` - searching
+        * `assigned` - assigned
+        * `arriving` - arriving
+        * `arrived` - arrived
+        * `inProgress` - inProgress
+        * `completed` - completed
+        * `cancelled` - cancelled
+        * `expired` - expired
+    DeliveryProofRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: ^[0-9]{8}$
+      required:
+      - code
+    DriverServicePreferences:
+      type: object
+      properties:
+        accepts_intercity:
+          type: boolean
+        accepts_courier:
+          type: boolean
+    PatchedScheduleRequest:
+      type: object
+      properties:
+        departure_at:
+          type: string
+          format: date-time
+          description: Pickup time as an ISO 8601 timestamp with offset.
+    ParcelPhotoRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+      - file
+    DriverServicePreferencesRequest:
+      type: object
+      properties:
+        accepts_intercity:
+          type: boolean
+        accepts_courier:
+          type: boolean
+    ParcelDetails:
+      type: object
+      properties:
+        parcel:
+          $ref: '#/components/schemas/Parcel'
+        has_photo:
+          type: boolean
+        confirmation_code:
+          type: string
+      required:
+      - has_photo
+      - parcel
+    Parcel:
+      type: object
+      properties:
+        sender_name:
+          type: string
+          maxLength: 100
+        sender_phone:
+          type: string
+          maxLength: 30
+        recipient_name:
+          type: string
+          maxLength: 100
+        recipient_phone:
+          type: string
+          maxLength: 30
+        description:
+          type: string
+          maxLength: 250
+        instructions:
+          type: string
+          default: ''
+          maxLength: 250
+        size:
+          $ref: '#/components/schemas/SizeEnum'
+        weight_kg:
+          type: number
+          format: double
+          maximum: 20
+          minimum: 0.1
+        permitted_goods:
+          type: boolean
+      required:
+      - description
+      - permitted_goods
+      - recipient_name
+      - recipient_phone
+      - sender_name
+      - sender_phone
+      - size
+      - weight_kg
   securitySchemes:
     cookieAuth:
       type: apiKey
