@@ -1,0 +1,655 @@
+Creating test database for alias 'default'...
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=401 duration_ms=159", "request_id": "f7900024a24d497d947f97126011637a"}
+Unauthorized: /api/v1/me/
+{"level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/me/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=7", "request_id": "16fcb355edf14a36b5eab7c8e06e7694"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=5", "request_id": "42bca09e06af4a1bb0befa3a5f6f67ac"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "af73a382016f4012af79f49249a1b968"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "237866cf4a7b4a3e93cb622af2f70a52"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=1", "request_id": "90da6e480e6b4a91976c1ce426536e1f"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "85ac645eb6ec4016af87fb87024710cd"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "f5f3e1f7d60844e5a62df42ee51ab19a"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "6a05b549308c498498f87f5a91a5edd3"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "60226da358004155a803cd57cb7f2cb8"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=1", "request_id": "5983290c4f3e407b846e7b16346a53b9"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=429 duration_ms=1", "request_id": "bce22e43354945caa6f8575a3a08fa6c"}
+Too Many Requests: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Too Many Requests: /api/v1/auth/otp/request/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=202 duration_ms=119", "request_id": "e170f9429c07488b80414a6ca1bc703b"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=429 duration_ms=25", "request_id": "131e739ccec04d1198bba92189982851"}
+Too Many Requests: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Too Many Requests: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=46", "request_id": "8af70dbc3abf400da28db57d2d59af3c"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=105", "request_id": "5d31045dd71c4995b276eba7a1da8c39"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=58", "request_id": "de1e056357a44f86a79f73c1829e3402"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=52", "request_id": "b1a29771266b476d8b3c5c95141bbe10"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=91", "request_id": "203b3b6768f4474e80eceaf818443503"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=46", "request_id": "1840278827e74846acb8c4976d2c1d5c"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=86", "request_id": "e613761a4c144ab2bf363da7ea20ff38"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=7", "request_id": "f2e447c2cd86438f8ad29f4ab0c95908"}
+Bad Request: /api/v1/auth/otp/request/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/request/", "request_id": null}
+..{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=202 duration_ms=49", "request_id": "a928fd0e030c4df7b91c3c9e288fdc56"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=159", "request_id": "e839c495f53f4a8ca2bb8a59a25e1089"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=44", "request_id": "8a94503799e148da97323238fb430f4e"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=170", "request_id": "08a4257c356e438d86e3dfbf26ce970d"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=401 duration_ms=17", "request_id": "0dac2556f1434da3b878b968dcc31d0b"}
+Unauthorized: /api/v1/auth/token/refresh/
+{"level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=30", "request_id": "aa4b1955408941889ca8cf6141f006a8"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=204 duration_ms=89", "request_id": "47bc7858379b40bf8ac5e9138d4004ba"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=401 duration_ms=7", "request_id": "60530f90d6b8461e9d77de25c495cc22"}
+Unauthorized: /api/v1/auth/me/
+{"level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/me/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=401 duration_ms=8", "request_id": "1c9e5300fbf549eb82f8f738ec470251"}
+Unauthorized: /api/v1/auth/token/refresh/
+{"level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=503 duration_ms=6", "request_id": "e87dc72e41be4fae859d37ef41080a15"}
+Service Unavailable: /api/v1/auth/otp/request/
+{"level": "ERROR", "logger": "django.request", "message": "Service Unavailable: /api/v1/auth/otp/request/", "request_id": null}
+.Internal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=97", "request_id": "3412faaae60649f5a201d3db095aacf0"}
+EEE{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=202 duration_ms=36", "request_id": "082ca76da1104583845f63d74201d973"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=47", "request_id": "86e6fe224c00498dafac010bddea1baa"}
+Bad Request: /api/v1/auth/otp/verify/
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=55", "request_id": "60d211d4bc1f4c9395945e3cffbcd7fb"}
+.Internal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=84", "request_id": "21f28922055a45b99697d50c6fea3957"}
+EInternal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=44", "request_id": "1822fbdd669c4464a42b8dac5a51eda8"}
+EInternal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=82", "request_id": "2b5ec912b4c145818854c08f755cb650"}
+EInternal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=77", "request_id": "90c772108f534a8e84116c28cac32f7d"}
+EInternal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=49", "request_id": "2f66786b67f749179985926a23825402"}
+EInternal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=77", "request_id": "5d7f98db641a42449e395d7c26d5e32e"}
+E{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=20", "request_id": "dd23df5078464260ae422bdb2f041600"}
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=2", "request_id": "06e374a9899e44618793600097c5f8e8"}
+Internal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=46", "request_id": "cd06ed132538487b880b206a3c7cf8ba"}
+Internal Server Error: /api/v1/auth/otp/verify/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 62, in post
+    user, tokens = verify_code(**data.validated_data)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/core/transactions.py", line 50, in command
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 126, in verify_code
+    development = development_otp_enabled(phone)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 34, in development_otp_enabled
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=48", "request_id": "b25f887bb83542fd9d9b958bad562b62"}
+.Internal Server Error: /api/v1/auth/otp/request/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 52, in post
+    request_code(data.validated_data['phone'])
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 87, in request_code
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/request/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=79", "request_id": "071f3e15d819408095640e4f512fc02b"}
+EInternal Server Error: /api/v1/auth/otp/verify/
+Traceback (most recent call last):
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 526, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 474, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 485, in raise_uncaught_exception
+    raise exc
+  File "/home/taflowork/Desktop/RideFlow/Backend/.venv/lib/python3.12/site-packages/rest_framework/views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/api/views.py", line 62, in post
+    user, tokens = verify_code(**data.validated_data)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/core/transactions.py", line 50, in command
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 126, in verify_code
+    development = development_otp_enabled(phone)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/services/authentication.py", line 34, in development_otp_enabled
+    validate_test_otp_settings(settings)
+  File "/home/taflowork/Desktop/RideFlow/Backend/accounts/test_otp.py", line 35, in validate_test_otp_settings
+    raise ImproperlyConfigured(
+django.core.exceptions.ImproperlyConfigured: Test OTP requires rideflow.development, DEBUG and a local trivia_dev_* database.
+{"level": "ERROR", "logger": "django.request", "message": "Internal Server Error: /api/v1/auth/otp/verify/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=500 duration_ms=90", "request_id": "3799e2d784944c46baf493a5a71c27f7"}
+E{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=36", "request_id": "b787dbf6a7874e07a2f41fa634eec2d8"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=28", "request_id": "cc2e2e57453748228e1ffbbcd600c31d"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=PATCH status=400 duration_ms=106", "request_id": "0cb80de76e2245e5a435e509a774c449"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/admin/service-areas/6b004759c5f7aad84a5159c3/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=0", "request_id": "36902b1b8f694aeb834d1a0f1a14f519"}
+{"level": "INFO", "logger": "trivia.readiness", "message": "Trivia dependency check passed: mongodb", "request_id": null}
+{"level": "ERROR", "logger": "trivia.readiness", "message": "Trivia readiness check failed: redis | error_type=ConnectionError", "request_id": null}
+{"level": "ERROR", "logger": "trivia.readiness", "message": "Trivia readiness check failed: password_redis | error_type=ConnectionError", "request_id": null}
+{"level": "ERROR", "logger": "trivia.readiness", "message": "Trivia readiness check failed: celery | error_type=RuntimeError", "request_id": null}
+{"level": "WARNING", "logger": "trivia.readiness", "message": "Trivia readiness summary: {'mongodb': 'ok', 'redis': 'failed', 'password_redis': 'failed', 'celery': 'failed'}", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=503 duration_ms=2268", "request_id": "b30734da5e2a4e31a2863c45bdc60441"}
+{"level": "ERROR", "logger": "django.request", "message": "Service Unavailable: /ready/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=111", "request_id": "59f499951dbd4a4e8849cedfc7fc4398"}
+...{"level": "INFO", "logger": "trivia.http", "message": "method=PATCH status=200 duration_ms=154", "request_id": "869d507bb1944652a7b06f3a58a7fdb2"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=403 duration_ms=23", "request_id": "d4d4b6f6217d48e4abda9c0376d131bf"}
+{"level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/drivers/6b004771c5f7aad84a515db0/review/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=PATCH status=200 duration_ms=97", "request_id": "1dbd196d35694c169fbe4a7d8928fd32"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=266", "request_id": "01f281970e11457a8071b0d6f64e794f"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/drivers/applications/me/documents/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=4", "request_id": "f2c667a2a4864865a67d23ecb02b1b79"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=403 duration_ms=9", "request_id": "6c4ad0a9598b47c79ee27ed533475af8"}
+{"level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/drivers/me/go-online/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=PATCH status=200 duration_ms=135", "request_id": "516c4a9fabb44fd595cdfd01de7556a3"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=14", "request_id": "9cfb151eb8bd466e9312ca65e091249d"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=32", "request_id": "00296214133e4978baf8812bf8df09ff"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/drivers/applications/me/submit/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=81", "request_id": "5aeb5f31f6b54bce9a6000bd7ab3b4d4"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=12", "request_id": "eaafc427b6604937860c24be869c27c7"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=71", "request_id": "832c47d0551e4dd8b9b268b6b5f89050"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=403 duration_ms=35", "request_id": "b50670952ddb4d39874aec2c5cc40e92"}
+{"level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/drivers/me/go-online/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=403 duration_ms=5", "request_id": "bf31c6c7566447bcb88c3f5d41e464a0"}
+{"level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/drivers/6b004778c5f7aad84a515f3a/review/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=212", "request_id": "cf11b55632f04113a4677591a9068165"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=129", "request_id": "e99726ea08764e7c9483bef42a13cd2a"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=91", "request_id": "3e0c83eb0638434c9da235c1f102e319"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=44", "request_id": "c1b0e8b9fa4448f68287ea6e3efa0155"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/drivers/me/go-online/", "request_id": null}
+.....{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=46", "request_id": "11270ea930804e158b19f8b2b2c9c45e"}
+{"level": "INFO", "logger": "celery.app.trace", "message": "Task rides.tasks.dispatch_request[1665423f-66a1-49c5-8c2e-479ce0058fc6] succeeded in 0.04024504200060619s: None", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=191", "request_id": "94cd1c76f1bb4b06a9f13532fab3509a"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=196", "request_id": "2fc99e4a12794dcfa7ffa39f9d71f9ad"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=47", "request_id": "c7b7593e760f43d09ef20475f6a099ba"}
+{"level": "INFO", "logger": "celery.app.trace", "message": "Task rides.tasks.dispatch_request[45e43bb6-93bf-412c-bb31-e393c8594cb7] succeeded in 0.009962553998775547s: None", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=154", "request_id": "7a78744cbbe64cb0ab0c09c039158275"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=219", "request_id": "65be03805d254582ac1bf9ffcc7d0ab4"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=69", "request_id": "5aa8eeadec99430cb4a6d6b940f35f2d"}
+{"level": "INFO", "logger": "celery.app.trace", "message": "Task rides.tasks.dispatch_request[d2d28879-97b0-4442-928f-fdd589db8c65] succeeded in 0.016842851000546943s: None", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=193", "request_id": "e542b18cd980439f85f768c6c9915016"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=131", "request_id": "68c52c9a7b444e70b4ea2bab7070e3d8"}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=75", "request_id": "d74bcd77d7294e63bcded36dbd167a0f"}
+{"level": "INFO", "logger": "celery.app.trace", "message": "Task rides.tasks.dispatch_request[91d0efda-c885-4051-90f3-79b6879b55bb] succeeded in 0.016653127000608947s: None", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=122", "request_id": "a6e1d5ce63c54bc58479a7e9c227f149"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=404 duration_ms=7", "request_id": "02765cfa80b241aeaedb8286f84de146"}
+{"level": "WARNING", "logger": "django.request", "message": "Not Found: /mobile/v1/rides/674bd364-c28f-4ee9-bf3c-71f369e1b57e/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=29", "request_id": "b63be2adb97e4e6bb42565087dc62b54"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=401 duration_ms=3", "request_id": "c889229480df4e9fade11bbe0aa36ace"}
+{"level": "WARNING", "logger": "django.request", "message": "Unauthorized: /mobile/v1/currencies/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=403 duration_ms=34", "request_id": "3fcbfac750d7457b85e50235c77eeb5a"}
+{"level": "WARNING", "logger": "django.request", "message": "Forbidden: /mobile/v1/rides/674bd364-c28f-4ee9-bf3c-71f369e1b57e/status/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=148", "request_id": "6691f62108c748e7af422dad36439742"}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=36", "request_id": "036ade32f108427a8646714ee9a479ce"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=409 duration_ms=44", "request_id": "aef0e7af865741b9811a1c1a396b0c39"}
+{"level": "WARNING", "logger": "django.request", "message": "Conflict: /mobile/v1/rides/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=38", "request_id": "ed85995acb95471ea6ffb7ef495b0d04"}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=100", "request_id": "6630fb0ffa3447e2a914afb1308efb65"}
+{"level": "INFO", "logger": "celery.app.trace", "message": "Task rides.tasks.dispatch_request[65ebe75d-210b-4ed8-9ca0-7c48aef0d350] succeeded in 0.010852685001736972s: None", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=125", "request_id": "f4cf31cb09b94480826f000fcb73eed3"}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=6", "request_id": "343a868e3a914ae3af35e0df0a34e2c8"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=1", "request_id": "bbe09c88fb0f4e2a917115e704ffb68d"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=5", "request_id": "76e577ea02ef4086bbce46afdd30bd6e"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/routes/quote/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=4", "request_id": "c9a79170e51a45f8929fe9fe4cf4a536"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/routes/quote/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=3", "request_id": "933387a19fd34211a9ea5b8312989c7f"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/routes/quote/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=44", "request_id": "15253ef195894d2585ce0c1c07e52dd9"}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=113", "request_id": "83a45de8940e4ec788be1d447d15e8ed"}
+{"level": "INFO", "logger": "celery.app.trace", "message": "Task rides.tasks.dispatch_request[d81fc30b-d698-4343-a0ee-4594a2dc744a] succeeded in 0.014122783999482635s: None", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=116", "request_id": "92cce1886d264ea39c43042aa972281c"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=42", "request_id": "d04bf4c61daf4ac8b08ee4cc8bfe7e44"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=20", "request_id": "d343d0cdc71d4a6b9dafa14fbfbb1171"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=41", "request_id": "22400dd692504e60b19a9ac26541b120"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=4", "request_id": "56daadddcb26454bbb9048551b462dbe"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "6386a313e053423f92026fb6ccea67d7"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=49", "request_id": "246676da93a645d58f961bc8aa40719b"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=47", "request_id": "e6d67d04887c43c1b8a2164be86b1504"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=3", "request_id": "7feccca655b04a539d837c7864cf2b68"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=4", "request_id": "67052863a8c449f3bf77fe76b71c7b1e"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=3", "request_id": "87f8ad20e3cc443b80544f2f91deb815"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=503 duration_ms=7", "request_id": "9dbe1af546c54c208804933fe0ab964f"}
+{"level": "ERROR", "logger": "django.request", "message": "Service Unavailable: /mobile/v1/routes/quote/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=8", "request_id": "ddcc3fafba1a4295a1b61699dce428d9"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/routes/quote/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=37", "request_id": "1bd90b36732e4288a9ed1f6151dfbfdc"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=42", "request_id": "c0dd32c1bbea4a04a2fab585068fac84"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=5", "request_id": "53cb658270d44d1cb3b5fd839b035eba"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=49", "request_id": "af86023004914b80b84a10e8f4a49168"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=409 duration_ms=58", "request_id": "1a2268ab524e4a2f91bd38c673b5d1de"}
+{"level": "WARNING", "logger": "django.request", "message": "Conflict: /mobile/v1/rides/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=100", "request_id": "3c72b4efb3ac4cd593da1d86b0f2be92"}
+{"level": "INFO", "logger": "celery.app.trace", "message": "Task rides.tasks.dispatch_request[9734615f-5c33-4478-ac8e-1209710c36ac] succeeded in 0.012559038001199951s: None", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=112", "request_id": "2a32672dbe0d400eaaced5b70efccf0c"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=55", "request_id": "68f26c9e6aa24af98adc5fa90758ad82"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=42", "request_id": "3f21ebf6947e4561ab63c7e19fe8569a"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=33", "request_id": "6c0347436d01466a86dbda62a6c009c7"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "0479721b52d34241b1761c91e408f47f"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=2", "request_id": "00f11850726f43e789c8399f51c88419"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /mobile/v1/rides/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=202 duration_ms=50", "request_id": "24af255db78842008f8cd1657e29e4df"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=200", "request_id": "9218b03a8bd74fb6808c27122434eff8"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=202 duration_ms=128", "request_id": "85c6f398e1954598aba5cc57d361ea89"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=210", "request_id": "62aea85724dd4f598a26c6a328036932"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=PATCH status=200 duration_ms=190", "request_id": "b8885ccbc38d46c3a1703a4160a801db"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=119", "request_id": "8cc2362c21af441aa623c572b71cea16"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=97", "request_id": "e0b8ca9b3fd14a07815a82e379a8a4a7"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=218", "request_id": "0320ef8789bf4678b33b7ba763e556cc"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=129", "request_id": "49db98bd56a14820846ff40963a53bb2"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=89", "request_id": "66a455fcc3ec4ed3a3709e33cef4dd33"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=134", "request_id": "7bc99246bce34c0b813987afe76ed288"}
+{"level": "INFO", "logger": "celery.app.trace", "message": "Task rides.tasks.dispatch_request[85585e5a-dc56-4c08-8ea5-08544413817a] succeeded in 0.09280982700147433s: None", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=252", "request_id": "f3baef4f466242cb95441de359a65219"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=101", "request_id": "dc6dcb84dd4b428aae3ffad5d096b51a"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=163", "request_id": "acb88b49f3d046b08c3ce2f82c914562"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=59", "request_id": "cb5ed82580f04633bc14d9b578ef8a4a"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=249", "request_id": "73606b58be554423800f06017822fabe"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=151", "request_id": "b3cbd7722ec24d1e9f8615e9c11f78c6"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=196", "request_id": "9ae251216a884be49319be1df20a42de"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=189", "request_id": "f965016d33ef46768efdd3590054edfc"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=198", "request_id": "6711ed11a199408b8bbfd4e7f37f4562"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=87", "request_id": "b3833c22d3a443099d0b949ca1e16d4e"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=71", "request_id": "aed8fba7e18d477a86b7fc30b3911ad0"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=34", "request_id": "c37d9bb8d2ed4067a81c0f6e458134bf"}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=175", "request_id": "ad888d2bf29a4724915d21207371d289"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=145", "request_id": "5bcc5941ffc4451f896697d3ed635978"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=PATCH status=200 duration_ms=132", "request_id": "28645fde0dbd4918af36813a3c4e57e5"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=34", "request_id": "98f5e17c52dd43f4bee173be92c5b016"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/rides/40c832db-b405-479c-a36a-14973514794d/accept/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=191", "request_id": "180700cc02c44a2288ddd3beae715cf3"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=59", "request_id": "0475b061a08c4025a4637210bf1fc5f3"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=39", "request_id": "5250be89ee20425e8e77a08e5cfe49ec"}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=161", "request_id": "4abf7bee92b14405aff5952382da01a4"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=126", "request_id": "2c478f18ecc54650b7770b8a87186295"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=159", "request_id": "7db714e974e24981bdc7160a4f3f368a"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=46", "request_id": "c9fb7b1975274865b6a5f05daf90396c"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/rides/7a22b8ef-8bbe-4c21-959c-15a33c5a5164/accept/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=62", "request_id": "ee9fd57da5e945a089fab93293666831"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/rides/7a22b8ef-8bbe-4c21-959c-15a33c5a5164/start/", "request_id": null}
+.{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=40", "request_id": "4d65bce34d0d4841872f08de4952832d"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=203", "request_id": "c25d6a3410d44221ae7ac174f1e03e9d"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=336", "request_id": "0fdf030cc1364a659b3464ab02983de1"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=72", "request_id": "ae240306856041e7ab20092a72a1fab0"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=179", "request_id": "e6c9fab6743e4ed4b11fcaa755704a84"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=217", "request_id": "4a7f642746ce4564b74fcf81ea7cb598"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=59", "request_id": "06a0ac95994742a5b39929772c45fd8b"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/rides/4b4acf3c-40fa-4fb0-ae5a-beff2c0a29a9/accept/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=400 duration_ms=69", "request_id": "e3404628d8994a1db5e25f5609ba6208"}
+{"level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/rides/4b4acf3c-40fa-4fb0-ae5a-beff2c0a29a9/complete/", "request_id": null}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=357", "request_id": "eb6ce4d986fe4ba59315c3ebcbf28c28"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=282", "request_id": "f45f70890219415a8fe0ff89847436d8"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=168", "request_id": "e1741fc7be5a4328808fb0cba1ccf98b"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=340", "request_id": "c92b4c0cbc4c467388b0e32ce906c593"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=162", "request_id": "8a817aae530a42f49d1cf98d19109b3b"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=GET status=200 duration_ms=46", "request_id": "b64d45a7089940e2bf96e413c8ae4e75"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=159", "request_id": "1ca3f3b93d414b36947141ac64e45c13"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=201 duration_ms=152", "request_id": "8d0140246af3466abc4de51b56d74fa6"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=200 duration_ms=245", "request_id": "56509db666e04b8aa9501d94610dadce"}
+{"level": "INFO", "logger": "trivia.http", "message": "method=POST status=403 duration_ms=36", "request_id": "9d9f60557a57497991229a70b0c2b994"}
+{"level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/rides/4b4acf3c-40fa-4fb0-ae5a-beff2c0a29a9/start/", "request_id": null}
+.

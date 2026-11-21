@@ -51,6 +51,8 @@ def contract(view, method, path):
         password_api.RegistrationView: {'POST': result(
             password_api.RegistrationResultSerializer, password_api.RegistrationSerializer, 201,
         )},
+        password_api.SignupResendView: {'POST': result(None, password_api.SignupContactSerializer, 204)},
+        password_api.SignupVerifyView: {'POST': result(None, password_api.SignupVerificationSerializer, 204)},
         password_api.PasswordLoginView: {'POST': result(c.TokensSerializer, password_api.LoginSerializer)},
         password_api.RecoveryRequestView: {'POST': result(c.DetailSerializer, password_api.PasswordContactSerializer, 202)},
         password_api.RecoveryVerifyView: {'POST': result(password_api.RecoveryTokenSerializer, password_api.RecoveryVerificationSerializer)},
@@ -144,8 +146,23 @@ class TriviaAutoSchema(AutoSchema):
             }.items():
                 responses[status] = OpenApiResponse(c.ErrorSerializer, description=description)
             return responses
+        if self.path in ('/api/v1/auth/email/resend/', '/api/v1/auth/email/verify/'):
+            errors = {
+                400: 'Invalid verification data or incorrect, expired, or exhausted code',
+                401: 'Invalid pending signup credentials',
+                429: 'Rate limit or resend cooldown',
+                503: 'Verification or delivery temporarily unavailable',
+            }
+            if self.path.endswith('/verify/'):
+                errors[409] = 'Concurrent account update'
+            for status, description in errors.items():
+                responses[status] = OpenApiResponse(c.ErrorSerializer, description=description)
+            return responses
         for status in [400, 401, 403, 404, 409, 429, 503]:
             responses[status] = OpenApiResponse(c.ErrorSerializer, description={400:'Validation failed',401:'JWT missing, invalid, expired or revoked',403:'Role or ownership permission denied',404:'Resource not visible or not found',409:'State/quote conflict',429:'Rate limit or cooldown',503:'Configured provider or infrastructure unavailable'}[status])
+        if self.path == '/api/v1/auth/login/':
+            responses[401] = OpenApiResponse(c.ErrorSerializer, description='Invalid account credentials')
+            responses[403] = OpenApiResponse(c.ErrorSerializer, description='EMAIL_VERIFICATION_REQUIRED for a pending signup with valid credentials')
         return responses
 
     def get_tags(self):
@@ -172,6 +189,8 @@ class TriviaAutoSchema(AutoSchema):
         auth_summaries = {
             '/api/v1/admin/auth/login/': 'Staff API password login',
             '/api/v1/auth/register/': 'Register a passenger with email',
+            '/api/v1/auth/email/resend/': 'Resend signup verification code',
+            '/api/v1/auth/email/verify/': 'Verify a signup email',
             '/api/v1/auth/login/': 'Passenger or driver password login',
             '/api/v1/auth/otp/request/': 'Request OTP for registration or sign-in',
             '/api/v1/auth/otp/verify/': 'Verify OTP and register or sign in',
@@ -202,8 +221,10 @@ class TriviaAutoSchema(AutoSchema):
 
     def get_description(self):
         descriptions = {
-            '/api/v1/auth/register/': 'Create an active passenger account with a name, email, and password. Email ownership remains unverified. No OTP is required. Use the password login endpoint to obtain tokens. Duplicate addresses return DUPLICATE_EMAIL.',
-            '/api/v1/auth/login/': 'Passenger and driver password login. Supply a verified phone number or unique eligible account email and the account password. Email-registered passengers can log in without a phone identity. The server returns the current driver approval status.',
+            '/api/v1/auth/register/': 'Register with a name, email, and password. When signup verification is enabled, verification_required is true and login requires email verification. A retry with the correct password resumes the pending signup. No tokens are returned. Other duplicate addresses return DUPLICATE_EMAIL.',
+            '/api/v1/auth/email/resend/': 'Supply the email and password of a pending signup. A successful 204 means the mail backend accepted a replacement code. Resending invalidates the previous code and is subject to a 60-second cooldown.',
+            '/api/v1/auth/email/verify/': 'Supply the email and password of a pending signup and its six-digit code. The code expires after five minutes or five failed attempts. A successful 204 consumes it and unlocks normal password login.',
+            '/api/v1/auth/login/': 'Passenger and driver password login. A pending email signup with valid credentials returns EMAIL_VERIFICATION_REQUIRED (403) without tokens. A successful login returns tokens and the current driver approval status.',
             '/api/v1/admin/auth/login/': 'Staff API login using a Django username, unique email, or verified phone and password. Only active staff receive tokens. Each admin action still checks its Django permission.',
             '/api/v1/auth/otp/request/': 'Request a phone verification code for passenger or driver sign-in and registration. Delivery requires a configured SMS provider.',
             '/api/v1/auth/otp/verify/': 'Verify the phone code. First-time verification creates the passenger account. Driver application and approval use the separate Driver Applications operations.',
@@ -212,7 +233,7 @@ class TriviaAutoSchema(AutoSchema):
             '/api/v1/auth/logout/': 'Requires an access token. Revokes all phone-account sessions or the current staff API session.',
             '/api/v1/auth/logout-all/': 'Alias of logout. For staff API tokens it revokes the current staff API session.',
             '/api/v1/auth/me/': 'Return the authenticated account profile and current driver approval status.',
-            '/api/v1/auth/password/request/': 'Request recovery on an enabled channel. A generic 202 does not confirm account existence. Phone delivery needs SMS configuration; email sign-up accounts verify by code and legacy profile email requires a verified ownership binding.',
+            '/api/v1/auth/password/request/': 'Queue recovery on an enabled channel. A generic 202 confirms neither account existence nor delivery. Repeat this request after the 60-second cooldown to resend. Codes expire after five minutes.',
             '/api/v1/auth/password/verify/': 'Exchange the delivered one-time code for a short-lived password reset token.',
             '/api/v1/auth/password/change/': 'Supply the current password and a matching new password and confirmation. Existing authentication sessions are revoked.',
             '/api/v1/auth/password/reset/': 'Set a validated new password using the reset token. Include matching password confirmation. Existing authentication sessions are revoked.',
@@ -281,6 +302,8 @@ def examples_hook(result, generator, request, public):
 
     auth_examples = {
         '/api/v1/auth/register/': {'first_name': 'Rudo', 'last_name': 'Moyo', 'email': 'passenger@example.test', 'password': '<new strong password>', 'password_confirmation': '<same password>'},
+        '/api/v1/auth/email/resend/': {'email': 'passenger@example.test', 'password': '<signup password>'},
+        '/api/v1/auth/email/verify/': {'email': 'passenger@example.test', 'password': '<signup password>', 'code': '000000'},
         '/api/v1/auth/login/': {'channel': 'email', 'identifier': 'passenger@example.test', 'password': '<account password>'},
         '/api/v1/admin/auth/login/': {'channel': 'email', 'identifier': 'staff@example.test', 'password': '<staff password>'},
         '/api/v1/auth/password/request/': {'channel': 'email', 'identifier': 'passenger@example.test'},
@@ -380,6 +403,12 @@ def examples_hook(result, generator, request, public):
                             errors={'detail': 'The account details or password are incorrect.'},
                             code='INVALID_CREDENTIALS',
                             field_codes={'detail': 'invalid_credentials'},
+                        )
+                    if status == '403' and path == '/api/v1/auth/login/':
+                        value.update(
+                            errors={'detail': 'Verify your email address before logging in.'},
+                            code='EMAIL_VERIFICATION_REQUIRED',
+                            field_codes={'detail': 'email_verification_required'},
                         )
                     media.setdefault('examples', {'illustrative': {'summary': 'Illustrative response', 'value': value}})
             for parameter in operation.get('parameters', []):

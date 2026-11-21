@@ -334,7 +334,8 @@ class PasswordAccessTests(TransactionTestCase):
         email_code = self.request_code('email', EMAIL)
         key = passwords.recovery_key('email', EMAIL)
         ttl = passwords.run_script("return redis.call('TTL', KEYS[1])", key)
-        self.assertGreater(ttl, 590)
+        self.assertGreater(ttl, 290)
+        self.assertLessEqual(ttl, 300)
         wrong = '000000' if email_code != '000000' else '111111'
         for _ in range(settings.OTP_MAX_ATTEMPTS):
             self.assertEqual(self.verify('email', EMAIL, wrong).status_code, 400)
@@ -343,6 +344,86 @@ class PasswordAccessTests(TransactionTestCase):
         expired = mail.outbox[-1].body.splitlines()[0].split(': ')[-1]
         passwords.run_script("return redis.call('EXPIRE', KEYS[1], 0)", key)
         self.assertEqual(self.verify('email', EMAIL, expired).status_code, 400)
+
+    def signup_otp(self, action, **fields):
+        return self.post(f'email/{action}', email='new@example.net', password=NEW_PASSWORD, **fields)
+
+    @override_settings(TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED=True)
+    def test_pending_signup_requires_verification_and_duplicate_retry_reuses_account(self):
+        with patch.object(passwords.secrets, 'randbelow', return_value=37):
+            created = self.register()
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(created.data['verification_required'], True)
+        user = get_user_model().objects.get(email='new@example.net')
+        pending_login = self.login('email', user.email, NEW_PASSWORD)
+        self.assertEqual(pending_login.status_code, 403)
+        self.assertEqual(pending_login.data['code'], 'EMAIL_VERIFICATION_REQUIRED')
+        self.assertNotIn('access', pending_login.data)
+
+        self.assertEqual(self.register().data['id'], created.data['id'])
+        self.assertEqual(get_user_model().objects.filter(email=user.email).count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(self.register(password='Different-Str0ng!').status_code, 409)
+        self.assertEqual(self.signup_otp('resend').status_code, 429)
+        self.assertIn('000037', mail.outbox[0].body)
+        self.assertIn('5 minutes', mail.outbox[0].alternatives[0].content)
+        self.assertEqual(mail.outbox[0].attachments[0].get_content_type(), 'image/png')
+        key = passwords.signup_key(user.email)
+        stored = passwords.run_script("return redis.call('HGET', KEYS[1], 'code')", key)
+        self.assertEqual(stored.decode(), passwords.digest(key, '000037'))
+
+        self.assertEqual(self.signup_otp('verify', code='000037').status_code, 204)
+        self.assertIsNotNone(EmailIdentity.objects.get(user=user).verified_at)
+        self.assertEqual(self.signup_otp('verify', code='000037').status_code, 401)
+        self.assertEqual(self.login('email', user.email, NEW_PASSWORD).status_code, 200)
+
+    @override_settings(TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED=True, OTP_RESEND_SECONDS=1)
+    def test_signup_resend_replaces_code_and_expiration_and_attempt_limits_apply(self):
+        email = 'new@example.net'
+        key = passwords.signup_key(email)
+        cooldown = f'trivia:limit:signup-resend:{passwords.digest("rate", email)}'
+        with patch.object(passwords.secrets, 'randbelow', side_effect=[101, 101, 202, 303]):
+            self.assertEqual(self.register().status_code, 201)
+            passwords.run_script("return redis.call('DEL', KEYS[1])", cooldown)
+            self.assertEqual(self.signup_otp('resend').status_code, 204)
+            self.assertTrue(290 < passwords.run_script("return redis.call('TTL', KEYS[1])", key) <= 300)
+            for old_or_wrong in ('000101', '111111', '222222', '333333', '444444'):
+                self.assertEqual(self.signup_otp('verify', code=old_or_wrong).status_code, 400)
+            self.assertEqual(self.signup_otp('verify', code='000202').status_code, 400)
+            passwords.run_script("return redis.call('DEL', KEYS[1])", cooldown)
+            self.assertEqual(self.signup_otp('resend').status_code, 204)
+        passwords.run_script("return redis.call('EXPIRE', KEYS[1], 0)", key)
+        self.assertEqual(self.signup_otp('verify', code='000303').status_code, 400)
+
+    @override_settings(TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED=True)
+    def test_signup_and_reset_codes_cannot_be_exchanged(self):
+        email = 'new@example.net'
+        with patch.object(passwords.secrets, 'randbelow', side_effect=[101, 202]):
+            self.assertEqual(self.register().status_code, 201)
+            self.assertEqual(self.request_code('email', email), '000202')
+        self.assertEqual(self.verify('email', email, '000101').status_code, 400)
+        self.assertEqual(self.signup_otp('verify', code='000202').status_code, 400)
+        proof = self.verify('email', email, '000202').data['token']
+        self.assertEqual(self.reset(proof, PASSWORD).status_code, 204)
+        self.assertEqual(self.login('email', email, PASSWORD).data['code'], 'EMAIL_VERIFICATION_REQUIRED')
+
+    @override_settings(TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED=True)
+    def test_delivery_failure_disables_code_and_recovery_response_stays_generic(self):
+        email = 'new@example.net'
+        with (
+            patch.object(passwords.email_codes, 'send_code', side_effect=RuntimeError('sensitive provider detail')),
+            patch.object(passwords.secrets, 'randbelow', return_value=101),
+            self.assertLogs(passwords.logger, 'ERROR') as logs,
+        ):
+            self.assertEqual(self.register().status_code, 503)
+            pending = self.post('password/request', channel='email', identifier=email)
+            absent = self.post('password/request', channel='email', identifier='absent@example.net')
+        self.assertEqual(pending.status_code, 202)
+        self.assertEqual(pending.data, absent.data)
+        self.assertNotIn('sensitive provider detail', ' '.join(logs.output))
+        self.assertEqual(self.signup_otp('verify', code='000101').status_code, 400)
+        self.assertEqual(self.verify('email', email, '000101').status_code, 400)
+        self.assertEqual(mail.outbox, [])
 
     def test_unknown_unverified_and_ambiguous_email_delivery(self):
         with override_settings(TRIVIA_VERIFIED_RECOVERY_EMAILS={}):

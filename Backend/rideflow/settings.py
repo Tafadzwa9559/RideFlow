@@ -481,20 +481,23 @@ CELERY_BEAT_SCHEDULE = {
 SMS_PROVIDER = os.environ.get("SMS_PROVIDER", "")
 TRIVIA_LOCAL_PASSWORD_RECOVERY = False
 TRIVIA_RECOVERY_EMAIL_ENABLED = env_bool("TRIVIA_RECOVERY_EMAIL_ENABLED", False)
+TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED = env_bool("TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED", False)
 TRIVIA_VERIFIED_RECOVERY_EMAILS = json.loads(os.environ.get("TRIVIA_VERIFIED_RECOVERY_EMAILS", "{}"))
 if not isinstance(TRIVIA_VERIFIED_RECOVERY_EMAILS, dict) or any(
     not isinstance(address, str) for address in TRIVIA_VERIFIED_RECOVERY_EMAILS.values()
 ):
     raise ImproperlyConfigured("TRIVIA_VERIFIED_RECOVERY_EMAILS must map user IDs to verified email addresses.")
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 EMAIL_TIMEOUT = 15
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
-if TRIVIA_RECOVERY_EMAIL_ENABLED and not (EMAIL_HOST and DEFAULT_FROM_EMAIL):
-    raise ImproperlyConfigured("Email recovery requires EMAIL_HOST and DEFAULT_FROM_EMAIL.")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL") or EMAIL_HOST_USER
+if (TRIVIA_RECOVERY_EMAIL_ENABLED or TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED) and not DEFAULT_FROM_EMAIL:
+    raise ImproperlyConfigured("Email verification requires DEFAULT_FROM_EMAIL or EMAIL_HOST_USER.")
 PUSH_PROVIDER = os.environ.get("PUSH_PROVIDER", "")
 TRIVIA_LOCAL_OTP = env_bool("TRIVIA_LOCAL_OTP", False)
 TRIVIA_TEST_OTP_ENABLED = env_bool("TRIVIA_TEST_OTP_ENABLED", False)

@@ -18,7 +18,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.routers import DefaultRouter
 
 from accounts.api.passwords import (
-    ChangePasswordView, PassengerTestingView, PasswordLoginView, RecoveryRequestView, RecoveryResetView, RecoveryVerifyView, RegistrationView, StaffLoginView,
+    ChangePasswordView, PassengerTestingView, PasswordLoginView, RecoveryRequestView, RecoveryResetView, RecoveryVerifyView, RegistrationView, SignupResendView, SignupVerifyView, StaffLoginView,
 )
 from accounts.api.views import LogoutView, MeView, OTPRequestView, OTPVerifyView, RefreshView
 from core.admin_api import (
@@ -78,6 +78,8 @@ api_patterns = [
     path("", include("payments.api.urls")),
     path("", include("drivers.api.urls")),
     path("auth/register/", RegistrationView.as_view(), name="auth-register"),
+    path("auth/email/resend/", SignupResendView.as_view(), name="auth-email-resend"),
+    path("auth/email/verify/", SignupVerifyView.as_view(), name="auth-email-verify"),
     path("auth/login/", PasswordLoginView.as_view(), name="auth-password-login"),
     path("auth/passenger-testing/", PassengerTestingView.as_view(), name="auth-passenger-testing"),
     path("auth/password/request/", RecoveryRequestView.as_view(), name="auth-password-request"),

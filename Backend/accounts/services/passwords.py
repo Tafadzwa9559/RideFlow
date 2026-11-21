@@ -13,7 +13,6 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core import signing
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.mail import send_mail
 from django.db.models import F
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
@@ -25,6 +24,7 @@ from rest_framework.exceptions import APIException, Throttled, ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import EmailIdentity, PhoneIdentity
+from accounts.services import email_codes
 from accounts.services.authentication import sms_provider
 from accounts.test_otp import validate_test_otp_settings
 from core import transactions as transaction
@@ -32,10 +32,8 @@ from core import transactions as transaction
 logger = logging.getLogger(__name__)
 RESET_SALT = 'trivia.password-reset.v2'
 RESET_AUTHORIZATION_TTL = 300
-EMAIL_CODE_TTL = 600
-EMAIL_RESEND_DELAY = 60
 INVALID_PROOF = 'Invalid or expired verification. Request a new code.'
-ACCEPTED = 'If the account is eligible, a verification code will be sent.'
+ACCEPTED = 'If eligible and delivery is available, check for a code. This response does not confirm delivery.'
 
 
 class Unavailable(APIException):
@@ -47,6 +45,12 @@ class InvalidCredentials(APIException):
     status_code = 401
     default_detail = 'The account details or password are incorrect.'
     default_code = 'invalid_credentials'
+
+
+class EmailVerificationRequired(APIException):
+    status_code = 403
+    default_detail = 'Verify your email address before logging in.'
+    default_code = 'email_verification_required'
 
 
 @lru_cache(maxsize=4)
@@ -104,7 +108,21 @@ def register(first_name, last_name, email, password):
     )
     validate_new_password(password, user)
     user.set_password(password)
-    return create_email_account(user)
+    try:
+        identity = create_email_account(user)
+    except DuplicateEmail:
+        identity = signup_identity(email)
+        if identity is None or not identity.verification_pending or not identity.user.check_password(password):
+            raise
+        try:
+            send_signup_code(identity)
+        except Throttled:
+            if not signup_code_delivered(identity):
+                raise
+        return identity
+    if identity.verification_pending:
+        send_signup_code(identity)
+    return identity
 
 
 @transaction.atomic
@@ -113,7 +131,8 @@ def create_email_account(user):
     if get_user_model().objects.filter(email__iexact=user.email).exists():
         raise DuplicateEmail()
     user.save(force_insert=True)
-    return EmailIdentity.objects.create(user=user)
+    return EmailIdentity.objects.create(
+        user=user, verification_required=settings.TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED)
 
 
 def unique_email_user(identifier):
@@ -182,6 +201,8 @@ def login(channel, identifier, password):
         identity = account(channel, identifier)
         user = identity.user if identity else None
     verify_password(user if identity else None, password)
+    if isinstance(identity, EmailIdentity) and identity.verification_pending:
+        raise EmailVerificationRequired()
     refresh = RefreshToken.for_user(user)
     claim = 'email_session_version' if isinstance(identity, EmailIdentity) else 'session_version'
     refresh[claim] = identity.session_version
@@ -249,6 +270,121 @@ def password_state(identity):
     return digest('state', f'{identity.user.password}:{identity.session_version}')
 
 
+def issue_code(key, binding, deliver):
+    challenge = json.dumps([*binding, secrets.token_urlsafe(16)])
+    ttl = settings.OTP_TTL_SECONDS
+    for _ in range(3):
+        code = f'{secrets.randbelow(1000000):06d}'
+        if run_script("""
+            if redis.call('HGET', KEYS[1], 'code') == ARGV[1] then return 0 end
+            redis.call('HSET', KEYS[1], 'code', ARGV[1], 'challenge', ARGV[2], 'attempts', 0, 'delivery', 'pending')
+            return redis.call('EXPIRE', KEYS[1], ARGV[3])
+        """, key, digest(key, code), challenge, ttl):
+            break
+    else:
+        raise Unavailable()
+    try:
+        deliver(code)
+        if not run_script("""
+            if redis.call('HGET', KEYS[1], 'challenge') ~= ARGV[1] then return 0 end
+            redis.call('HDEL', KEYS[1], 'delivery')
+            return redis.call('EXPIRE', KEYS[1], ARGV[2])
+        """, key, challenge, ttl):
+            raise Unavailable()
+    except Exception:
+        run_script("""
+            if redis.call('HGET', KEYS[1], 'challenge') == ARGV[1] then
+                return redis.call('DEL', KEYS[1])
+            end
+            return 0
+        """, key, challenge)
+        raise
+
+
+def consume_code(key, code):
+    proof = run_script("""
+        if redis.call('HEXISTS', KEYS[1], 'challenge') == 0
+            or redis.call('HGET', KEYS[1], 'delivery') == 'pending' then return false end
+        if redis.call('HGET', KEYS[1], 'code') == ARGV[1] then
+            local proof = redis.call('HGET', KEYS[1], 'challenge')
+            redis.call('DEL', KEYS[1])
+            return proof
+        end
+        local attempts = redis.call('HINCRBY', KEYS[1], 'attempts', 1)
+        if attempts >= tonumber(ARGV[2]) then redis.call('DEL', KEYS[1]) end
+        return false
+    """, key, digest(key, code), settings.OTP_MAX_ATTEMPTS)
+    if not proof:
+        raise ValidationError({'code': INVALID_PROOF})
+    return json.loads(proof)
+
+
+def signup_identity(email):
+    user = unique_email_user(email)
+    if passenger(user):
+        return EmailIdentity.objects.filter(user=user).select_related('user').first()
+    return None
+
+
+def signup_key(email):
+    return f'trivia:signup:{digest("recipient", email)}'
+
+
+def signup_code_delivered(identity):
+    email = identity.user.email.lower()
+    proof = run_script("""
+        if redis.call('HGET', KEYS[1], 'delivery') == 'pending' then return false end
+        return redis.call('HGET', KEYS[1], 'challenge')
+    """, signup_key(email))
+    return bool(proof and json.loads(proof)[:-1] == [
+        email, str(identity.user_id), password_state(identity),
+    ])
+
+
+def signup_account(email, password, action):
+    limit(f'signup-{action}-contact', email, 15, 3600)
+    identity = signup_identity(email)
+    verify_password(identity.user if identity and identity.verification_pending else None, password)
+    limit(f'signup-{action}-user', str(identity.user_id), 15, 3600)
+    return identity
+
+
+def send_signup_code(identity):
+    email = identity.user.email.lower()
+    limit('signup-resend', email, 1, settings.OTP_RESEND_SECONDS)
+    limit('signup-delivery-user', str(identity.user_id), 5, 3600)
+    try:
+        issue_code(
+            signup_key(email), [email, str(identity.user_id), password_state(identity)],
+            lambda code: email_codes.send_code(email, code, 'signup'),
+        )
+    except Exception:
+        logger.error('Signup verification delivery failed.')
+        raise Unavailable('Verification email could not be sent. Try again after one minute.') from None
+
+
+def resend_signup(email, password):
+    send_signup_code(signup_account(email, password, 'resend'))
+
+
+def verify_signup(email, password, code):
+    identity = signup_account(email, password, 'verify')
+    binding = consume_code(signup_key(email), code)
+    mark_signup_verified(identity.user_id, email, binding)
+
+
+@transaction.atomic
+def mark_signup_verified(user_id, email, binding):
+    transaction.guard(get_user_model(), user_id)
+    transaction.guard('profile-email', email)
+    identity = signup_identity(email)
+    if (identity is None or not identity.verification_pending or identity.user_id != user_id
+            or binding[:-1] != [email, str(user_id), password_state(identity)]):
+        raise ValidationError({'code': INVALID_PROOF})
+    identity.verified_at = timezone.now()
+    identity.save(update_fields=['verified_at'])
+
+
 @shared_task(ignore_result=True)
 def deliver_recovery(channel, identifier):
     try:
@@ -256,37 +392,21 @@ def deliver_recovery(channel, identifier):
         identity = recovery_account(channel, identifier)
         if identity is None:
             return
-        code = f'{secrets.randbelow(1000000):06d}'
-        challenge = json.dumps([channel, identifier, str(identity.user_id), password_state(identity), secrets.token_urlsafe(16)])
-        ttl = EMAIL_CODE_TTL if channel == 'email' else settings.OTP_TTL_SECONDS
-        key = recovery_key(channel, identifier)
-        challenge_digest = digest(key, code)
-        run_script("""
-            redis.call('HSET', KEYS[1], 'code', ARGV[1], 'challenge', ARGV[2], 'attempts', 0)
-            redis.call('EXPIRE', KEYS[1], ARGV[3])
-            return 1
-        """, key, challenge_digest, challenge, ttl)
-        try:
-            if channel == 'phone':
-                if local_recovery():
-                    LocalRecoverySMS().send(identifier, code)
-                else:
-                    sms_provider().send(identifier, code)
-            elif send_mail(
-                'Trivia password recovery',
-                f'Enter this verification code in Trivia: {code}\n\n'
-                'It expires in ten minutes. Ignore this email if you did not request it.',
-                settings.DEFAULT_FROM_EMAIL, [identifier],
-            ) != 1:
-                raise Unavailable()
-        except Exception:
-            run_script("""
-                if redis.call('HGET', KEYS[1], 'challenge') == ARGV[1] then
-                    return redis.call('DEL', KEYS[1])
-                end
-                return 0
-            """, key, challenge)
-            raise
+        limit('reset-delivery-user', str(identity.user_id), 5, 3600)
+
+        def deliver(code):
+            if channel == 'email':
+                email_codes.send_code(identifier, code, 'password_reset')
+            elif local_recovery():
+                LocalRecoverySMS().send(identifier, code)
+            else:
+                sms_provider().send(identifier, code)
+
+        issue_code(
+            recovery_key(channel, identifier),
+            [channel, identifier, str(identity.user_id), password_state(identity)],
+            deliver,
+        )
     except Exception:
         # Provider exceptions can contain message bodies or recipient addresses.
         logger.error('Password recovery delivery failed for channel %s.', channel)
@@ -295,8 +415,7 @@ def deliver_recovery(channel, identifier):
 def request_recovery(channel, identifier):
     check_delivery(channel)
     subject = f'{channel}:{identifier}'
-    cooldown = EMAIL_RESEND_DELAY if channel == 'email' else settings.OTP_RESEND_SECONDS
-    limit('reset-resend', subject, 1, cooldown)
+    limit('reset-resend', subject, 1, settings.OTP_RESEND_SECONDS)
     limit('reset-contact', subject, 5, 3600)
     try:
         deliver_recovery.apply_async(
@@ -307,21 +426,8 @@ def request_recovery(channel, identifier):
 
 def verify_recovery(channel, identifier, code):
     limit('reset-verify-contact', f'{channel}:{identifier}', 15, 3600)
-    key = recovery_key(channel, identifier)
-    proof = run_script("""
-        if redis.call('HEXISTS', KEYS[1], 'challenge') == 0 then return false end
-        local attempts = redis.call('HINCRBY', KEYS[1], 'attempts', 1)
-        if redis.call('HGET', KEYS[1], 'code') == ARGV[1] then
-            local proof = redis.call('HGET', KEYS[1], 'challenge')
-            redis.call('DEL', KEYS[1])
-            return proof
-        end
-        if attempts >= tonumber(ARGV[2]) then redis.call('DEL', KEYS[1]) end
-        return false
-    """, key, digest(key, code), settings.OTP_MAX_ATTEMPTS)
-    if not proof:
-        raise ValidationError({'code': INVALID_PROOF})
-    channel, identifier, user_id, state, _ = json.loads(proof)
+    channel, identifier, user_id, state, _ = consume_code(
+        recovery_key(channel, identifier), code)
     return signing.dumps([channel, identifier, user_id, state], salt=RESET_SALT)
 
 
@@ -340,7 +446,8 @@ def reset_password(proof, password):
     if not identity or str(identity.user_id) != user_id or not secrets.compare_digest(password_state(identity), state):
         raise ValidationError({'token': INVALID_PROOF})
 
-    if isinstance(identity, EmailIdentity) and identity.verified_at is None:
+    if (isinstance(identity, EmailIdentity) and identity.verified_at is None
+            and not identity.verification_pending):
         identity.verified_at = timezone.now()
         identity.save(update_fields=['verified_at'])
     save_new_password(identity.user, password)

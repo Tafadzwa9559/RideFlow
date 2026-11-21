@@ -10477,13 +10477,925 @@ paths:
                       detail: invalid
                     request_id: example-correlation-id
           description: Configured provider or infrastructure unavailable
+  /api/v1/auth/email/resend/:
+    post:
+      operationId: api_v1_auth_email_resend_post
+      description: |-
+        Resend signup verification code.
+
+        Supply the email and password of a pending signup. A successful 204 means the mail backend accepted a replacement code. Resending invalidates the previous code and is subject to a 60-second cooldown.
+      summary: Resend signup verification code
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupContactRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  email: passenger@example.test
+                  password: <signup password>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignupContactRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  email: passenger@example.test
+                  password: <signup password>
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SignupContactRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  email: passenger@example.test
+                  password: <signup password>
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Invalid verification data or incorrect, expired, or exhausted
+            code
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Invalid pending signup credentials
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or resend cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Verification or delivery temporarily unavailable
+  /api/v1/auth/email/verify/:
+    post:
+      operationId: api_v1_auth_email_verify_post
+      description: |-
+        Verify a signup email.
+
+        Supply the email and password of a pending signup and its six-digit code. The code expires after five minutes or five failed attempts. A successful 204 consumes it and unlocks normal password login.
+      summary: Verify a signup email
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupVerificationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  email: passenger@example.test
+                  password: <signup password>
+                  code: '000000'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignupVerificationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  email: passenger@example.test
+                  password: <signup password>
+                  code: '000000'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SignupVerificationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  email: passenger@example.test
+                  password: <signup password>
+                  code: '000000'
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Invalid verification data or incorrect, expired, or exhausted
+            code
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Invalid pending signup credentials
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or resend cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Verification or delivery temporarily unavailable
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Concurrent account update
+  /api/v1/auth/login/:
+    post:
+      operationId: api_v1_auth_login_post
+      description: |-
+        Passenger or driver password login.
+
+        Passenger and driver password login. A pending email signup with valid credentials returns EMAIL_VERIFICATION_REQUIRED (403) without tokens. A successful login returns tokens and the current driver approval status.
+      summary: Passenger or driver password login
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: email
+                  identifier: passenger@example.test
+                  password: <account password>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: email
+                  identifier: passenger@example.test
+                  password: <account password>
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: email
+                  identifier: passenger@example.test
+                  password: <account password>
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tokens'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    access: <access-token-from-sign-in>
+                    refresh: <refresh-token-from-sign-in>
+                    user:
+                      id: '000000000000000000000001'
+                      first_name: Test
+                      last_name: Passenger
+                      email: example
+                      phone: '+263771234567'
+                      driver_status: example
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: The account details or password are incorrect.
+                    code: INVALID_CREDENTIALS
+                    field_codes:
+                      detail: invalid_credentials
+                    request_id: example-correlation-id
+          description: Invalid account credentials
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Verify your email address before logging in.
+                    code: EMAIL_VERIFICATION_REQUIRED
+                    field_codes:
+                      detail: email_verification_required
+                    request_id: example-correlation-id
+          description: EMAIL_VERIFICATION_REQUIRED for a pending signup with valid
+            credentials
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+  /api/v1/auth/password/request/:
+    post:
+      operationId: api_v1_auth_password_request_post
+      description: |-
+        Request password recovery.
+
+        Queue recovery on an enabled channel. A generic 202 confirms neither account existence nor delivery. Repeat this request after the 60-second cooldown to resend. Codes expire after five minutes.
+      summary: Request password recovery
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordContactRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: email
+                  identifier: passenger@example.test
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordContactRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: email
+                  identifier: passenger@example.test
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordContactRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: email
+                  identifier: passenger@example.test
+        required: true
+      security:
+      - {}
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    detail: example
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+  /api/v1/auth/password/reset/:
+    post:
+      operationId: api_v1_auth_password_reset_post
+      description: |-
+        Reset password.
+
+        Set a validated new password using the reset token. Include matching password confirmation. Existing authentication sessions are revoked.
+      summary: Reset password
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  token: <reset proof from verification>
+                  password: <new strong password>
+                  password_confirmation: <same password>
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResetRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  token: <reset proof from verification>
+                  password: <new strong password>
+                  password_confirmation: <same password>
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResetRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  token: <reset proof from verification>
+                  password: <new strong password>
+                  password_confirmation: <same password>
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
+  /api/v1/auth/password/verify/:
+    post:
+      operationId: api_v1_auth_password_verify_post
+      description: |-
+        Verify recovery code.
+
+        Exchange the delivered one-time code for a short-lived password reset token.
+      summary: Verify recovery code
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryVerificationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: phone
+                  identifier: '+263771234567'
+                  code: '000000'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecoveryVerificationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: phone
+                  identifier: '+263771234567'
+                  code: '000000'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecoveryVerificationRequest'
+            examples:
+              illustrative:
+                summary: Illustrative input. Replace placeholders before sending.
+                value:
+                  channel: phone
+                  identifier: '+263771234567'
+                  code: '000000'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryToken'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    token: example
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: INVALID
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Validation failed
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_AUTHENTICATED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: JWT missing, invalid, expired or revoked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: PERMISSION_DENIED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Role or ownership permission denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: NOT_FOUND
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Resource not visible or not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: QUOTE_EXPIRED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: State/quote conflict
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: THROTTLED
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Rate limit or cooldown
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                illustrative:
+                  summary: Illustrative response
+                  value:
+                    errors:
+                      detail: Request could not be completed.
+                    code: ROUTE_UNAVAILABLE
+                    field_codes:
+                      detail: invalid
+                    request_id: example-correlation-id
+          description: Configured provider or infrastructure unavailable
   /api/v1/auth/register/:
     post:
       operationId: api_v1_auth_register_post
       description: |-
         Register a passenger with email.
 
-        Create an active passenger account with a name, email, and password. Email ownership remains unverified. No OTP is required. Use the password login endpoint to obtain tokens. Duplicate addresses return DUPLICATE_EMAIL.
+        Register with a name, email, and password. When signup verification is enabled, verification_required is true and login requires email verification. A retry with the correct password resumes the pending signup. No tokens are returned. Other duplicate addresses return DUPLICATE_EMAIL.
       summary: Register a passenger with email
       tags:
       - Authentication
@@ -10499,7 +11411,8 @@ paths:
                   first_name: Rudo
                   last_name: Moyo
                   email: passenger@example.test
-                  password: <at least 15 characters>
+                  password: <new strong password>
+                  password_confirmation: <same password>
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/RegistrationRequest'
@@ -10510,7 +11423,8 @@ paths:
                   first_name: Rudo
                   last_name: Moyo
                   email: passenger@example.test
-                  password: <at least 15 characters>
+                  password: <new strong password>
+                  password_confirmation: <same password>
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/RegistrationRequest'
@@ -10521,7 +11435,8 @@ paths:
                   first_name: Rudo
                   last_name: Moyo
                   email: passenger@example.test
-                  password: <at least 15 characters>
+                  password: <new strong password>
+                  password_confirmation: <same password>
         required: true
       security:
       - {}
@@ -10538,6 +11453,7 @@ paths:
                     id: example
                     email: developer@example.test
                     email_verified: false
+                    verification_required: false
           description: ''
         '400':
           content:
@@ -29322,6 +30238,16 @@ components:
     RegistrationRequest:
       type: object
       properties:
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
+        password_confirmation:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 256
         first_name:
           type: string
           minLength: 1
@@ -29335,15 +30261,141 @@ components:
           format: email
           minLength: 1
           maxLength: 254
-        password:
-          type: string
-          writeOnly: true
-          minLength: 15
-          maxLength: 256
       required:
       - email
       - first_name
       - last_name
+      - password
+      - password_confirmation
+    LoginRequest:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/PasswordContactChannelEnum'
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 254
+          description: Verified international phone number or unique account email,
+            matching channel.
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 256
+          description: Existing account password. Leading and trailing spaces are
+            significant.
+      required:
+      - channel
+      - identifier
+      - password
+    PasswordContactChannelEnum:
+      enum:
+      - phone
+      - email
+      type: string
+      description: |-
+        * `phone` - phone
+        * `email` - email
+    PasswordContactRequest:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/PasswordContactChannelEnum'
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 254
+      required:
+      - channel
+      - identifier
+    RecoveryToken:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+      - token
+    RecoveryVerificationRequest:
+      type: object
+      properties:
+        channel:
+          $ref: '#/components/schemas/PasswordContactChannelEnum'
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 254
+        code:
+          type: string
+          writeOnly: true
+          minLength: 1
+          pattern: ^[0-9]{6}$
+      required:
+      - channel
+      - code
+      - identifier
+    ResetRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
+          description: New account password. Django password validation applies.
+        password_confirmation:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 256
+        token:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 1024
+          description: Short-lived reset proof returned after successful recovery
+            verification.
+      required:
+      - password
+      - password_confirmation
+      - token
+    SignupContactRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 256
+      required:
+      - email
+      - password
+    SignupVerificationRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 256
+        code:
+          type: string
+          writeOnly: true
+          minLength: 1
+          pattern: ^[0-9]{6}$
+      required:
+      - code
+      - email
       - password
     RegistrationResult:
       type: object
@@ -29354,6 +30406,8 @@ components:
           type: string
           format: email
         email_verified:
+          type: boolean
+        verification_required:
           type: boolean
       required:
       - email

@@ -41,6 +41,18 @@ class SchemaTests(SimpleTestCase):
             'first_name', 'last_name', 'email', 'password', 'password_confirmation',
         })
         self.assertIn('email_verified', schemas['RegistrationResult']['required'])
+        self.assertIn('verification_required', schemas['RegistrationResult']['properties'])
+        for action, fields in (
+            ('resend', {'email', 'password'}),
+            ('verify', {'email', 'password', 'code'}),
+        ):
+            route = self.schema['paths'][f'/api/v1/auth/email/{action}/']['post']
+            self.assertEqual(route['security'], [{}])
+            self.assertIn('204', route['responses'])
+            self.assertIn('429', route['responses'])
+            self.assertIn('503', route['responses'])
+            ref = route['requestBody']['content']['application/json']['schema']['$ref']
+            self.assertEqual(set(schemas[ref.rsplit('/', 1)[-1]]['required']), fields)
 
     def test_required_resources_and_typed_business_responses(self):
         paths = self.schema['paths']

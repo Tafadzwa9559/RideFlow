@@ -61,6 +61,19 @@ class RegistrationResultSerializer(serializers.Serializer):
     id = serializers.CharField()
     email = serializers.EmailField()
     email_verified = serializers.BooleanField()
+    verification_required = serializers.BooleanField(required=False)
+
+
+class SignupContactSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254)
+    password = serializers.CharField(max_length=256, trim_whitespace=False, write_only=True)
+
+    def validate_email(self, value):
+        return value.lower()
+
+
+class SignupVerificationSerializer(SignupContactSerializer):
+    code = serializers.RegexField(r'^[0-9]{6}\Z', write_only=True)
 
 
 class LoginSerializer(PasswordContactSerializer):
@@ -131,7 +144,28 @@ class RegistrationView(PublicPasswordView):
             'id': str(identity.user_id),
             'email': identity.user.email,
             'email_verified': identity.verified_at is not None,
+            **({'verification_required': True} if identity.verification_pending else {}),
         }, status=201)
+
+
+class SignupResendView(PublicPasswordView):
+    serializer_class = SignupContactSerializer
+    throttle_scope = 'signup-resend-ip'
+    ip_limit = (10, 3600)
+
+    def process(self, **data):
+        passwords.resend_signup(**data)
+        return Response(status=204)
+
+
+class SignupVerifyView(PublicPasswordView):
+    serializer_class = SignupVerificationSerializer
+    throttle_scope = 'signup-verify-ip'
+    ip_limit = (30, 3600)
+
+    def process(self, **data):
+        passwords.verify_signup(**data)
+        return Response(status=204)
 
 
 class PasswordLoginView(PublicPasswordView):

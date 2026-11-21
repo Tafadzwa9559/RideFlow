@@ -21,6 +21,11 @@ Create an external Render environment group `trivia-production-secrets` and atta
 | PRIVATE_STORAGE_REGION | Provider region |
 | PRIVATE_STORAGE_ACCESS_KEY / PRIVATE_STORAGE_SECRET_KEY | Least-privilege object credentials, or workload identity where supported |
 | SMS_PROVIDER | Installed adapter class; empty means OTP returns 503, not delivered |
+| TRIVIA_EMAIL_SIGNUP_VERIFICATION_ENABLED | Enable verification for newly created email signups after deploying the compatible Flutter build and verifying mail delivery |
+| TRIVIA_RECOVERY_EMAIL_ENABLED | Enable the existing email password recovery endpoints |
+| EMAIL_BACKEND | Django email backend class. Defaults to SMTP and can be replaced with an HTTPS provider adapter |
+| EMAIL_HOST_USER / EMAIL_HOST_PASSWORD | Gmail SMTP account and app password when using Gmail. Store both in Render secrets |
+| DEFAULT_FROM_EMAIL | Sender address. Defaults to the SMTP account |
 | TRIVIA_GEOAPIFY_API_KEY | Server-side Geoapify project key for autocomplete, reverse geocoding and driving routes |
 | TRIVIA_GEOAPIFY_DAILY_REQUEST_LIMIT | Optional shared daily upstream request limit, defaults to 2500 UTC. Long routes can consume multiple credits. Track credit usage in the Geoapify dashboard. |
 | TRIVIA_ROUTING_URL / TRIVIA_GEOCODING_URL | Optional HTTPS overrides for existing OSRM and Nominatim-compatible services respectively. Clear either override to use Geoapify for that service. |
@@ -34,6 +39,21 @@ and driving routes are cached for five minutes. Geoapify cache misses share
 a Redis-backed five-per-second limit and a UTC daily request budget. Leave
 existing pricing zones and fare rules in place and verify coverage for each
 area where passengers can request rides.
+
+### Email verification rollout
+
+Render Free blocks outbound SMTP ports 25, 465, and 587. Gmail SMTP on port
+587 requires a service with working outbound SMTP. An HTTPS email backend
+is the alternative for Render Free. Configure delivery on the web service
+for signup and on the Celery worker for recovery. Both use the shared
+password-auth Redis connection and the same Django secret for code digests.
+
+Apply the MongoDB account migration before enabling email signup verification.
+Existing accounts keep their login policy. New pending signups require email
+verification before password login and can resume by logging in with their
+password. Test signup, resend, verification, and recovery against a staging
+mailbox before enabling the flags in production. Recovery's generic HTTP 202
+does not confirm account existence or message delivery.
 
 The Blueprint supplies production settings, private storage class and internal Redis connections. Production rejects local OTP, non-Atlas URIs, insecure browser origins, wildcard/local hosts and filesystem-only storage. Never supply test variables on production services. The environment group is intentionally not generated with secret values.
 

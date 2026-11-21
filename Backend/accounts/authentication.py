@@ -22,8 +22,9 @@ class SessionJWTAuthentication(JWTAuthentication):
         if token.get('staff_api_session'):
             return user
         if 'email_session_version' in token:
-            version = EmailIdentity.objects.filter(user=user).values_list('session_version', flat=True).first()
-            if version is None or token['email_session_version'] != version:
+            identity = EmailIdentity.objects.filter(user=user).first()
+            if (identity is None or identity.verification_pending
+                    or token['email_session_version'] != identity.session_version):
                 raise AuthenticationFailed('Session revoked.')
             return user
         if token.get('development_otp'):

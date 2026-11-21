@@ -16,6 +16,11 @@ class EmailIdentity(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='email_identity')
     verified_at = models.DateTimeField(null=True)
     session_version = models.PositiveIntegerField(default=0)
+    verification_required = models.BooleanField(default=False)
+
+    @property
+    def verification_pending(self):
+        return self.verification_required and self.verified_at is None
 
 
 class PhoneChallenge(models.Model):
