@@ -8,6 +8,7 @@ import AppPreview from "../../components/ui/AppPreview";
 import Photo from "../../components/ui/Photo";
 import { questions } from "./publicContent";
 import { projectConfig } from "../../config/project";
+import RideCategories from "./RideCategories";
 export function FAQList({ limit }: { limit?: number }) {
   return <FAQAccordion items={questions.slice(0, limit)} />;
 }
@@ -32,44 +33,7 @@ export function DownloadSection() {
     </ScrollReveal>
   );
 }
-export function RideCategories() {
-  return (
-    <div className="category-editorial">
-      {[
-        [
-          "city-car",
-          "Standard",
-          "The everyday essential.",
-          "A straightforward option for daily plans.",
-        ],
-        [
-          "car-journey",
-          "Comfort",
-          "A little room to unwind.",
-          "A comfortable choice for the journey ahead.",
-        ],
-        [
-          "suv",
-          "XL",
-          "Make room for everyone.",
-          "A larger option for travelling together.",
-        ],
-      ].map(([photo, title, line, copy], index) => (
-        <ScrollReveal as="article" delay={index * 0.1} key={title}>
-          <Photo
-            name={photo as "city-car" | "car-journey" | "suv"}
-            reveal={false}
-          />
-          <div>
-            <h3>Trivia {title}</h3>
-            <strong>{line}</strong>
-            <p>{copy}</p>
-          </div>
-        </ScrollReveal>
-      ))}
-    </div>
-  );
-}
+export { RideCategories };
 export default function Landing() {
   return (
     <>
