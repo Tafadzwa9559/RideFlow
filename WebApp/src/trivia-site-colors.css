@@ -331,3 +331,239 @@
 /* marketing.css pushed the old driver photo to the left; the new driver sits right of centre */
 .marketing .editorial-photo.photo-driver img { object-position: 62% center; }
 .marketing .editorial-photo.photo-passenger img { object-position: 60% center; }
+
+/* ===== Mobile menu: deep green, big white type ===== */
+.marketing .mobile-menu-backdrop {
+  background: rgba(2, 44, 34, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.marketing .mobile-menu-panel {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(52, 211, 153, 0.38), transparent 52%),
+    linear-gradient(165deg, #065f46 0%, #064e3b 45%, #022c22 100%);
+  border: 1px solid rgba(110, 231, 183, 0.25);
+  border-radius: 28px;
+  padding-bottom: 20px;
+  box-shadow: 0 28px 70px rgba(2, 44, 34, 0.55);
+  color: #fff;
+}
+
+/* "EXPLORE TRIVIA" and the close button */
+.marketing.marketing .mobile-menu-title > span {
+  color: #6ee7b7;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.marketing .mobile-menu-panel button {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+/* Main links: big white type with thin dividers */
+.marketing.marketing .mobile-menu-panel nav > div:not(.mobile-secondary-links) > a {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  padding: 9px 4px;
+  margin: 0;
+  border-radius: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  box-shadow: none;
+}
+.marketing.marketing .mobile-menu-panel nav > div:not(.mobile-secondary-links) > a:active {
+  color: #6ee7b7;
+}
+.marketing.marketing .mobile-menu-panel nav > div:not(.mobile-secondary-links) > a[aria-current="page"] {
+  color: #6ee7b7;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Index numbers: small circles, filled green on the current page */
+.marketing.marketing .mobile-link-index {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #a7f3d0;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.marketing .mobile-menu-panel a[aria-current="page"] .mobile-link-index {
+  background: #10b981;
+  color: #052e22;
+}
+
+/* Secondary links as outlined pills */
+.marketing .mobile-secondary-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.marketing.marketing .mobile-secondary-links > a {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Download button and tagline */
+.marketing .mobile-menu-panel .site-button {
+  position: static;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 16px;
+  background: #10b981;
+  border-color: #10b981;
+  color: #052e22;
+  font-weight: 700;
+  box-shadow: 0 10px 26px rgba(16, 185, 129, 0.45);
+}
+.marketing.marketing .mobile-menu-panel > p {
+  text-align: center;
+  margin: 14px 0 0;
+  color: #6ee7b7;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Short phone screens: tighten so everything fits */
+@media (max-height: 700px) {
+  .marketing.marketing .mobile-menu-panel nav > div:not(.mobile-secondary-links) > a {
+    font-size: 1.25rem;
+    padding: 7px 4px;
+  }
+  .marketing .mobile-menu-panel .site-button { min-height: 48px; margin-top: 12px; }
+}
+
+/* ===== Mobile menu animation (plays every time the menu opens; slower version) ===== */
+
+/* Slow drifting glow in the panel background */
+.marketing .mobile-menu-panel {
+  background-size: 170% 170%, 100% 100%;
+  background-position: 0% 0%, 0 0;
+  animation: tv-menu-glow 14s ease-in-out infinite alternate;
+}
+
+/* Close icon spins in */
+.marketing .mobile-menu-panel .mobile-menu-title button svg {
+  animation: tv-menu-spin 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+.marketing .mobile-menu-panel .mobile-menu-title button:active { transform: rotate(90deg); }
+
+/* Links slide in from the left, one after another; number badges pop in after them */
+.marketing .mobile-menu-panel nav > div:not(.mobile-secondary-links) > a {
+  animation: tv-menu-link 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.marketing .mobile-menu-panel .mobile-link-index {
+  animation: tv-menu-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.marketing .mobile-menu-panel nav > div:nth-child(1) > a { animation-delay: 0.35s; }
+.marketing .mobile-menu-panel nav > div:nth-child(1) .mobile-link-index { animation-delay: 0.65s; }
+.marketing .mobile-menu-panel nav > div:nth-child(2) > a { animation-delay: 0.48s; }
+.marketing .mobile-menu-panel nav > div:nth-child(2) .mobile-link-index { animation-delay: 0.78s; }
+.marketing .mobile-menu-panel nav > div:nth-child(3) > a { animation-delay: 0.61s; }
+.marketing .mobile-menu-panel nav > div:nth-child(3) .mobile-link-index { animation-delay: 0.91s; }
+.marketing .mobile-menu-panel nav > div:nth-child(4) > a { animation-delay: 0.74s; }
+.marketing .mobile-menu-panel nav > div:nth-child(4) .mobile-link-index { animation-delay: 1.04s; }
+.marketing .mobile-menu-panel nav > div:nth-child(5) > a { animation-delay: 0.87s; }
+.marketing .mobile-menu-panel nav > div:nth-child(5) .mobile-link-index { animation-delay: 1.17s; }
+.marketing .mobile-menu-panel nav > div:nth-child(6) > a { animation-delay: 1.0s; }
+.marketing .mobile-menu-panel nav > div:nth-child(6) .mobile-link-index { animation-delay: 1.3s; }
+
+/* The current page's badge gently pulses */
+.marketing .mobile-menu-panel a[aria-current="page"] .mobile-link-index {
+  animation:
+    tv-menu-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s both,
+    tv-menu-ring 2.8s ease-out 2s infinite;
+}
+
+/* Pills fade up */
+.marketing .mobile-secondary-links > a { animation: tv-menu-rise 0.7s ease both; }
+.marketing .mobile-secondary-links > a:nth-child(1) { animation-delay: 1.25s; }
+.marketing .mobile-secondary-links > a:nth-child(2) { animation-delay: 1.37s; }
+.marketing .mobile-secondary-links > a:nth-child(3) { animation-delay: 1.49s; }
+.marketing .mobile-secondary-links > a:nth-child(4) { animation-delay: 1.61s; }
+
+/* Download button rises in, then glows softly; its arrow nudges */
+.marketing .mobile-menu-panel .site-button {
+  animation:
+    tv-menu-rise 0.7s ease 1.6s both,
+    tv-menu-glow-btn 3.4s ease-in-out 2.4s infinite;
+}
+.marketing .mobile-menu-panel .site-button svg {
+  animation: tv-menu-arrow 2.4s ease-in-out 2.6s infinite;
+}
+
+/* Tagline fades up last */
+.marketing .mobile-menu-panel > p { animation: tv-menu-rise 0.7s ease 1.9s both; }
+
+@keyframes tv-menu-glow { from { background-position: 0% 0%, 0 0; } to { background-position: 100% 60%, 0 0; } }
+@keyframes tv-menu-spin { from { opacity: 0; transform: rotate(-90deg) scale(0.5); } to { opacity: 1; transform: none; } }
+@keyframes tv-menu-link { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+@keyframes tv-menu-pop { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: none; } }
+@keyframes tv-menu-ring { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.65); } 100% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); } }
+@keyframes tv-menu-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes tv-menu-glow-btn {
+  0%, 100% { box-shadow: 0 10px 26px rgba(16, 185, 129, 0.45); }
+  50% { box-shadow: 0 14px 36px rgba(52, 211, 153, 0.8); }
+}
+@keyframes tv-menu-arrow { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(3px, -3px); } }
+
+/* ===== Navbar: shared green details on laptop and phone ===== */
+
+/* The floating bar (same pill on laptop and phone): soft mint tint, green edge and glow */
+.marketing .site-header .site-nav {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(236, 253, 245, 0.92));
+  border: 1px solid #a7f3d0;
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.18);
+}
+.marketing .site-header.is-scrolled .site-nav {
+  box-shadow: 0 14px 34px rgba(16, 185, 129, 0.28);
+}
+
+/* Laptop links: rounded pills, soft green on hover, solid light green for the current page */
+.marketing .site-nav .desktop-navigation > a,
+.marketing .site-nav .dropdown-trigger {
+  padding: 8px 14px;
+  border-radius: 999px;
+  transition: background 0.2s, color 0.2s;
+}
+.marketing .site-nav .desktop-navigation > a::before,
+.marketing .site-nav .desktop-navigation > a::after {
+  display: none; /* replaces the old underline on the current page */
+}
+.marketing .site-nav .desktop-navigation > a {
+  border-bottom: 0;
+  box-shadow: none;
+}
+.marketing .site-nav .desktop-navigation > a:hover,
+.marketing .site-nav .dropdown-trigger:hover {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+.marketing .site-nav .desktop-navigation > a[aria-current="page"] {
+  background: #d1fae5;
+  color: #064e3b;
+  font-weight: 600;
+}
+
+/* Phone menu: the current page gets the same green pill */
+.marketing.marketing .mobile-menu-panel nav > div:not(.mobile-secondary-links) > a[aria-current="page"] {
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 14px;
+  border-bottom-color: transparent;
+  padding-left: 12px;
+  padding-right: 12px;
+}
