@@ -93,9 +93,7 @@ def fetch_route(pickup, destination, *, stops=()):
     if not base and settings.TRIVIA_GEOAPIFY_API_KEY:
         return geoapify_route(pickup, destination, stops=stops) if stops else geoapify_route(pickup, destination)
     if not base:
-        raise RouteUnavailable(
-            "Driving routes are not configured. Please retry once the service is available."
-        )
+        base = "https://router.project-osrm.org"
     coordinates = ";".join(f"{p['longitude']},{p['latitude']}" for p in locations)
     data = provider_json(
         f"{base}/route/v1/driving/{coordinates}?"
