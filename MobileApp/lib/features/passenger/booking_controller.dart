@@ -327,6 +327,16 @@ class BookingController extends ChangeNotifier {
 
   Future<bool> submit() async {
     if (!canSubmit) {
+      if (pickup == null || destination == null) {
+        error = 'Choose both pickup and destination before requesting a ride.';
+      } else if (quote == null || quoting) {
+        error = 'Calculate the route and fare before requesting a ride.';
+      } else if (fareError != null) {
+        error = fareError;
+      } else {
+        error = 'The ride is not ready to submit yet. Please review the route and fare.';
+      }
+      notifyListeners();
       return false;
     }
     submitting = true;
