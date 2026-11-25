@@ -1,12 +1,18 @@
 import 'package:flutter/foundation.dart';
 
 const bool developmentBuild = bool.fromEnvironment('TRIVIA_DEVELOPMENT_BUILD');
-const bool passengerTestingBuild = bool.fromEnvironment('TRIVIA_PASSENGER_TESTING');
-const String passengerTestingOrigin = String.fromEnvironment('TRIVIA_PASSENGER_TESTING_ORIGIN');
+const bool passengerTestingBuild = bool.fromEnvironment(
+  'TRIVIA_PASSENGER_TESTING',
+);
+const String passengerTestingOrigin = String.fromEnvironment(
+  'TRIVIA_PASSENGER_TESTING_ORIGIN',
+);
 
 bool get passengerTestingEnabled =>
-    passengerTestingBuild && passengerTestingOrigin.isNotEmpty &&
-    baseUrl == passengerTestingOrigin && Uri.parse(baseUrl).scheme == 'https' &&
+    passengerTestingBuild &&
+    passengerTestingOrigin.isNotEmpty &&
+    baseUrl == passengerTestingOrigin &&
+    Uri.parse(baseUrl).scheme == 'https' &&
     Uri.parse(baseUrl).host != 'trivia-backend-bze2.onrender.com';
 
 const String baseUrl = String.fromEnvironment(
@@ -43,17 +49,19 @@ class AppConfig {
 
   static String? get mapTiles {
     if (_customMapTiles.isNotEmpty) return _customMapTiles;
-    if (_geoapifyMapKey.isEmpty) return null;
-    final key = Uri.encodeQueryComponent(_geoapifyMapKey);
-    return 'https://maps.geoapify.com/v1/tile/osm-carto/{z}/{x}/{y}.png?apiKey=$key';
+    if (_geoapifyMapKey.isNotEmpty) {
+      final key = Uri.encodeQueryComponent(_geoapifyMapKey);
+      return 'https://maps.geoapify.com/v1/tile/osm-carto/{z}/{x}/{y}.png?apiKey=$key';
+    }
+    return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   }
 
   static const mapTileAttribution = _customMapTiles != ''
       ? _customMapTileAttribution
-      : 'Powered by Geoapify';
+      : (_geoapifyMapKey != '' ? 'Powered by Geoapify' : '');
   static const mapTileAttributionUrl = _customMapTiles != ''
       ? _customMapTileAttributionUrl
-      : 'https://www.geoapify.com/';
+      : (_geoapifyMapKey != '' ? 'https://www.geoapify.com/' : '');
   static const privacy = String.fromEnvironment('TRIVIA_PRIVACY_URL');
   static const terms = String.fromEnvironment('TRIVIA_TERMS_URL');
   static void validate() =>

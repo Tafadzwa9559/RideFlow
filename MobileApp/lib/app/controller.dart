@@ -139,13 +139,22 @@ class AppController extends ChangeNotifier {
       }
       if (session != null) {
         driverMode = session?.driverStatus == DriverStatus.approved;
-        await sync();
-        startSync();
       }
     });
     initializationFailed = !ok;
     ready = true;
     notifyListeners();
+
+    if (ok && session != null) {
+      startSync();
+      unawaited(
+        sync().catchError((Object _) {
+          if (session == null) return;
+          error = 'Connection interrupted. Pull to refresh or retry.';
+          notifyListeners();
+        }),
+      );
+    }
   }
 
   Future<void> finishOnboarding() async {
@@ -207,23 +216,36 @@ class AppController extends ChangeNotifier {
   Future<void> _syncOnce() async {
     final identity = session;
     final previousRide = ride;
-    final refreshed = await repository.restore();
-    final current = await repository.activeRide();
-    final records = await repository.history();
+    final results = await Future.wait([
+      repository.restore(),
+      repository.activeRide(),
+      repository.history(),
+    ]);
+    final refreshed = results[0] as Session?;
+    final current = results[1] as Ride?;
+    final records = results[2] as List<Ride>;
     final asDriver = switch (current?.viewerRole) {
       'driver' => true,
       'passenger' => false,
       _ => driverMode,
     };
-    final bids = !asDriver && current?.status == RideStatus.searching
-        ? await repository.offers(current!.id)
-        : <DriverOffer>[];
+    final bidsFuture = !asDriver && current?.status == RideStatus.searching
+        ? repository.offers(current!.id)
+        : Future.value(<DriverOffer>[]);
     final currentSession = refreshed ?? identity;
     final isApproved = currentSession?.driverStatus == DriverStatus.approved;
-    final availability = repository is ApiRepository && isApproved
-        ? await repository.read('drivers/me/availability')
-        : null;
-    final places = await repository.read('users/me/saved-places');
+    final availabilityFuture = repository is ApiRepository && isApproved
+        ? repository.read('drivers/me/availability')
+        : Future.value(<String, dynamic>{});
+    final placesFuture = repository.read('users/me/saved-places');
+    final secondary = await Future.wait([
+      bidsFuture,
+      availabilityFuture,
+      placesFuture,
+    ]);
+    final bids = secondary[0] as List<DriverOffer>;
+    final availability = secondary[1] as Map<String, dynamic>;
+    final places = secondary[2] as Map<String, dynamic>;
     if (!identical(session, identity) || _disposed) {
       return;
     }
@@ -237,7 +259,7 @@ class AppController extends ChangeNotifier {
     online =
         !_paused &&
         isApproved &&
-        (availability == null
+        (availability.isEmpty
             ? online
             : {
                 'online',

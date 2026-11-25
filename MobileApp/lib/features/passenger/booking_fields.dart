@@ -220,52 +220,7 @@ class BookingFields extends StatelessWidget {
               alignLabelWithHint: true,
             ),
           ),
-
           const SizedBox(height: 20),
-          Text(
-            'Payment preference',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const Text(
-            'Your driver sees this preference. Payment is arranged outside Trivia.',
-          ),
-          if (booking.loadingMethods) const LinearProgressIndicator(),
-          if (booking.configurationError != null)
-            TextButton(
-              onPressed: booking.loadConfiguration,
-              child: Text(booking.configurationError!),
-            ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              for (final method in booking.methods)
-                ChoiceChip(
-                  avatar: Icon(
-                    method.kind == 'cash'
-                        ? Icons.payments_outlined
-                        : Icons.phone_android_outlined,
-                    size: 18,
-                  ),
-                  label: Text(method.name),
-                  selected: booking.method?.id == method.id,
-                  showCheckmark: false,
-                  onSelected: booking.submitting
-                      ? null
-                      : (_) => booking.setPayment(method),
-                ),
-            ],
-          ),
-          if (booking.paymentError != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                booking.paymentError!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          const SizedBox(height: 16),
           if (booking.fare.text.isNotEmpty && booking.fareError == null)
             Text(
               'Your offered fare: ${money(parseFare(booking.fare.text), currency: currency)}',

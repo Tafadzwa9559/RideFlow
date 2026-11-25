@@ -160,6 +160,10 @@ Use [the isolated backend OTP setup](../Backend/docs/development-otp.md), then r
 use a local HTTP origin. The login/OTP screens and real API workflow are unchanged;
 normal builds continue using the public HTTPS origin.
 
+A default OpenStreetMap raster tile source is used when no tile provider is
+configured. Builds in production should use a licensed tile provider that is
+approved for the expected traffic.
+
 Build with `--dart-define=TRIVIA_GEOAPIFY_MAP_KEY=YOUR_CLIENT_KEY` to enable
 [Geoapify OSM Carto raster tiles](https://apidocs.geoapify.com/docs/maps/).
 Use a client key for this app and a plan that covers your traffic under
@@ -169,6 +173,5 @@ The map displays both Geoapify and OpenStreetMap attribution.
 To use another licensed provider, set `TRIVIA_MAP_TILES` to its HTTPS raster
 template containing `{z}`, `{x}`, and `{y}`. Set `TRIVIA_MAP_TILE_ATTRIBUTION`
 and `TRIVIA_MAP_TILE_ATTRIBUTION_URL` to the provider’s required credit.
-MapLibre style JSON requires a vector renderer. Builds without tile
-configuration show the map controls and overlays with a configuration notice.
+MapLibre style JSON requires a vector renderer.
 Flutter web GPS requires HTTPS (or localhost) and browser permission.

@@ -175,13 +175,7 @@ class ReceiptPage extends StatelessWidget {
             money(ride.cents, currency: ride.currency),
             style: Theme.of(context).textTheme.headlineLarge,
           ),
-          const Text(
-            'Please pay your driver directly using your selected payment method.',
-          ),
           const SizedBox(height: 12),
-          Text(
-            'Payment preference: ${directPaymentLabel(ride.paymentMethod, ride.paymentMethodName)}',
-          ),
           Text('Trip reference: ${ride.id}'),
           if (ride.driver != null)
             Text(
@@ -210,9 +204,6 @@ class ReceiptPage extends StatelessWidget {
                     if (ride.distanceMetres case final distance?)
                       '${app.distanceLabel(distance)} by road',
                     '${ride.agreedCents == null ? 'Offered fare' : 'Agreed fare'}: ${money(ride.cents, currency: ride.currency)}',
-                    'Payment preference: ${directPaymentLabel(ride.paymentMethod, ride.paymentMethodName)}',
-                    'Payment is arranged directly with the driver.',
-                    'Trip reference: ${ride.id}',
                   ].join('\n'),
                   sharePositionOrigin: box == null
                       ? null

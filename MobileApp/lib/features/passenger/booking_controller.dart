@@ -196,42 +196,17 @@ class BookingController extends ChangeNotifier {
       app.ride?.active != true &&
       !app.busy &&
       !quoting &&
-      !loadingMethods &&
-      configurationError == null &&
       currencies.contains(currency) &&
       pickup != null &&
       destination != null &&
       quote?.valid == true &&
       quote?.id != null &&
       quote?.currency == currency &&
-      fareError == null &&
-      paymentError == null;
+      fareError == null;
   Future<void> loadConfiguration() async {
-    loadingMethods = true;
-    configurationError = null;
-    notifyListeners();
-    try {
-      final config = await app.repository.read('payments/methods');
-      methods = (config['items'] as List)
-          .map(
-            (j) => BookingPaymentMethod.fromJson(
-              Map<String, dynamic>.from(j as Map),
-            ),
-          )
-          .where((m) => m.enabled && m.supports('USD'))
-          .toList();
-      currencies = ['USD'];
-      currency = 'USD';
-      if (method == null) {
-        app.selectPayment('cash-usd', 'Cash');
-      }
-    } catch (e) {
-      configurationError =
-          'Payment/currency options unavailable. Retry before booking.';
-    } finally {
-      loadingMethods = false;
-      notifyListeners();
-    }
+    currencies = ['USD'];
+    currency = 'USD';
+    app.selectPayment('cash-usd', 'Cash');
   }
 
   Future<void> setPlaces({Place? pickup, Place? destination}) async {
@@ -357,18 +332,15 @@ class BookingController extends ChangeNotifier {
     submitting = true;
     error = null;
     notifyListeners();
+    const paymentMethodId = 'cash-usd';
     final signature =
-        '${quote!.id}|${method!.id}|$currency|${fare.text}|${note.text}|$passengerCount|$luggage|$departureAt|${courier ? parcel : ''}';
+        '${quote!.id}|$paymentMethodId|$currency|${fare.text}|${note.text}|$passengerCount|$luggage|$departureAt|${courier ? parcel : ''}';
     if (signature != _lastSubmission) {
       _requestKey = _uuid();
       _lastSubmission = signature;
     }
     _requestKey ??= _uuid();
-    final paymentPreference = method?.id == 'ecocash'
-        ? 'ecocash'
-        : method?.id == 'onemoney'
-        ? 'onemoney'
-        : 'cash';
+    const paymentPreference = 'cash';
     final ok = await app.book(
       pickup!,
       destination!,
@@ -377,7 +349,7 @@ class BookingController extends ChangeNotifier {
       quoteId: quote!.id,
       requestKey: _requestKey,
       offeredCurrency: currency,
-      methodId: method!.id,
+      methodId: paymentMethodId,
       paymentPreference: paymentPreference,
       passengerNote: note.text,
       passengerCount: intercity ? passengerCount : null,
@@ -397,31 +369,50 @@ class BookingController extends ChangeNotifier {
       }
     }
     if (!ok) {
-      error =
-          app.error ??
-          'Booking could not be confirmed. Retry using the same request.';
+      error = app.error ?? 'An unknown error occurred. Please try again later.';
     }
     submitting = false;
     notifyListeners();
     return ok;
   }
 
-  static String _uuid() {
-    final random = Random.secure();
-    final bytes = List.generate(16, (_) => random.nextInt(256));
-    bytes[6] = (bytes[6] & 15) | 64;
-    bytes[8] = (bytes[8] & 63) | 128;
-    final h = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-    return '${h.substring(0, 8)}-${h.substring(8, 12)}-${h.substring(12, 16)}-${h.substring(16, 20)}-${h.substring(20)}';
+  void clear() {
+    pickup = null;
+    destination = null;
+    stops = const [];
+    passengerCount = 1;
+    luggage = 'none';
+    departureAt = null;
+    note.clear();
+    parcel
+      ..clear()
+      ..addAll({'size': 'small', 'permitted_goods': false});
+    fare.clear();
+    category = 'Standard';
+    currency = 'USD';
+    app.selectPayment('cash-usd', 'Cash');
+    methods.clear();
+    currencies = ['USD'];
+    quote = null;
+    error = null;
+    configurationError = null;
+    notice = null;
+    _requestKey = null;
+    _lastSubmission = null;
+    _generation = 0;
+    _expiry?.cancel();
   }
 
   @override
   void dispose() {
     _disposed = true;
-    _generation++;
     _expiry?.cancel();
-    fare.dispose();
-    note.dispose();
     super.dispose();
+  }
+
+  static String _uuid() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
   }
 }

@@ -124,6 +124,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int tab = 0;
+  final List<Widget?> _cachedPages = List<Widget?>.filled(4, null);
 
   @override
   void initState() {
@@ -157,19 +158,34 @@ class _MainShellState extends State<MainShell> {
     if (driver && app.session?.driverStatus != DriverStatus.approved) {
       return SafeArea(child: DriverRegistration(app: app));
     }
-    final pages = <Widget>[
-      driver ? DriverHome(app: app) : PassengerHome(app: app),
-      driver ? DriverRequests(app: app) : HistoryPage(app: app),
-      driver
-          ? EarningsPage(app: app)
-          : ResourcePage(
-              app: app,
-              title: 'Notifications',
-              resource: 'notifications',
-              empty: 'You’re all caught up. Trip updates will appear here.',
-            ),
-      AccountPage(app: app),
-    ];
+    Widget pageFor(int index) {
+      final cached = _cachedPages[index];
+      if (cached != null) return cached;
+
+      final page = switch (index) {
+        0 => driver ? DriverHome(app: app) : PassengerHome(app: app),
+        1 => driver ? DriverRequests(app: app) : HistoryPage(app: app),
+        2 =>
+          driver
+              ? EarningsPage(app: app)
+              : ResourcePage(
+                  app: app,
+                  title: 'Notifications',
+                  resource: 'notifications',
+                  empty: 'You’re all caught up. Trip updates will appear here.',
+                ),
+        _ => AccountPage(app: app),
+      };
+      _cachedPages[index] = page;
+      return page;
+    }
+
+    final pages = List<Widget>.generate(
+      4,
+      (index) => index == tab
+          ? pageFor(index)
+          : (_cachedPages[index] ?? const SizedBox.shrink()),
+    );
     return Scaffold(
       body: SafeArea(
         bottom: false,
